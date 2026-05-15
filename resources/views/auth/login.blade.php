@@ -28,7 +28,7 @@
 <body>
     <div class="card login-card p-4">
         <div class="brand-header">
-            <img src="/images/logo.png" alt="VIP Windows" style="height:80px;" class="mb-2">
+            <img src="/images/logo.png" alt="VIP Windows" style="height:100px;" class="mb-2">
             <p class="text-muted mb-0">Sign in to your account</p>
         </div>
 

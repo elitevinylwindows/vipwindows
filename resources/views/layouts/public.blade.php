@@ -101,7 +101,7 @@
     <nav class="navbar navbar-expand-lg navbar-public fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
-                <img src="/images/logo.png" alt="VIP Windows" style="height:40px; margin-right:8px;">
+                <img src="/images/logo.png" alt="VIP Windows" style="height:55px; margin-right:8px;">
             </a>
             <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navPublic">
                 <i class="bi bi-list fs-4"></i>
