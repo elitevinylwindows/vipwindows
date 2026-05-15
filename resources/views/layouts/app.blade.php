@@ -9,20 +9,20 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         :root {
-            --vip-primary: #1a3a5c;
-            --vip-accent: #e8a838;
-            --vip-light: #f4f6f9;
+            --vip-primary: #111111;
+            --vip-accent: #c9a84c;
+            --vip-light: #f7f6f3;
         }
         body { background: var(--vip-light); font-family: 'Segoe UI', system-ui, sans-serif; }
         .navbar-vip {
-            background: linear-gradient(135deg, var(--vip-primary) 0%, #244e78 100%);
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
         }
         .navbar-vip .navbar-brand { color: #fff; font-weight: 700; letter-spacing: .5px; }
         .navbar-vip .navbar-brand span { color: var(--vip-accent); }
         .navbar-vip .nav-link { color: rgba(255,255,255,.85); }
         .navbar-vip .nav-link:hover, .navbar-vip .nav-link.active { color: #fff; }
         .btn-vip { background: var(--vip-accent); color: #fff; border: none; }
-        .btn-vip:hover { background: #d49530; color: #fff; }
+        .btn-vip:hover { background: #b8973f; color: #fff; }
         .card { border: none; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-radius: .5rem; }
         .stat-card { transition: transform .15s; }
         .stat-card:hover { transform: translateY(-2px); }
@@ -40,8 +40,9 @@
     {{-- Navbar --}}
     <nav class="navbar navbar-expand-lg navbar-vip">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('admin.dashboard') }}">
-                <i class="bi bi-building me-1"></i> <span>VIP</span> Windows <small class="opacity-75">Admin</small>
+            <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.dashboard') }}">
+                <img src="/images/logo.png" alt="VIP Windows" style="height:36px; margin-right:8px;">
+                <small class="opacity-75">Admin</small>
             </a>
             <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
                 <i class="bi bi-list fs-4"></i>

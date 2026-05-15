@@ -9,16 +9,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         :root {
-            --vip-primary: #1a3a5c;
-            --vip-accent: #e8a838;
-            --vip-light: #f4f6f9;
-            --vip-dark: #0f2438;
+            --vip-primary: #111111;
+            --vip-accent: #c9a84c;
+            --vip-light: #f7f6f3;
+            --vip-dark: #0a0a0a;
         }
         body { font-family: 'Segoe UI', system-ui, sans-serif; color: #333; }
 
         /* Navbar */
         .navbar-public {
-            background: rgba(26, 58, 92, 0.95);
+            background: rgba(10, 10, 10, 0.97);
             backdrop-filter: blur(10px);
             padding: .75rem 0;
         }
@@ -30,13 +30,13 @@
 
         /* Buttons */
         .btn-vip { background: var(--vip-accent); color: #fff; border: none; font-weight: 600; }
-        .btn-vip:hover { background: #d49530; color: #fff; }
+        .btn-vip:hover { background: #b8973f; color: #fff; }
         .btn-outline-vip { border: 2px solid var(--vip-accent); color: var(--vip-accent); font-weight: 600; }
         .btn-outline-vip:hover { background: var(--vip-accent); color: #fff; }
 
         /* Hero */
         .hero-section {
-            background: linear-gradient(135deg, var(--vip-primary) 0%, #244e78 50%, #2d6a9f 100%);
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
             color: #fff;
             position: relative;
             overflow: hidden;
@@ -61,7 +61,7 @@
         .service-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
         .service-icon {
             width: 64px; height: 64px;
-            background: linear-gradient(135deg, var(--vip-primary), #2d6a9f);
+            background: linear-gradient(135deg, #1a1a1a, #333);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             color: #fff; font-size: 1.5rem;
@@ -81,7 +81,7 @@
 
         /* CTA */
         .cta-section {
-            background: linear-gradient(135deg, var(--vip-accent), #d49530);
+            background: linear-gradient(135deg, var(--vip-accent), #b8973f);
             color: #fff;
         }
 
@@ -100,8 +100,8 @@
     {{-- Navbar --}}
     <nav class="navbar navbar-expand-lg navbar-public fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('home') }}">
-                <i class="bi bi-building me-1"></i> <span>VIP</span> Windows
+            <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
+                <img src="/images/logo.png" alt="VIP Windows" style="height:40px; margin-right:8px;">
             </a>
             <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navPublic">
                 <i class="bi bi-list fs-4"></i>

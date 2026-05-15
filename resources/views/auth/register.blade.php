@@ -10,7 +10,7 @@
         body {
             min-height: 100vh;
             display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #1a3a5c 0%, #244e78 50%, #2d6a9f 100%);
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
             font-family: 'Segoe UI', system-ui, sans-serif;
         }
         .register-card {
@@ -19,16 +19,16 @@
             box-shadow: 0 8px 32px rgba(0,0,0,.25);
         }
         .brand-header { text-align: center; margin-bottom: 1.5rem; }
-        .brand-header h2 { font-weight: 700; color: #1a3a5c; }
-        .brand-header h2 span { color: #e8a838; }
-        .btn-vip { background: #e8a838; color: #fff; border: none; }
-        .btn-vip:hover { background: #d49530; color: #fff; }
+        .brand-header h2 { font-weight: 700; color: #111; }
+        .brand-header h2 span { color: #c9a84c; }
+        .btn-vip { background: #c9a84c; color: #fff; border: none; }
+        .btn-vip:hover { background: #b8973f; color: #fff; }
     </style>
 </head>
 <body>
     <div class="card register-card p-4">
         <div class="brand-header">
-            <h2><i class="bi bi-building"></i> <span>VIP</span> Windows</h2>
+            <img src="/images/logo.png" alt="VIP Windows" style="height:80px;" class="mb-2">
             <p class="text-muted mb-0">Create Your Account</p>
         </div>
 
