@@ -40,8 +40,8 @@
     {{-- Navbar --}}
     <nav class="navbar navbar-expand-lg navbar-vip">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <i class="bi bi-building me-1"></i> <span>VIP</span> Windows
+            <a class="navbar-brand" href="{{ route('admin.dashboard') }}">
+                <i class="bi bi-building me-1"></i> <span>VIP</span> Windows <small class="opacity-75">Admin</small>
             </a>
             <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
                 <i class="bi bi-list fs-4"></i>
@@ -49,17 +49,17 @@
             <div class="collapse navbar-collapse" id="navMain">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
                             <i class="bi bi-speedometer2 me-1"></i> Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">
                             <i class="bi bi-clipboard-check me-1"></i> Orders
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('calendar.*') ? 'active' : '' }}" href="{{ route('calendar.index') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.calendar.*') ? 'active' : '' }}" href="{{ route('admin.calendar.index') }}">
                             <i class="bi bi-calendar3 me-1"></i> Calendar
                         </a>
                     </li>

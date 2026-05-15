@@ -54,7 +54,7 @@ class CalendarController extends Controller
             'created_by'       => Auth::id(),
         ]);
 
-        return redirect()->route('calendar.index', ['month' => \Carbon\Carbon::parse($validated['slot_date'])->format('Y-m')])
+        return redirect()->route('admin.calendar.index', ['month' => \Carbon\Carbon::parse($validated['slot_date'])->format('Y-m')])
             ->with('success', 'Slot created.');
     }
 
@@ -70,7 +70,7 @@ class CalendarController extends Controller
 
         $slot->update(['max_bookings' => $validated['max_bookings']]);
 
-        return redirect()->route('calendar.index', ['month' => $slot->slot_date->format('Y-m')])
+        return redirect()->route('admin.calendar.index', ['month' => $slot->slot_date->format('Y-m')])
             ->with('success', 'Slot updated.');
     }
 
@@ -87,7 +87,7 @@ class CalendarController extends Controller
 
         $slot->delete();
 
-        return redirect()->route('calendar.index', ['month' => $slot->slot_date->format('Y-m')])
+        return redirect()->route('admin.calendar.index', ['month' => $slot->slot_date->format('Y-m')])
             ->with('success', 'Slot removed.');
     }
 

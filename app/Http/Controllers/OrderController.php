@@ -47,7 +47,7 @@ class OrderController extends Controller
             'completed_at'  => $validated['status'] === 'completed' ? now() : $order->completed_at,
         ]);
 
-        return redirect()->route('orders.show', $order->id)->with('success', 'Order status updated.');
+        return redirect()->route('admin.orders.show', $order->id)->with('success', 'Order status updated.');
     }
 
     public function assignTechnician(Request $request, $id)
@@ -57,6 +57,6 @@ class OrderController extends Controller
 
         $order->update(['technician_id' => $validated['technician_id']]);
 
-        return redirect()->route('orders.show', $order->id)->with('success', 'Technician assigned.');
+        return redirect()->route('admin.orders.show', $order->id)->with('success', 'Technician assigned.');
     }
 }

@@ -3,7 +3,7 @@
 
 @section('content')
 <div class="container py-4">
-    <a href="{{ route('orders.index') }}" class="text-decoration-none mb-3 d-inline-block">
+    <a href="{{ route('admin.orders.index') }}" class="text-decoration-none mb-3 d-inline-block">
         <i class="bi bi-arrow-left me-1"></i> Back to Orders
     </a>
 
@@ -113,7 +113,7 @@
             <div class="card mb-3">
                 <div class="card-header bg-white fw-semibold">Update Status</div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('orders.updateStatus', $order->id) }}">
+                    <form method="POST" action="{{ route('admin.orders.updateStatus', $order->id) }}">
                         @csrf @method('PUT')
                         <div class="mb-3">
                             <select name="status" class="form-select">
@@ -137,7 +137,7 @@
             <div class="card mb-3">
                 <div class="card-header bg-white fw-semibold">Assign Technician</div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('orders.assign', $order->id) }}">
+                    <form method="POST" action="{{ route('admin.orders.assign', $order->id) }}">
                         @csrf @method('PUT')
                         <div class="mb-3">
                             <select name="technician_id" class="form-select">

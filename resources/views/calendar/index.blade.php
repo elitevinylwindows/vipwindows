@@ -11,11 +11,11 @@
         $next = $startOfMonth->copy()->addMonth()->format('Y-m');
     @endphp
     <div class="d-flex align-items-center mb-4">
-        <a href="{{ route('calendar.index', ['month' => $prev]) }}" class="btn btn-outline-secondary btn-sm me-2">
+        <a href="{{ route('admin.calendar.index', ['month' => $prev]) }}" class="btn btn-outline-secondary btn-sm me-2">
             <i class="bi bi-chevron-left"></i>
         </a>
         <h5 class="mb-0 fw-semibold">{{ $startOfMonth->format('F Y') }}</h5>
-        <a href="{{ route('calendar.index', ['month' => $next]) }}" class="btn btn-outline-secondary btn-sm ms-2">
+        <a href="{{ route('admin.calendar.index', ['month' => $next]) }}" class="btn btn-outline-secondary btn-sm ms-2">
             <i class="bi bi-chevron-right"></i>
         </a>
     </div>
@@ -28,7 +28,7 @@
                     <i class="bi bi-plus-circle me-1"></i> Add Availability Slot
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('calendar.storeSlot') }}">
+                    <form method="POST" action="{{ route('admin.calendar.storeSlot') }}">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label">Date</label>
@@ -90,7 +90,7 @@
                                                         <div class="fw-semibold" style="font-size:0.7rem;">{{ $slot->slot_time }}</div>
                                                         <div style="font-size:0.65rem;">{{ $slot->bookingsRemaining() }}/{{ $slot->max_bookings }} avail</div>
                                                         <div class="mt-1">
-                                                            <form method="POST" action="{{ route('calendar.deleteSlot', $slot->id) }}" class="d-inline" onsubmit="return confirm('Remove this slot?')">
+                                                            <form method="POST" action="{{ route('admin.calendar.deleteSlot', $slot->id) }}" class="d-inline" onsubmit="return confirm('Remove this slot?')">
                                                                 @csrf @method('DELETE')
                                                                 <button class="btn btn-link btn-sm text-danger p-0" style="font-size:0.65rem;">remove</button>
                                                             </form>

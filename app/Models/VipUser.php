@@ -14,4 +14,14 @@ class VipUser extends Authenticatable
     protected $fillable = ['name', 'email', 'phone', 'role', 'password', 'status'];
 
     protected $hidden = ['password', 'remember_token'];
+
+    public function isAdmin(): bool
+    {
+        return in_array($this->role, ['admin', 'technician']);
+    }
+
+    public function isCustomer(): bool
+    {
+        return $this->role === 'customer';
+    }
 }

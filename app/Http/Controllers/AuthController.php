@@ -11,7 +11,9 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        if (Auth::check()) return redirect()->route('dashboard');
+        if (Auth::check()) {
+            return redirect($this->redirectByRole(Auth::user()));
+        }
         return view('auth.login');
     }
 
@@ -24,7 +26,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended($this->redirectByRole(Auth::user()));
         }
 
         return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
@@ -32,7 +34,9 @@ class AuthController extends Controller
 
     public function showRegister()
     {
-        if (Auth::check()) return redirect()->route('dashboard');
+        if (Auth::check()) {
+            return redirect($this->redirectByRole(Auth::user()));
+        }
         return view('auth.register');
     }
 
@@ -42,6 +46,10 @@ class AuthController extends Controller
             'name'     => 'required|string|max:100',
             'email'    => 'required|email|unique:vip_users,email',
             'phone'    => 'nullable|string|max:30',
+            'address'  => 'nullable|string|max:255',
+            'city'     => 'nullable|string|max:100',
+            'state'    => 'nullable|string|max:50',
+            'zip'      => 'nullable|string|max:20',
             'password' => 'required|confirmed|min:8',
         ]);
 
@@ -49,12 +57,12 @@ class AuthController extends Controller
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'phone'    => $validated['phone'] ?? null,
-            'role'     => 'admin',
+            'role'     => 'customer',
             'password' => Hash::make($validated['password']),
         ]);
 
         Auth::login($user);
-        return redirect()->route('dashboard');
+        return redirect()->route('customer.dashboard');
     }
 
     public function logout(Request $request)
@@ -62,6 +70,17 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('login');
+        return redirect('/');
+    }
+
+    /**
+     * Redirect user based on role after login.
+     */
+    protected function redirectByRole($user): string
+    {
+        if ($user->isAdmin()) {
+            return route('admin.dashboard');
+        }
+        return route('customer.dashboard');
     }
 }

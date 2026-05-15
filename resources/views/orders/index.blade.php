@@ -11,7 +11,7 @@
     <ul class="nav nav-pills mb-3">
         @foreach(['all' => 'All', 'pending' => 'Pending', 'scheduled' => 'Scheduled', 'in_progress' => 'In Progress', 'completed' => 'Completed', 'cancelled' => 'Cancelled'] as $key => $label)
             <li class="nav-item">
-                <a class="nav-link {{ $status === $key ? 'active' : '' }}" href="{{ route('orders.index', ['status' => $key]) }}">
+                <a class="nav-link {{ $status === $key ? 'active' : '' }}" href="{{ route('admin.orders.index', ['status' => $key]) }}">
                     {{ $label }}
                 </a>
             </li>
@@ -62,7 +62,7 @@
                                     </td>
                                     <td class="small">{{ $order->created_at->format('M d') }}</td>
                                     <td>
-                                        <a href="{{ route('orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">
+                                        <a href="{{ route('admin.orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                     </td>

@@ -85,7 +85,7 @@
                                 <tbody>
                                     @foreach($todayInstalls as $o)
                                         <tr>
-                                            <td><a href="{{ route('orders.show', $o->id) }}">#{{ $o->id }}</a></td>
+                                            <td><a href="{{ route('admin.orders.show', $o->id) }}">#{{ $o->id }}</a></td>
                                             <td>{{ $o->customer_name }}</td>
                                             <td>{{ $o->scheduled_slot }}</td>
                                             <td><span class="badge badge-{{ $o->status }}">{{ ucwords(str_replace('_', ' ', $o->status)) }}</span></td>
@@ -104,7 +104,7 @@
             <div class="card">
                 <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-clock-history me-1"></i> Recent Orders</span>
-                    <a href="{{ route('orders.index') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                    <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-outline-secondary">View All</a>
                 </div>
                 <div class="card-body p-0">
                     @if($recentOrders->isEmpty())
@@ -123,7 +123,7 @@
                                 <tbody>
                                     @foreach($recentOrders as $o)
                                         <tr>
-                                            <td><a href="{{ route('orders.show', $o->id) }}">#{{ $o->id }}</a></td>
+                                            <td><a href="{{ route('admin.orders.show', $o->id) }}">#{{ $o->id }}</a></td>
                                             <td>{{ $o->customer_name }}</td>
                                             <td><span class="badge badge-{{ $o->status }}">{{ ucwords(str_replace('_', ' ', $o->status)) }}</span></td>
                                             <td>{{ $o->created_at->format('M d, Y') }}</td>
