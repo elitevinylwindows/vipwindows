@@ -22,7 +22,7 @@
                         </div>
                         <div>
                             <h6 class="fw-bold mb-1">Phone</h6>
-                            <p class="text-muted mb-0">(555) 123-4567</p>
+                            <p class="text-muted mb-0">(562) 368-0313</p>
                         </div>
                     </div>
 
