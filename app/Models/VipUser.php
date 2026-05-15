@@ -11,7 +11,7 @@ class VipUser extends Authenticatable
 
     protected $table = 'vip_users';
 
-    protected $fillable = ['name', 'email', 'phone', 'role', 'password', 'status'];
+    protected $fillable = ['name', 'email', 'phone', 'address', 'city', 'state', 'zip', 'notes', 'role', 'password', 'status'];
 
     protected $hidden = ['password', 'remember_token'];
 

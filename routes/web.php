@@ -2,10 +2,16 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerManagementController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmailController;
+use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\ServiceAreaController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -56,8 +62,48 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/calendar/slots', [CalendarController::class, 'storeSlot'])->name('calendar.storeSlot');
     Route::put('/calendar/slots/{id}', [CalendarController::class, 'updateSlot'])->name('calendar.updateSlot');
     Route::delete('/calendar/slots/{id}', [CalendarController::class, 'deleteSlot'])->name('calendar.deleteSlot');
+
+    // Gallery management
+    Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
+    Route::post('/gallery', [GalleryController::class, 'store'])->name('gallery.store');
+    Route::put('/gallery/{id}', [GalleryController::class, 'update'])->name('gallery.update');
+    Route::delete('/gallery/{id}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
+
+    // Service areas management
+    Route::get('/service-areas', [ServiceAreaController::class, 'index'])->name('service-areas.index');
+    Route::post('/service-areas', [ServiceAreaController::class, 'store'])->name('service-areas.store');
+    Route::put('/service-areas/{id}', [ServiceAreaController::class, 'update'])->name('service-areas.update');
+    Route::delete('/service-areas/{id}', [ServiceAreaController::class, 'destroy'])->name('service-areas.destroy');
+
+    // Customer management
+    Route::get('/customers', [CustomerManagementController::class, 'index'])->name('customers.index');
+    Route::get('/customers/create', [CustomerManagementController::class, 'create'])->name('customers.create');
+    Route::post('/customers', [CustomerManagementController::class, 'store'])->name('customers.store');
+    Route::get('/customers/{id}', [CustomerManagementController::class, 'show'])->name('customers.show');
+    Route::get('/customers/{id}/edit', [CustomerManagementController::class, 'edit'])->name('customers.edit');
+    Route::put('/customers/{id}', [CustomerManagementController::class, 'update'])->name('customers.update');
+    Route::delete('/customers/{id}', [CustomerManagementController::class, 'destroy'])->name('customers.destroy');
+
+    // Email
+    Route::get('/email/compose', [EmailController::class, 'compose'])->name('email.compose');
+    Route::post('/email/send', [EmailController::class, 'send'])->name('email.send');
+    Route::get('/email/sent', [EmailController::class, 'sent'])->name('email.sent');
+
+    // Virtual Consultations
+    Route::get('/consultations', [ConsultationController::class, 'index'])->name('consultations.index');
+    Route::get('/consultations/create', [ConsultationController::class, 'create'])->name('consultations.create');
+    Route::post('/consultations', [ConsultationController::class, 'store'])->name('consultations.store');
+    Route::put('/consultations/{id}', [ConsultationController::class, 'update'])->name('consultations.update');
+    Route::delete('/consultations/{id}', [ConsultationController::class, 'destroy'])->name('consultations.destroy');
+
+    // Settings
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 });
 
 // ─── Public booking (via link from admin) ─────────────────────
 Route::get('/book/{order}', [CalendarController::class, 'showBooking'])->name('booking.show');
 Route::post('/book/{order}', [CalendarController::class, 'confirmBooking'])->name('booking.confirm');
+
+// ─── Public consultation request ─────────────────────────────
+Route::post('/consultation-request', [ConsultationController::class, 'publicRequest'])->name('consultation.request');

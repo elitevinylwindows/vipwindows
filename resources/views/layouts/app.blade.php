@@ -116,7 +116,7 @@
     {{-- Sidebar --}}
     <aside class="admin-sidebar" id="adminSidebar">
         <div class="sidebar-brand">
-            <a href="{{ route('admin.dashboard') }}">
+            <a href="{{ route('home') }}" target="_blank">
                 <img src="/images/logo.png" alt="VIP Windows">
             </a>
         </div>
@@ -132,17 +132,39 @@
             <a href="{{ route('admin.calendar.index') }}" class="{{ request()->routeIs('admin.calendar.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar3"></i> Calendar
             </a>
+            <a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> Customers
+            </a>
 
-            <div class="nav-label mt-3">Website</div>
-            <a href="{{ route('home') }}" target="_blank">
-                <i class="bi bi-globe"></i> View Website
+            <div class="nav-label mt-3">Content</div>
+            <a href="{{ route('admin.gallery.index') }}" class="{{ request()->routeIs('admin.gallery.*') ? 'active' : '' }}">
+                <i class="bi bi-images"></i> Gallery
+            </a>
+            <a href="{{ route('admin.service-areas.index') }}" class="{{ request()->routeIs('admin.service-areas.*') ? 'active' : '' }}">
+                <i class="bi bi-geo-alt"></i> Service Areas
+            </a>
+
+            <div class="nav-label mt-3">Communication</div>
+            <a href="{{ route('admin.email.compose') }}" class="{{ request()->routeIs('admin.email.*') ? 'active' : '' }}">
+                <i class="bi bi-envelope"></i> Email
+            </a>
+            <a href="{{ route('admin.consultations.index') }}" class="{{ request()->routeIs('admin.consultations.*') ? 'active' : '' }}">
+                <i class="bi bi-camera-video"></i> Consultations
+            </a>
+
+            <div class="nav-label mt-3">System</div>
+            <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                <i class="bi bi-gear"></i> Settings
             </a>
         </nav>
 
         <div class="sidebar-user">
             <div class="user-name"><i class="bi bi-person-circle me-1"></i> {{ Auth::user()->name }}</div>
             <div class="user-role">{{ ucfirst(Auth::user()->role) }}</div>
-            <form method="POST" action="{{ route('logout') }}" class="mt-2">
+            <a href="{{ route('home') }}" target="_blank" class="btn btn-sm btn-outline-light w-100 mt-2 opacity-75">
+                <i class="bi bi-globe me-1"></i> View Website
+            </a>
+            <form method="POST" action="{{ route('logout') }}" class="mt-1">
                 @csrf
                 <button class="btn btn-sm btn-outline-light w-100 opacity-50" type="submit">
                     <i class="bi bi-box-arrow-left me-1"></i> Sign Out

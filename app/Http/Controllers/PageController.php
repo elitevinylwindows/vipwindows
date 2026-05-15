@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GalleryImage;
+use App\Models\ServiceArea;
+
 class PageController extends Controller
 {
     public function home()
@@ -21,12 +24,24 @@ class PageController extends Controller
 
     public function gallery()
     {
-        return view('pages.gallery');
+        $images = GalleryImage::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $categories = $images->pluck('category')->unique()->values();
+
+        return view('pages.gallery', compact('images', 'categories'));
     }
 
     public function serviceAreas()
     {
-        return view('pages.service-areas');
+        $areas = ServiceArea::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return view('pages.service-areas', compact('areas'));
     }
 
     public function contact()

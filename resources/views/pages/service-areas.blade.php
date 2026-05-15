@@ -11,7 +11,6 @@
 
 <section class="py-5">
     <div class="container py-4">
-        {{-- Replace with actual service areas --}}
         <div class="text-center mb-5">
             <p class="text-muted" style="max-width:600px; margin:0 auto;">
                 VIP Windows provides professional window installation services across the following areas.
@@ -19,29 +18,25 @@
             </p>
         </div>
 
-        <div class="row g-4 justify-content-center">
-            {{-- Placeholder areas — update with real locations --}}
-            @php
-                $areas = [
-                    ['name' => 'Area 1', 'desc' => 'City and surrounding neighborhoods', 'icon' => 'bi-geo-alt-fill'],
-                    ['name' => 'Area 2', 'desc' => 'City and surrounding neighborhoods', 'icon' => 'bi-geo-alt-fill'],
-                    ['name' => 'Area 3', 'desc' => 'City and surrounding neighborhoods', 'icon' => 'bi-geo-alt-fill'],
-                    ['name' => 'Area 4', 'desc' => 'City and surrounding neighborhoods', 'icon' => 'bi-geo-alt-fill'],
-                    ['name' => 'Area 5', 'desc' => 'City and surrounding neighborhoods', 'icon' => 'bi-geo-alt-fill'],
-                    ['name' => 'Area 6', 'desc' => 'City and surrounding neighborhoods', 'icon' => 'bi-geo-alt-fill'],
-                ];
-            @endphp
-
-            @foreach($areas as $area)
-                <div class="col-md-4">
-                    <div class="card service-card p-4 text-center h-100">
-                        <i class="bi {{ $area['icon'] }} fs-1 mb-2" style="color:var(--vip-primary);"></i>
-                        <h5 class="fw-bold">{{ $area['name'] }}</h5>
-                        <p class="text-muted small mb-0">{{ $area['desc'] }}</p>
+        @if($areas->isEmpty())
+            <div class="text-center py-4">
+                <i class="bi bi-geo-alt fs-1 text-muted"></i>
+                <h5 class="mt-3 text-muted">Service areas coming soon.</h5>
+            </div>
+        @else
+            <div class="row g-4 justify-content-center">
+                @foreach($areas as $area)
+                    <div class="col-md-4">
+                        <div class="card service-card p-4 text-center h-100">
+                            <i class="bi bi-geo-alt-fill fs-1 mb-2" style="color:var(--vip-primary);"></i>
+                            <h5 class="fw-bold">{{ $area->name }}</h5>
+                            <p class="text-muted small mb-1">{{ $area->description ?: 'And surrounding neighborhoods' }}</p>
+                            <span class="badge bg-dark mt-auto" style="width:fit-content; margin:0 auto;">{{ $area->state }}</span>
+                        </div>
                     </div>
-                </div>
-            @endforeach
-        </div>
+                @endforeach
+            </div>
+        @endif
 
         <div class="text-center mt-5">
             <div class="card p-4 d-inline-block" style="border:2px dashed var(--vip-accent); background:transparent; box-shadow:none;">
