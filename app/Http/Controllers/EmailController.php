@@ -10,12 +10,12 @@ use Illuminate\Support\Facades\Mail;
 
 class EmailController extends Controller
 {
+    /**
+     * Compose redirects to sent page (compose is now a modal there).
+     */
     public function compose(Request $request)
     {
-        $customers = VipUser::where('role', 'customer')->orderBy('name')->get();
-        $prefillEmail = $request->input('to');
-
-        return view('email.compose', compact('customers', 'prefillEmail'));
+        return redirect()->route('admin.email.sent', ['to' => $request->input('to')]);
     }
 
     public function send(Request $request)
@@ -51,15 +51,16 @@ class EmailController extends Controller
                 'sent_by' => Auth::id(),
             ]);
 
-            return redirect()->route('admin.email.compose')->with('success', 'Email sent successfully to ' . $validated['to']);
+            return redirect()->route('admin.email.sent')->with('success', 'Email sent successfully to ' . $validated['to']);
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Failed to send email: ' . $e->getMessage());
         }
     }
 
-    public function sent()
+    public function sent(Request $request)
     {
         $emails = SentEmail::orderByDesc('created_at')->paginate(20);
-        return view('email.sent', compact('emails'));
+        $customers = VipUser::where('role', 'customer')->orderBy('name')->get();
+        return view('email.sent', compact('emails', 'customers'));
     }
 }

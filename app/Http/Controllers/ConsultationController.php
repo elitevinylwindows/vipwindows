@@ -13,13 +13,13 @@ class ConsultationController extends Controller
     public function index()
     {
         $consultations = Consultation::orderByDesc('scheduled_at')->paginate(20);
-        return view('consultations.index', compact('consultations'));
+        $customers = VipUser::where('role', 'customer')->orderBy('name')->get();
+        return view('consultations.index', compact('consultations', 'customers'));
     }
 
     public function create()
     {
-        $customers = VipUser::where('role', 'customer')->orderBy('name')->get();
-        return view('consultations.create', compact('customers'));
+        return redirect()->route('admin.consultations.index');
     }
 
     public function store(Request $request)

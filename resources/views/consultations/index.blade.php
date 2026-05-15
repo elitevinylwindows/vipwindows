@@ -5,15 +5,15 @@
 <div class="container-fluid py-4 px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0"><i class="bi bi-camera-video me-2"></i>Virtual Consultations</h4>
-        <a href="{{ route('admin.consultations.create') }}" class="btn btn-vip">
+        <button class="btn btn-vip" data-bs-toggle="modal" data-bs-target="#scheduleModal">
             <i class="bi bi-plus-circle me-1"></i> Schedule Consultation
-        </a>
+        </button>
     </div>
 
     {{-- Stats cards --}}
     @php
         $upcoming = $consultations->where('status', 'scheduled')->where('scheduled_at', '>=', now());
-        $today = $consultations->where('status', 'scheduled')->whereBetween('scheduled_at', [now()->startOfDay(), now()->endOfDay()]);
+        $today = $consultations->where('status', 'scheduled')->filter(fn($c) => $c->scheduled_at->isToday());
     @endphp
     <div class="row g-3 mb-4">
         <div class="col-md-3">
@@ -91,6 +91,10 @@
                                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editConsult{{ $c->id }}">
                                             <i class="bi bi-pencil"></i>
                                         </button>
+                                        <form method="POST" action="{{ route('admin.consultations.destroy', $c->id) }}" class="d-inline" onsubmit="return confirm('Remove this consultation?')">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
                                     </td>
                                 </tr>
 
@@ -140,4 +144,112 @@
         </div>
     </div>
 </div>
+
+{{-- Schedule Consultation modal --}}
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.consultations.store') }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-camera-video me-1"></i> Schedule Virtual Consultation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 class="text-muted small mb-2">Customer Information</h6>
+
+                    @if($customers->count())
+                        <div class="mb-3">
+                            <label class="form-label">Select Existing Customer</label>
+                            <select class="form-select" id="customerPick">
+                                <option value="">— Or enter manually below —</option>
+                                @foreach($customers as $cust)
+                                    <option data-name="{{ $cust->name }}" data-email="{{ $cust->email }}" data-phone="{{ $cust->phone }}" data-address="{{ $cust->address ? $cust->address . ', ' . $cust->city . ', ' . $cust->state . ' ' . $cust->zip : '' }}">
+                                        {{ $cust->name }} — {{ $cust->email }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Customer Name <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_name" id="custName" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Customer Email <span class="text-danger">*</span></label>
+                            <input type="email" name="customer_email" id="custEmail" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="text" name="customer_phone" id="custPhone" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Property Address</label>
+                            <input type="text" name="address" id="custAddress" class="form-control" placeholder="For on-site reference">
+                        </div>
+                    </div>
+
+                    <hr class="my-2">
+                    <h6 class="text-muted small mb-2">Consultation Details</h6>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Date & Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" name="scheduled_at" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Duration</label>
+                            <select name="duration" class="form-select">
+                                <option value="15">15 minutes</option>
+                                <option value="30" selected>30 minutes</option>
+                                <option value="45">45 minutes</option>
+                                <option value="60">1 hour</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Platform</label>
+                            <select name="platform" class="form-select">
+                                <option value="zoom">Zoom</option>
+                                <option value="teams">Microsoft Teams</option>
+                                <option value="phone">Phone Call</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Meeting Link <span class="text-muted">(optional)</span></label>
+                        <input type="url" name="meeting_link" class="form-control" placeholder="https://zoom.us/j/1234567890">
+                        <div class="form-text">Paste your Zoom or Teams meeting link. The customer receives this in their confirmation email.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Window types, special requirements..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-vip"><i class="bi bi-calendar-check me-1"></i> Schedule Consultation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+document.getElementById('customerPick')?.addEventListener('change', function() {
+    const opt = this.options[this.selectedIndex];
+    if (opt.dataset.name) {
+        document.getElementById('custName').value = opt.dataset.name;
+        document.getElementById('custEmail').value = opt.dataset.email;
+        document.getElementById('custPhone').value = opt.dataset.phone || '';
+        document.getElementById('custAddress').value = opt.dataset.address || '';
+    }
+});
+</script>
+@endpush
 @endsection
