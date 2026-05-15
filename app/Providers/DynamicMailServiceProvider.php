@@ -11,7 +11,7 @@ class DynamicMailServiceProvider extends ServiceProvider
     public function boot()
     {
         try {
-            if (Schema::hasTable('settings')) {
+            if (Schema::hasTable('vip_settings')) {
                 $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
 
                 if (!empty($settings['smtp_host'])) {

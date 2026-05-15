@@ -8,11 +8,7 @@ return new class extends Migration
 {
     public function up()
     {
-        if (Schema::hasTable('settings')) {
-            return;
-        }
-
-        Schema::create('settings', function (Blueprint $table) {
+        Schema::create('vip_settings', function (Blueprint $table) {
             $table->id();
             $table->string('key')->unique();
             $table->text('value')->nullable();
@@ -21,6 +17,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::dropIfExists('settings');
+        Schema::dropIfExists('vip_settings');
     }
 };
