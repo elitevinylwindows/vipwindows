@@ -10,7 +10,7 @@
         <div class="row g-2" id="windowTypeGrid">
             @php
                 // Pull window types from master data so names stay in sync
-                $windowTypes = \App\Http\Controllers\Master\Series\SeriesWindowTypeController::baseWindowTypes();
+                $windowTypes = \App\Http\Controllers\Master\SeriesWindowTypeController::baseWindowTypes();
                 // Merge any custom types from the DB
                 $dbWtRows = \Illuminate\Support\Facades\DB::table('elitevw_master_series_window_types')
                     // ->where('parent_id', parentId()) // Removed: VIP Windows is single-tenant

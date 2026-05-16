@@ -10,6 +10,25 @@ use Illuminate\Support\Facades\DB;
 class SeriesWindowTypeController extends Controller
 {
     /**
+     * Base window types used by the product navigator.
+     */
+    public static function baseWindowTypes(): array
+    {
+        return [
+            'SH'  => 'Single Hung',
+            'DH'  => 'Double Hung',
+            'CS'  => 'Casement',
+            'AW'  => 'Awning',
+            'SL'  => 'Slider',
+            'PW'  => 'Picture Window',
+            'BW'  => 'Bay Window',
+            'BOW' => 'Bow Window',
+            'GS'  => 'Garden Window',
+            'HP'  => 'Hopper',
+        ];
+    }
+
+    /**
      * Display window type assignments per series.
      */
     public function index()
