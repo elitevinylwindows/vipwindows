@@ -5,6 +5,7 @@ use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerManagementController;
+use App\Http\Controllers\InstallerManagementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\GalleryController;
@@ -113,6 +114,13 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::get('/customers/{id}/edit', [CustomerManagementController::class, 'edit'])->name('customers.edit');
     Route::put('/customers/{id}', [CustomerManagementController::class, 'update'])->name('customers.update');
     Route::delete('/customers/{id}', [CustomerManagementController::class, 'destroy'])->name('customers.destroy');
+
+    // Installer management
+    Route::get('/installers', [InstallerManagementController::class, 'index'])->name('installers.index');
+    Route::post('/installers', [InstallerManagementController::class, 'store'])->name('installers.store');
+    Route::get('/installers/{id}', [InstallerManagementController::class, 'show'])->name('installers.show');
+    Route::put('/installers/{id}', [InstallerManagementController::class, 'update'])->name('installers.update');
+    Route::delete('/installers/{id}', [InstallerManagementController::class, 'destroy'])->name('installers.destroy');
 
     // Email
     Route::get('/email/compose', [EmailController::class, 'compose'])->name('email.compose');

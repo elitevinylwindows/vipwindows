@@ -144,6 +144,9 @@
             <a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> Customers
             </a>
+            <a href="{{ route('admin.installers.index') }}" class="{{ request()->routeIs('admin.installers.*') ? 'active' : '' }}">
+                <i class="bi bi-person-badge"></i> Installers
+            </a>
 
             <div class="nav-label mt-3">Content</div>
             <a href="{{ route('admin.gallery.index') }}" class="{{ request()->routeIs('admin.gallery.*') ? 'active' : '' }}">

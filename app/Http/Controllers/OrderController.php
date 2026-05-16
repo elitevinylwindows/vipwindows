@@ -23,10 +23,42 @@ class OrderController extends Controller
         return view('orders.index', compact('orders', 'status', 'technicians'));
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $order = InstallationOrder::with('quoteItems')->findOrFail($id);
         $technicians = VipUser::where('role', 'technician')->orWhere('role', 'admin')->orderBy('name')->get();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'order' => [
+                    'id'              => $order->id,
+                    'customer_name'   => $order->customer_name,
+                    'customer_email'  => $order->customer_email,
+                    'customer_phone'  => $order->customer_phone,
+                    'install_address' => $order->install_address,
+                    'install_city'    => $order->install_city,
+                    'install_state'   => $order->install_state,
+                    'install_zip'     => $order->install_zip,
+                    'status'          => $order->status,
+                    'scheduled_date'  => $order->scheduled_date?->format('M d, Y'),
+                    'scheduled_slot'  => $order->scheduled_slot,
+                    'notes'           => $order->notes,
+                    'technician_id'   => $order->technician_id,
+                    'technician_name' => $technicians->firstWhere('id', $order->technician_id)?->name,
+                    'created_at'      => $order->created_at?->format('M d, Y'),
+                    'completed_at'    => $order->completed_at?->format('M d, Y'),
+                ],
+                'items' => $order->quoteItems->map(fn($i) => [
+                    'id'          => $i->id,
+                    'description' => $i->description,
+                    'series_type' => $i->series_type,
+                    'width'       => $i->width,
+                    'height'      => $i->height,
+                    'qty'         => $i->qty,
+                ]),
+                'technicians' => $technicians->map(fn($t) => ['id' => $t->id, 'name' => $t->name]),
+            ]);
+        }
 
         return view('orders.show', compact('order', 'technicians'));
     }
@@ -47,6 +79,10 @@ class OrderController extends Controller
             'completed_at'  => $validated['status'] === 'completed' ? now() : $order->completed_at,
         ]);
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
         return redirect()->route('admin.orders.show', $order->id)->with('success', 'Order status updated.');
     }
 
@@ -56,6 +92,10 @@ class OrderController extends Controller
         $validated = $request->validate(['technician_id' => 'required|integer']);
 
         $order->update(['technician_id' => $validated['technician_id']]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->route('admin.orders.show', $order->id)->with('success', 'Technician assigned.');
     }
