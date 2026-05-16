@@ -15,16 +15,15 @@ class SeriesWindowTypeController extends Controller
     public static function baseWindowTypes(): array
     {
         return [
-            'SH'  => 'Single Hung',
-            'DH'  => 'Double Hung',
-            'CS'  => 'Casement',
-            'AW'  => 'Awning',
-            'SL'  => 'Slider',
-            'PW'  => 'Picture Window',
-            'BW'  => 'Bay Window',
-            'BOW' => 'Bow Window',
-            'GS'  => 'Garden Window',
-            'HP'  => 'Hopper',
+            ['code' => 'SH',  'name' => 'Single Hung'],
+            ['code' => 'DH',  'name' => 'Double Hung'],
+            ['code' => 'CM',  'name' => 'Casement'],
+            ['code' => 'AW',  'name' => 'Awning'],
+            ['code' => 'HS',  'name' => 'Horizontal Slider'],
+            ['code' => 'PW',  'name' => 'Picture Window'],
+            ['code' => 'SLD', 'name' => 'Sliding Door'],
+            ['code' => 'SWD', 'name' => 'Swing Door'],
+            ['code' => 'XX',  'name' => 'Specialty'],
         ];
     }
 
