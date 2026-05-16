@@ -3,7 +3,12 @@
 
 @section('content')
 <div class="container-fluid py-4 px-4">
-    <h4 class="fw-bold mb-4"><i class="bi bi-gear me-2"></i>Settings</h4>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0"><i class="bi bi-gear me-2"></i>Settings</h4>
+        <a href="{{ route('admin.settings.rates') }}" class="btn btn-outline-dark">
+            <i class="bi bi-cash-stack me-1"></i> Service Rates
+        </a>
+    </div>
 
     <form method="POST" action="{{ route('admin.settings.update') }}">
         @csrf

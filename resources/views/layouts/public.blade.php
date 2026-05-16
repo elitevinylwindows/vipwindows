@@ -127,13 +127,20 @@
                         <a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact</a>
                     </li>
                 </ul>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
                     @auth('vip')
                         @if(Auth::guard('vip')->user()->isAdmin())
                             <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-vip btn-sm">Admin Panel</a>
+                        @elseif(Auth::guard('vip')->user()->isInstaller())
+                            <a href="{{ route('installer.dashboard') }}" class="btn btn-outline-vip btn-sm">Installer Portal</a>
                         @else
                             <a href="{{ route('customer.dashboard') }}" class="btn btn-outline-vip btn-sm">My Account</a>
+                            <a href="{{ route('customer.book') }}" class="btn btn-vip btn-sm">Book Installation</a>
                         @endif
+                        <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-light opacity-75">Logout</button>
+                        </form>
                     @else
                         <a href="{{ route('login') }}" class="btn btn-outline-vip btn-sm">Sign In</a>
                         <a href="{{ route('register') }}" class="btn btn-vip btn-sm">Sign Up</a>

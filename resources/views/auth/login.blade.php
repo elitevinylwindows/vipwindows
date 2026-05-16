@@ -14,15 +14,42 @@
             font-family: 'Segoe UI', system-ui, sans-serif;
         }
         .login-card {
-            width: 100%; max-width: 420px;
+            width: 100%; max-width: 440px;
             border-radius: .75rem; border: none;
             box-shadow: 0 8px 32px rgba(0,0,0,.25);
         }
         .brand-header { text-align: center; margin-bottom: 1.5rem; }
-        .brand-header h2 { font-weight: 700; color: #111; }
-        .brand-header h2 span { color: #c9a84c; }
         .btn-vip { background: #c9a84c; color: #fff; border: none; }
         .btn-vip:hover { background: #b8973f; color: #fff; }
+
+        /* Portal switcher */
+        .portal-switch {
+            display: flex;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #e9ecef;
+            margin-bottom: 1.5rem;
+        }
+        .portal-switch label {
+            flex: 1;
+            text-align: center;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: .85rem;
+            transition: all .2s;
+            background: #f8f9fa;
+            color: #666;
+            border: none;
+            margin: 0;
+        }
+        .portal-switch label:first-of-type { border-right: 1px solid #e9ecef; }
+        .portal-switch input { display: none; }
+        .portal-switch input:checked + label {
+            background: #111;
+            color: #c9a84c;
+        }
+        .portal-switch label i { display: block; font-size: 1.3rem; margin-bottom: 2px; }
     </style>
 </head>
 <body>
@@ -39,6 +66,18 @@
                 @endforeach
             </div>
         @endif
+
+        {{-- Portal type switcher --}}
+        <div class="portal-switch">
+            <input type="radio" name="portal_display" id="portalCustomer" value="customer" checked>
+            <label for="portalCustomer">
+                <i class="bi bi-house-door"></i> Customer
+            </label>
+            <input type="radio" name="portal_display" id="portalInstaller" value="installer">
+            <label for="portalInstaller">
+                <i class="bi bi-tools"></i> Installer
+            </label>
+        </div>
 
         <form method="POST" action="{{ route('login') }}">
             @csrf
@@ -64,8 +103,25 @@
         </form>
 
         <div class="text-center mt-3">
-            <a href="{{ route('register') }}" class="text-decoration-none">Create an account</a>
+            <a href="{{ route('register') }}" class="text-decoration-none" id="registerLink">Create an account</a>
+        </div>
+
+        <div class="text-center mt-2 small text-muted" id="portalHint">
+            Sign in to book installations and track your projects.
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('.portal-switch input').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const hint = document.getElementById('portalHint');
+                if (this.value === 'installer') {
+                    hint.textContent = 'Sign in to manage quotes, jobs, and customers.';
+                } else {
+                    hint.textContent = 'Sign in to book installations and track your projects.';
+                }
+            });
+        });
+    </script>
 </body>
 </html>

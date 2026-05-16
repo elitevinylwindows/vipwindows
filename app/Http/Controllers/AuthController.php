@@ -83,7 +83,10 @@ class AuthController extends Controller
      */
     protected function redirectByRole($user): string
     {
-        if ($user->isStaff()) {
+        if ($user->isInstaller()) {
+            return route('installer.dashboard');
+        }
+        if ($user->isAdmin() || $user->isStaff()) {
             return route('admin.dashboard');
         }
         return route('customer.dashboard');

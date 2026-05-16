@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'VIP Windows') — VIP Windows Admin</title>
+    <title>@yield('title', 'Installer Portal') — VIP Windows</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
@@ -25,6 +25,7 @@
             z-index: 1040;
             display: flex; flex-direction: column;
             transition: transform .3s;
+            border-top: 3px solid var(--vip-accent);
         }
         .sidebar-brand {
             padding: 1.25rem 1.25rem 1rem;
@@ -33,6 +34,17 @@
         }
         .sidebar-brand img { height: 70px; }
         .sidebar-brand .badge { font-size: .6rem; vertical-align: middle; }
+        .sidebar-brand .portal-badge {
+            display: inline-block;
+            margin-top: .5rem;
+            font-size: .65rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--vip-accent);
+            border: 1px solid var(--vip-accent);
+            padding: .15rem .6rem;
+            border-radius: .25rem;
+        }
 
         .sidebar-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
         .sidebar-nav .nav-label {
@@ -63,7 +75,7 @@
             font-size: .85rem;
         }
         .sidebar-user .user-name { color: #fff; font-weight: 600; }
-        .sidebar-user .user-role { color: rgba(255,255,255,.4); font-size: .75rem; }
+        .sidebar-user .user-role { color: var(--vip-accent); font-size: .75rem; }
 
         /* Main content */
         .admin-main {
@@ -116,69 +128,52 @@
     {{-- Sidebar --}}
     <aside class="admin-sidebar" id="adminSidebar">
         <div class="sidebar-brand">
-            <a href="{{ route('home') }}" target="_blank">
-                <img src="/images/logo.png" alt="VIP Windows">
-            </a>
+            @if(Auth::user()->company_logo)
+                <a href="{{ route('installer.dashboard') }}">
+                    <img src="{{ asset('uploads/installer-logos/' . Auth::user()->company_logo) }}" alt="{{ Auth::user()->company_name }}" style="height:50px; max-width:180px; object-fit:contain;">
+                </a>
+                <div class="small text-muted mt-1">powered by VIP Windows</div>
+            @else
+                <a href="{{ route('home') }}" target="_blank">
+                    <img src="/images/logo.png" alt="VIP Windows" style="height:70px;">
+                </a>
+            @endif
+            <div class="portal-badge">Installer Portal</div>
         </div>
 
         <nav class="sidebar-nav">
             <div class="nav-label">Main</div>
-            <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            <a href="{{ route('installer.dashboard') }}" class="{{ request()->routeIs('installer.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
-            <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                <i class="bi bi-clipboard-check"></i> Orders
+            <a href="{{ route('installer.quotes.index') }}" class="{{ request()->routeIs('installer.quotes.*') ? 'active' : '' }}">
+                <i class="bi bi-calculator"></i> My Quotes
             </a>
-            <a href="{{ route('admin.calendar.index') }}" class="{{ request()->routeIs('admin.calendar.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar3"></i> Calendar
+            <a href="{{ route('installer.jobs.index') }}" class="{{ request()->routeIs('installer.jobs.*') ? 'active' : '' }}">
+                <i class="bi bi-tools"></i> My Jobs
             </a>
-            <a href="{{ route('admin.jobs.index') }}" class="{{ request()->routeIs('admin.jobs.*') ? 'active' : '' }}">
-                <i class="bi bi-tools"></i> Jobs
-            </a>
-            <a href="{{ route('admin.quotes.index') }}" class="{{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
-                <i class="bi bi-calculator"></i> Quotes
-            </a>
-            <a href="{{ route('admin.invoices.index') }}" class="{{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i> Invoices
-            </a>
-            <a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> Customers
+            <a href="{{ route('installer.invoices.index') }}" class="{{ request()->routeIs('installer.invoices.*') ? 'active' : '' }}">
+                <i class="bi bi-receipt"></i> My Invoices
             </a>
 
-            <div class="nav-label mt-3">Content</div>
-            <a href="{{ route('admin.gallery.index') }}" class="{{ request()->routeIs('admin.gallery.*') ? 'active' : '' }}">
-                <i class="bi bi-images"></i> Gallery
-            </a>
-            <a href="{{ route('admin.service-areas.index') }}" class="{{ request()->routeIs('admin.service-areas.*') ? 'active' : '' }}">
-                <i class="bi bi-geo-alt"></i> Service Areas
+            <div class="nav-label mt-3">Customers</div>
+            <a href="{{ route('installer.customers.index') }}" class="{{ request()->routeIs('installer.customers.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> My Customers
             </a>
 
-            <div class="nav-label mt-3">Communication</div>
-            <a href="{{ route('admin.email.compose') }}" class="{{ request()->routeIs('admin.email.*') ? 'active' : '' }}">
-                <i class="bi bi-envelope"></i> Email
+            <div class="nav-label mt-3">Account</div>
+            <a href="{{ route('installer.profile') }}" class="{{ request()->routeIs('installer.profile*') ? 'active' : '' }}">
+                <i class="bi bi-person-gear"></i> My Profile
             </a>
-            <a href="{{ route('admin.consultations.index') }}" class="{{ request()->routeIs('admin.consultations.*') ? 'active' : '' }}">
-                <i class="bi bi-camera-video"></i> Consultations
-            </a>
-
-            <div class="nav-label mt-3">Configuration</div>
-            <a href="{{ route('admin.master.hub') }}" class="{{ request()->routeIs('admin.master.*') ? 'active' : '' }}">
-                <i class="bi bi-database-gear"></i> Master Data
-            </a>
-
-            <div class="nav-label mt-3">System</div>
-            <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                <i class="bi bi-gear"></i> Settings
+            <a href="{{ route('home') }}" target="_blank">
+                <i class="bi bi-globe"></i> View Website
             </a>
         </nav>
 
         <div class="sidebar-user">
             <div class="user-name"><i class="bi bi-person-circle me-1"></i> {{ Auth::user()->name }}</div>
-            <div class="user-role">{{ ucfirst(Auth::user()->role) }}</div>
-            <a href="{{ route('home') }}" target="_blank" class="btn btn-sm btn-outline-light w-100 mt-2 opacity-75">
-                <i class="bi bi-globe me-1"></i> View Website
-            </a>
-            <form method="POST" action="{{ route('logout') }}" class="mt-1">
+            <div class="user-role">Installer</div>
+            <form method="POST" action="{{ route('logout') }}" class="mt-2">
                 @csrf
                 <button class="btn btn-sm btn-outline-light w-100 opacity-50" type="submit">
                     <i class="bi bi-box-arrow-left me-1"></i> Sign Out
@@ -198,7 +193,7 @@
                 <button class="btn btn-sm btn-outline-dark sidebar-toggle" onclick="document.getElementById('adminSidebar').classList.toggle('show')">
                     <i class="bi bi-list"></i>
                 </button>
-                <h6 class="mb-0 fw-semibold text-muted">@yield('title', 'Admin')</h6>
+                <h6 class="mb-0 fw-semibold text-muted">@yield('title', 'Installer Portal')</h6>
             </div>
             <div class="small text-muted">{{ now()->format('l, M d, Y') }}</div>
         </div>

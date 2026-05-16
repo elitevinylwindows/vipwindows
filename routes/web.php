@@ -32,7 +32,16 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ServiceAreaController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\JobController;
 use App\Http\Controllers\VipQuoteController;
+use App\Http\Controllers\Installer\InstallerDashboardController;
+use App\Http\Controllers\Installer\InstallerQuoteController;
+use App\Http\Controllers\Installer\InstallerJobController;
+use App\Http\Controllers\Installer\InstallerInvoiceController;
+use App\Http\Controllers\Installer\InstallerCustomerController;
+use App\Http\Controllers\Installer\InstallerProfileController;
+use App\Http\Controllers\ServiceRateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -130,9 +139,36 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/quotes/{id}/send', [VipQuoteController::class, 'sendToCustomer'])->name('quotes.send');
     Route::delete('/quotes/{id}', [VipQuoteController::class, 'destroy'])->name('quotes.destroy');
 
+    // Invoices
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+    Route::get('/invoices/{id}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::put('/invoices/{id}', [InvoiceController::class, 'update'])->name('invoices.update');
+    Route::post('/invoices/{id}/item', [InvoiceController::class, 'addItem'])->name('invoices.addItem');
+    Route::delete('/invoices/{id}/item/{itemId}', [InvoiceController::class, 'removeItem'])->name('invoices.removeItem');
+    Route::post('/invoices/{id}/payment', [InvoiceController::class, 'recordPayment'])->name('invoices.recordPayment');
+    Route::post('/invoices/{id}/send', [InvoiceController::class, 'sendToCustomer'])->name('invoices.send');
+    Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+
+    // Jobs
+    Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
+    Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
+    Route::get('/jobs/{id}', [JobController::class, 'show'])->name('jobs.show');
+    Route::put('/jobs/{id}', [JobController::class, 'update'])->name('jobs.update');
+    Route::post('/jobs/{id}/assign', [JobController::class, 'assign'])->name('jobs.assign');
+    Route::post('/jobs/{id}/status', [JobController::class, 'updateStatus'])->name('jobs.updateStatus');
+    Route::post('/jobs/{id}/note', [JobController::class, 'addNote'])->name('jobs.addNote');
+    Route::delete('/jobs/{id}', [JobController::class, 'destroy'])->name('jobs.destroy');
+
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
+    // Service Rates
+    Route::get('/settings/rates', [ServiceRateController::class, 'index'])->name('settings.rates');
+    Route::post('/settings/rates', [ServiceRateController::class, 'store'])->name('settings.rates.store');
+    Route::put('/settings/rates/{id}', [ServiceRateController::class, 'update'])->name('settings.rates.update');
+    Route::delete('/settings/rates/{id}', [ServiceRateController::class, 'destroy'])->name('settings.rates.destroy');
 
     // ── Master Data ──────────────────────────────────────────
     Route::get('/master', [MasterHubController::class, 'index'])->name('master.hub');
@@ -252,6 +288,31 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/master/frames', [FrameController::class, 'store'])->name('master.frames.store');
     Route::put('/master/frames/{id}', [FrameController::class, 'update'])->name('master.frames.update');
     Route::delete('/master/frames/{id}', [FrameController::class, 'destroy'])->name('master.frames.destroy');
+});
+
+// ─── Installer portal ────────────────────────────────────────
+Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('installer.')->group(function () {
+    Route::get('/', [InstallerDashboardController::class, 'index'])->name('dashboard');
+
+    // Quotes
+    Route::get('/quotes', [InstallerQuoteController::class, 'index'])->name('quotes.index');
+
+    // Jobs
+    Route::get('/jobs', [InstallerJobController::class, 'index'])->name('jobs.index');
+    Route::get('/jobs/{id}', [InstallerJobController::class, 'show'])->name('jobs.show');
+    Route::post('/jobs/{id}/status', [InstallerJobController::class, 'updateStatus'])->name('jobs.updateStatus');
+    Route::post('/jobs/{id}/note', [InstallerJobController::class, 'addNote'])->name('jobs.addNote');
+
+    // Invoices
+    Route::get('/invoices', [InstallerInvoiceController::class, 'index'])->name('invoices.index');
+
+    // Customers
+    Route::get('/customers', [InstallerCustomerController::class, 'index'])->name('customers.index');
+
+    // Profile
+    Route::get('/profile', [InstallerProfileController::class, 'index'])->name('profile');
+    Route::put('/profile', [InstallerProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/logo', [InstallerProfileController::class, 'uploadLogo'])->name('profile.uploadLogo');
 });
 
 // ─── Public booking (via link from admin) ─────────────────────
