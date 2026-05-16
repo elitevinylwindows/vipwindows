@@ -42,6 +42,7 @@ use App\Http\Controllers\Installer\InstallerJobController;
 use App\Http\Controllers\Installer\InstallerInvoiceController;
 use App\Http\Controllers\Installer\InstallerCustomerController;
 use App\Http\Controllers\Installer\InstallerProfileController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceRateController;
 use Illuminate\Support\Facades\Route;
 
@@ -121,6 +122,14 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::get('/installers/{id}', [InstallerManagementController::class, 'show'])->name('installers.show');
     Route::put('/installers/{id}', [InstallerManagementController::class, 'update'])->name('installers.update');
     Route::delete('/installers/{id}', [InstallerManagementController::class, 'destroy'])->name('installers.destroy');
+
+    // Services management
+    Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+    Route::post('/services', [ServiceController::class, 'store'])->name('services.store');
+    Route::get('/services/{id}', [ServiceController::class, 'show'])->name('services.show');
+    Route::put('/services/{id}', [ServiceController::class, 'update'])->name('services.update');
+    Route::delete('/services/{id}', [ServiceController::class, 'destroy'])->name('services.destroy');
+    Route::post('/services/{id}/toggle-active', [ServiceController::class, 'toggleActive'])->name('services.toggleActive');
 
     // Email
     Route::get('/email/compose', [EmailController::class, 'compose'])->name('email.compose');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\VipUser;
+use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -22,7 +23,15 @@ class InstallerManagementController extends Controller
         }
 
         $installers = $query->orderByDesc('created_at')->paginate(20);
-        return view('installers.index', compact('installers'));
+
+        // Get all services for the add/edit modals
+        try {
+            $services = Service::where('is_active', true)->orderBy('sort_order')->get();
+        } catch (\Exception $e) {
+            $services = collect();
+        }
+
+        return view('installers.index', compact('installers', 'services'));
     }
 
     public function show($id)
@@ -42,6 +51,21 @@ class InstallerManagementController extends Controller
             $invoiceCount = \App\Models\Invoice::where('created_by', $installer->id)->count();
         } catch (\Exception $e) { $invoiceCount = 0; }
 
+        // Get assigned services
+        try {
+            $assignedServices = $installer->services()->get()->map(function ($s) {
+                return [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'code' => $s->code,
+                    'base_price' => $s->base_price,
+                    'custom_price' => $s->pivot->custom_price,
+                ];
+            });
+        } catch (\Exception $e) {
+            $assignedServices = collect();
+        }
+
         return response()->json([
             'installer' => $installer,
             'stats' => [
@@ -49,6 +73,7 @@ class InstallerManagementController extends Controller
                 'jobs' => $jobCount,
                 'invoices' => $invoiceCount,
             ],
+            'services' => $assignedServices,
         ]);
     }
 
@@ -67,9 +92,11 @@ class InstallerManagementController extends Controller
             'state'         => 'nullable|string|max:50',
             'zip'           => 'nullable|string|max:20',
             'notes'         => 'nullable|string|max:1000',
+            'services'      => 'nullable|array',
+            'services.*'    => 'integer|exists:vip_services,id',
         ]);
 
-        VipUser::create([
+        $installer = VipUser::create([
             'name'            => $validated['name'],
             'email'           => $validated['email'],
             'phone'           => $validated['phone'] ?? null,
@@ -85,6 +112,13 @@ class InstallerManagementController extends Controller
             'role'            => 'installer',
             'password'        => Hash::make('VipInstaller2026!'),
         ]);
+
+        // Sync services
+        if (!empty($validated['services'])) {
+            try {
+                $installer->services()->sync($validated['services']);
+            } catch (\Exception $e) {}
+        }
 
         return redirect()->route('admin.installers.index')->with('success', 'Installer added. Default password: VipInstaller2026!');
     }
@@ -107,9 +141,19 @@ class InstallerManagementController extends Controller
             'zip'           => 'nullable|string|max:20',
             'notes'         => 'nullable|string|max:1000',
             'status'        => 'nullable|in:active,suspended',
+            'services'      => 'nullable|array',
+            'services.*'    => 'integer|exists:vip_services,id',
         ]);
 
+        $serviceIds = $validated['services'] ?? [];
+        unset($validated['services']);
+
         $installer->update($validated);
+
+        // Sync services
+        try {
+            $installer->services()->sync($serviceIds);
+        } catch (\Exception $e) {}
 
         return redirect()->route('admin.installers.index')->with('success', 'Installer updated.');
     }

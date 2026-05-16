@@ -147,6 +147,9 @@
             <a href="{{ route('admin.installers.index') }}" class="{{ request()->routeIs('admin.installers.*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge"></i> Installers
             </a>
+            <a href="{{ route('admin.services.index') }}" class="{{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
+                <i class="bi bi-wrench"></i> Services
+            </a>
 
             <div class="nav-label mt-3">Content</div>
             <a href="{{ route('admin.gallery.index') }}" class="{{ request()->routeIs('admin.gallery.*') ? 'active' : '' }}">

@@ -38,4 +38,11 @@ class VipUser extends Authenticatable
     {
         return $this->role === 'customer';
     }
+
+    public function services()
+    {
+        return $this->belongsToMany(Service::class, 'vip_installer_services', 'installer_id', 'service_id')
+            ->withPivot('custom_price')
+            ->withTimestamps();
+    }
 }

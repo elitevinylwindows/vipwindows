@@ -268,6 +268,20 @@
                         <div class="col-md-3 mb-3"><input type="text" name="zip" class="form-control" placeholder="ZIP"></div>
                     </div>
                     <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+                    @if(isset($services) && $services->count())
+                    <hr class="my-2">
+                    <h6 class="text-muted small fw-bold mb-2">Services</h6>
+                    <div class="row">
+                        @foreach($services as $svc)
+                        <div class="col-md-6 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="services[]" value="{{ $svc->id }}" id="addSvc{{ $svc->id }}">
+                                <label class="form-check-label" for="addSvc{{ $svc->id }}">{{ $svc->name }} <small class="text-muted">({{ $svc->code }})</small></label>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-vip"><i class="bi bi-person-badge me-1"></i> Add Installer</button>
@@ -319,6 +333,20 @@
                         <div class="col-md-3 mb-3"><input type="text" name="zip" id="eZip" class="form-control" placeholder="ZIP"></div>
                     </div>
                     <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" id="eNotes" class="form-control" rows="2"></textarea></div>
+                    @if(isset($services) && $services->count())
+                    <hr class="my-2">
+                    <h6 class="text-muted small fw-bold mb-2">Services</h6>
+                    <div class="row" id="editServiceChecks">
+                        @foreach($services as $svc)
+                        <div class="col-md-6 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input edit-svc-check" type="checkbox" name="services[]" value="{{ $svc->id }}" id="editSvc{{ $svc->id }}">
+                                <label class="form-check-label" for="editSvc{{ $svc->id }}">{{ $svc->name }} <small class="text-muted">({{ $svc->code }})</small></label>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-vip">Save Changes</button>
@@ -335,6 +363,7 @@
     const csrf = '{{ csrf_token() }}';
     let activeInstallerId = null;
     let activeInstallerData = null;
+    let activeInstallerServices = [];
 
     // ── Search filter ─────────────────────────────────────
     window.filterInstallers = function() {
@@ -364,6 +393,7 @@
         .then(r => r.json())
         .then(data => {
             activeInstallerData = data.installer;
+            activeInstallerServices = data.services || [];
             renderInstallerDetail(data);
             loader.classList.remove('show');
             detail.style.display = 'block';
@@ -383,6 +413,7 @@
     function renderInstallerDetail(data) {
         const i = data.installer;
         const s = data.stats;
+        const services = data.services || [];
         const since = i.created_at ? new Date(i.created_at).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : '—';
         const address = [i.address, i.city, i.state, i.zip].filter(Boolean).join(', ') || '—';
         const statusBadge = (i.status || 'active') === 'active'
@@ -414,6 +445,18 @@
                 <div class="ins-info-card"><div class="label">Website</div><div class="value">${i.company_website ? `<a href="${esc(i.company_website)}" target="_blank">${esc(i.company_website)}</a>` : '—'}</div></div>
             </div>
         `;
+
+        // Services section
+        if (services.length > 0) {
+            html += `<div class="p-3 bg-light rounded border mb-3">
+                <div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px"><i class="bi bi-wrench me-1"></i>Assigned Services</div>
+                <div class="d-flex flex-wrap gap-2">
+                    ${services.map(svc => `<span class="badge" style="background:rgba(201,168,76,.15);color:#8b6914;font-size:.78rem;padding:5px 10px;border-radius:4px;">
+                        ${esc(svc.name)} ${svc.custom_price ? `<small>($${parseFloat(svc.custom_price).toFixed(2)})</small>` : `<small>($${parseFloat(svc.base_price).toFixed(2)})</small>`}
+                    </span>`).join('')}
+                </div>
+            </div>`;
+        }
 
         if (i.notes) {
             html += `<div class="p-3 bg-light rounded border">
@@ -450,6 +493,13 @@
         document.getElementById('eState').value = i.state || '';
         document.getElementById('eZip').value = i.zip || '';
         document.getElementById('eNotes').value = i.notes || '';
+
+        // Pre-check assigned services
+        const svcIds = activeInstallerServices.map(s => String(s.id));
+        document.querySelectorAll('.edit-svc-check').forEach(cb => {
+            cb.checked = svcIds.includes(cb.value);
+        });
+
         new bootstrap.Modal(document.getElementById('editInstallerModal')).show();
     });
 
