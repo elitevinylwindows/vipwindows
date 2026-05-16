@@ -155,6 +155,11 @@
                 <i class="bi bi-camera-video"></i> Consultations
             </a>
 
+            <div class="nav-label mt-3">Configuration</div>
+            <a href="{{ route('admin.master.hub') }}" class="{{ request()->routeIs('admin.master.*') ? 'active' : '' }}">
+                <i class="bi bi-database-gear"></i> Master Data
+            </a>
+
             <div class="nav-label mt-3">System</div>
             <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i> Settings
