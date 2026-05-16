@@ -2,6 +2,17 @@
 
 use Illuminate\Support\Facades\DB;
 
+if (!function_exists('featureEnabled')) {
+    /**
+     * Check if a feature flag is enabled.
+     * VIP Windows is single-tenant so all features are always enabled.
+     */
+    function featureEnabled($feature)
+    {
+        return true;
+    }
+}
+
 if (!function_exists('getSettingsValByName')) {
     /**
      * Get a setting value by its key name.
