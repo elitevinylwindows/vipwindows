@@ -290,6 +290,8 @@
         font-size: .9rem;
         font-weight: 600;
         color: #333;
+        word-break: break-all;
+        overflow-wrap: anywhere;
     }
 
     /* Tabs inside detail */
