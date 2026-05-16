@@ -3852,7 +3852,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.getElementById('preview-shipping-address').innerHTML = `<strong>${d.customer_name}</strong><br>${d.delivery_address || ''}<br>${d.delivery_city || ''}, ${d.delivery_state || ''} ${d.delivery_zip || ''}`;
                     }
                     // Preferred delivery days → highlight on Expected Delivery picker
-                    window._prefDeliveryDays = ({{ featureEnabled('customer.preferred_delivery_days') ? 'true' : 'false' }}) && Array.isArray(d.preferred_delivery_days)
+                    window._prefDeliveryDays = (true) && Array.isArray(d.preferred_delivery_days)
                         ? d.preferred_delivery_days.map(n => parseInt(n, 10)).filter(n => !isNaN(n))
                         : [];
                     if (window._expectedDeliveryFp) {
