@@ -606,6 +606,28 @@ class VipQuoteController extends Controller
     /**
      * Shape data for the shape picker (shared Enterprise tables).
      */
+    /**
+     * Return series → NFRC mapping for the quote configurator.
+     */
+    public function seriesMap()
+    {
+        try {
+            $map = DB::table('elitevw_master_series_configurations as sc')
+                ->join('elitevw_master_series as s', 's.id', '=', 'sc.series_id')
+                ->select('sc.name as series_type', 's.series')
+                ->get()
+                ->pluck('series', 'series_type')
+                ->toArray();
+        } catch (\Exception $e) {
+            $map = [];
+        }
+
+        return response()->json([
+            'map' => $map,
+            'variant' => 'main',
+        ]);
+    }
+
     public function shapes()
     {
         $categories = DB::table('elitevw_shape_categories')

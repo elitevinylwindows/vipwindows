@@ -150,6 +150,7 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/quotes/check-price', [VipQuoteController::class, 'checkPrice'])->name('quotes.checkPrice');
     Route::get('/quotes/panel-layout', [VipQuoteController::class, 'panelLayout'])->name('quotes.panel-layout');
     Route::get('/quotes/shapes', [VipQuoteController::class, 'shapes'])->name('quotes.shapes');
+    Route::get('/quotes/series-map', [VipQuoteController::class, 'seriesMap'])->name('quotes.seriesMap');
     Route::get('/quotes/{id}', [VipQuoteController::class, 'show'])->name('quotes.show');
     Route::put('/quotes/{id}', [VipQuoteController::class, 'update'])->name('quotes.update');
     Route::get('/quotes/{id}/edit', [VipQuoteController::class, 'edit'])->name('quotes.edit');
