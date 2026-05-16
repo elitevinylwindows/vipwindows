@@ -565,6 +565,36 @@ class VipQuoteController extends Controller
     }
 
     /**
+     * Apply per-item discounts to a quote.
+     */
+    public function applyDiscounts(Request $request, $id)
+    {
+        $quote = Quote::findOrFail($id);
+        $discounts = $request->input('discounts', []);
+        $totalDiscount = 0;
+
+        foreach ($discounts as $d) {
+            $itemId = $d['item_id'] ?? null;
+            $discount = floatval($d['discount'] ?? 0);
+            if ($itemId && $discount >= 0) {
+                QuoteItem::where('id', $itemId)
+                    ->where('quote_id', $quote->id)
+                    ->update(['discount' => $discount]);
+                $totalDiscount += $discount;
+            }
+        }
+
+        // Update quote-level discount total
+        $quote->update(['discount' => $totalDiscount]);
+
+        return response()->json([
+            'success' => true,
+            'total_discount' => $totalDiscount,
+            'message' => 'Discounts applied successfully.',
+        ]);
+    }
+
+    /**
      * Send quote to customer via email.
      */
     public function sendToCustomer(Request $request, $id)

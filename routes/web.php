@@ -157,6 +157,7 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/quotes/{id}/save-draft', [VipQuoteController::class, 'saveDraft'])->name('quotes.saveDraft');
     Route::post('/quotes/{id}/item', [VipQuoteController::class, 'storeItem'])->name('quotes.storeItem');
     Route::delete('/quotes/{id}/item/{itemId}', [VipQuoteController::class, 'deleteItem'])->name('quotes.deleteItem');
+    Route::post('/quotes/{id}/apply-discounts', [VipQuoteController::class, 'applyDiscounts'])->name('quotes.applyDiscounts');
     Route::post('/quotes/{id}/send', [VipQuoteController::class, 'sendToCustomer'])->name('quotes.send');
     Route::delete('/quotes/{id}', [VipQuoteController::class, 'destroy'])->name('quotes.destroy');
 
