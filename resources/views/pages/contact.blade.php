@@ -81,4 +81,74 @@
         </div>
     </div>
 </section>
+
+{{-- Virtual Consultation Section --}}
+<section class="py-5" style="background:#f8f8f8;">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center mb-4">
+                <h3 class="fw-bold" style="color:var(--vip-primary);">
+                    <i class="bi bi-camera-video me-2" style="color:var(--vip-accent);"></i>
+                    Request a Virtual Consultation
+                </h3>
+                <p class="text-muted">Can't visit in person? Schedule a virtual consultation via Zoom, Teams, or phone. We'll measure, assess, and verify everything remotely.</p>
+            </div>
+            <div class="col-lg-6">
+                <div class="card p-4" style="border:none; box-shadow:0 2px 12px rgba(0,0,0,.08); border-radius:.75rem;">
+                    @if(session('consultation_success'))
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-1"></i> {{ session('consultation_success') }}
+                        </div>
+                    @endif
+                    <form method="POST" action="{{ route('consultation.request') }}">
+                        @csrf
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" required placeholder="Your name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Phone <span class="text-danger">*</span></label>
+                                <input type="text" name="phone" class="form-control" required placeholder="Your phone number">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" required placeholder="Your email address">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Address</label>
+                                <input type="text" name="address" class="form-control" placeholder="Installation address (optional)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Preferred Platform</label>
+                                <select name="platform" class="form-select">
+                                    <option value="zoom">Zoom</option>
+                                    <option value="teams">Microsoft Teams</option>
+                                    <option value="phone">Phone Call</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Preferred Time</label>
+                                <select name="preferred_time" class="form-select">
+                                    <option value="morning">Morning (8-12)</option>
+                                    <option value="afternoon">Afternoon (12-5)</option>
+                                    <option value="flexible">Flexible</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Notes</label>
+                                <textarea name="notes" class="form-control" rows="3" placeholder="Tell us about your project — window type, quantity, any concerns..."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-vip btn-lg w-100">
+                                    <i class="bi bi-camera-video me-2"></i> Request Consultation
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 @endsection

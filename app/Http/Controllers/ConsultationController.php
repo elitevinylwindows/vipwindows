@@ -101,25 +101,38 @@ class ConsultationController extends Controller
     public function publicRequest(Request $request)
     {
         $validated = $request->validate([
-            'name'    => 'required|string|max:150',
-            'email'   => 'required|email',
-            'phone'   => 'nullable|string|max:30',
-            'address' => 'nullable|string|max:500',
-            'notes'   => 'nullable|string|max:2000',
+            'name'           => 'required|string|max:150',
+            'email'          => 'required|email',
+            'phone'          => 'required|string|max:30',
+            'address'        => 'nullable|string|max:500',
+            'platform'       => 'nullable|string|in:zoom,teams,phone',
+            'preferred_time' => 'nullable|string|in:morning,afternoon,flexible',
+            'notes'          => 'nullable|string|max:2000',
         ]);
+
+        $preferredTime = $validated['preferred_time'] ?? 'morning';
+        $hour = $preferredTime === 'afternoon' ? 13 : 10;
+
+        $notesParts = [];
+        if (!empty($validated['preferred_time'])) {
+            $notesParts[] = 'Preferred time: ' . ucfirst($validated['preferred_time']);
+        }
+        if (!empty($validated['notes'])) {
+            $notesParts[] = $validated['notes'];
+        }
 
         Consultation::create([
             'customer_name'  => $validated['name'],
             'customer_email' => $validated['email'],
             'customer_phone' => $validated['phone'],
             'address'        => $validated['address'],
-            'notes'          => $validated['notes'] ?? 'Requested via website',
-            'scheduled_at'   => now()->addDays(3)->setHour(10)->setMinute(0), // placeholder
+            'notes'          => implode("\n", $notesParts) ?: 'Requested via website',
+            'scheduled_at'   => now()->addDays(3)->setHour($hour)->setMinute(0),
             'duration'       => 30,
-            'platform'       => 'zoom',
+            'platform'       => $validated['platform'] ?? 'zoom',
             'status'         => 'scheduled',
         ]);
 
-        return redirect()->back()->with('success', 'Thank you! We\'ll contact you shortly to confirm your virtual consultation.');
+        return redirect()->back()->with('consultation_success', 'Thank you! We\'ll contact you shortly to confirm your virtual consultation.');
     }
 }

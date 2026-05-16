@@ -43,26 +43,31 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name'     => 'required|string|max:100',
-            'email'    => 'required|email|unique:vip_users,email',
-            'phone'    => 'nullable|string|max:30',
-            'address'  => 'nullable|string|max:255',
-            'city'     => 'nullable|string|max:100',
-            'state'    => 'nullable|string|max:50',
-            'zip'      => 'nullable|string|max:20',
-            'password' => 'required|confirmed|min:8',
+            'name'      => 'required|string|max:100',
+            'email'     => 'required|email|unique:vip_users,email',
+            'phone'     => 'nullable|string|max:30',
+            'address'   => 'nullable|string|max:255',
+            'city'      => 'nullable|string|max:100',
+            'state'     => 'nullable|string|max:50',
+            'zip'       => 'nullable|string|max:20',
+            'password'  => 'required|confirmed|min:8',
+            'user_type' => 'required|in:customer,installer',
         ]);
 
         $user = VipUser::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'phone'    => $validated['phone'] ?? null,
-            'role'     => 'customer',
+            'address'  => $validated['address'] ?? null,
+            'city'     => $validated['city'] ?? null,
+            'state'    => $validated['state'] ?? null,
+            'zip'      => $validated['zip'] ?? null,
+            'role'     => $validated['user_type'],
             'password' => Hash::make($validated['password']),
         ]);
 
         Auth::login($user);
-        return redirect()->route('customer.dashboard');
+        return redirect($this->redirectByRole($user));
     }
 
     public function logout(Request $request)
@@ -78,7 +83,7 @@ class AuthController extends Controller
      */
     protected function redirectByRole($user): string
     {
-        if ($user->isAdmin()) {
+        if ($user->isStaff()) {
             return route('admin.dashboard');
         }
         return route('customer.dashboard');

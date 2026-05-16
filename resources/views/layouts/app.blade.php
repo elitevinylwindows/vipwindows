@@ -132,6 +132,9 @@
             <a href="{{ route('admin.calendar.index') }}" class="{{ request()->routeIs('admin.calendar.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar3"></i> Calendar
             </a>
+            <a href="{{ route('admin.quotes.index') }}" class="{{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
+                <i class="bi bi-calculator"></i> Quotes
+            </a>
             <a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> Customers
             </a>

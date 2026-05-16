@@ -20,6 +20,16 @@ class VipUser extends Authenticatable
         return in_array($this->role, ['admin', 'technician']);
     }
 
+    public function isInstaller(): bool
+    {
+        return $this->role === 'installer';
+    }
+
+    public function isStaff(): bool
+    {
+        return in_array($this->role, ['admin', 'technician', 'installer']);
+    }
+
     public function isCustomer(): bool
     {
         return $this->role === 'customer';

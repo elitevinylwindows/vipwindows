@@ -42,6 +42,26 @@
 
         <form method="POST" action="{{ route('register') }}">
             @csrf
+
+            {{-- Account type toggle --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">I am a...</label>
+                <div class="d-flex gap-2">
+                    <div class="form-check flex-fill">
+                        <input type="radio" name="user_type" value="customer" id="typeCustomer" class="form-check-input" {{ old('user_type', 'customer') === 'customer' ? 'checked' : '' }}>
+                        <label class="form-check-label" for="typeCustomer">
+                            <i class="bi bi-house-door me-1"></i> Homeowner / Customer
+                        </label>
+                    </div>
+                    <div class="form-check flex-fill">
+                        <input type="radio" name="user_type" value="installer" id="typeInstaller" class="form-check-input" {{ old('user_type') === 'installer' ? 'checked' : '' }}>
+                        <label class="form-check-label" for="typeInstaller">
+                            <i class="bi bi-tools me-1"></i> Window Installer
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label class="form-label">Full Name</label>
                 <input type="text" name="name" class="form-control" value="{{ old('name') }}" required autofocus>
@@ -58,7 +78,7 @@
             </div>
 
             <hr class="my-3">
-            <p class="text-muted small mb-2">Installation Address (optional — can be added later)</p>
+            <p class="text-muted small mb-2">Address (optional — can be added later)</p>
 
             <div class="mb-3">
                 <label class="form-label">Street Address</label>

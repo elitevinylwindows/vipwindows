@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\CalendarSlot;
 use App\Models\InstallationOrder;
+use App\Models\Quote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CustomerController extends Controller
 {
     /**
-     * Customer dashboard — their bookings and upcoming installations.
+     * Customer dashboard — their bookings, installations, and quotes.
      */
     public function dashboard()
     {
@@ -23,7 +24,17 @@ class CustomerController extends Controller
         $upcoming = $orders->whereIn('status', ['scheduled', 'in_progress']);
         $completed = $orders->where('status', 'completed');
 
-        return view('customer.dashboard', compact('orders', 'upcoming', 'completed'));
+        // Quotes sent to this customer (matched by email or customer_number)
+        $quotes = Quote::with('items')
+            ->where(function ($q) use ($user) {
+                $q->where('billing_email', $user->email)
+                  ->orWhere('customer_number', $user->email);
+            })
+            ->where('status', 'sent')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('customer.dashboard', compact('orders', 'upcoming', 'completed', 'quotes'));
     }
 
     /**

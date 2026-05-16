@@ -12,6 +12,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ServiceAreaController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\VipQuoteController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -95,6 +96,19 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/consultations', [ConsultationController::class, 'store'])->name('consultations.store');
     Route::put('/consultations/{id}', [ConsultationController::class, 'update'])->name('consultations.update');
     Route::delete('/consultations/{id}', [ConsultationController::class, 'destroy'])->name('consultations.destroy');
+
+    // Quotes (full configurator)
+    Route::get('/quotes', [VipQuoteController::class, 'index'])->name('quotes.index');
+    Route::get('/quotes/create', [VipQuoteController::class, 'create'])->name('quotes.create');
+    Route::post('/quotes', [VipQuoteController::class, 'store'])->name('quotes.store');
+    Route::get('/quotes/{id}/edit', [VipQuoteController::class, 'edit'])->name('quotes.edit');
+    Route::post('/quotes/{id}/save-draft', [VipQuoteController::class, 'saveDraft'])->name('quotes.saveDraft');
+    Route::post('/quotes/{id}/item', [VipQuoteController::class, 'storeItem'])->name('quotes.storeItem');
+    Route::delete('/quotes/{id}/item/{itemId}', [VipQuoteController::class, 'deleteItem'])->name('quotes.deleteItem');
+    Route::post('/quotes/check-price', [VipQuoteController::class, 'checkPrice'])->name('quotes.checkPrice');
+    Route::get('/quotes/panel-layout', [VipQuoteController::class, 'panelLayout'])->name('quotes.panel-layout');
+    Route::post('/quotes/{id}/send', [VipQuoteController::class, 'sendToCustomer'])->name('quotes.send');
+    Route::delete('/quotes/{id}', [VipQuoteController::class, 'destroy'])->name('quotes.destroy');
 
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
