@@ -208,6 +208,35 @@ class VipQuoteController extends Controller
     }
 
     /**
+     * Update quote header fields.
+     */
+    public function update(Request $request, $id)
+    {
+        $quote = Quote::findOrFail($id);
+
+        $quote->update([
+            'quote_number'      => $request->quote_number ?: $quote->quote_number,
+            'customer_number'   => $request->customer_number,
+            'reference'         => $request->reference,
+            'entry_date'        => $request->entry_date ?: $quote->entry_date,
+            'expected_delivery' => $request->expected_delivery,
+            'valid_until'       => $request->valid_until,
+            'tax_rule_id'       => $request->tax_rule_id,
+            'billing_name'      => $request->billing_name,
+            'billing_address'   => $request->billing_address,
+            'billing_city'      => $request->billing_city,
+            'billing_state'     => $request->billing_state,
+            'billing_zip'       => $request->billing_zip,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'quote_id' => $quote->id,
+            'redirect' => route('admin.quotes.edit', $quote->id),
+        ]);
+    }
+
+    /**
      * Return quote detail as JSON (for left-rail AJAX panel).
      */
     public function show($id)
