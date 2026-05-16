@@ -68,25 +68,45 @@ class CustomerManagementController extends Controller
     {
         $customer = VipUser::where('role', 'customer')->findOrFail($id);
 
-        $quotes = Quote::with('items')
-            ->where(function ($q) use ($customer) {
-                $q->where('billing_email', $customer->email)
-                  ->orWhere('customer_number', $customer->email);
-            })
-            ->orderByDesc('created_at')
-            ->get();
+        // Quotes — shared table, should always exist
+        try {
+            $quotes = Quote::with('items')
+                ->where(function ($q) use ($customer) {
+                    $q->where('billing_email', $customer->email)
+                      ->orWhere('customer_number', $customer->email);
+                })
+                ->orderByDesc('created_at')
+                ->get();
+        } catch (\Exception $e) {
+            $quotes = collect();
+        }
 
-        $jobs = Job::where('customer_email', $customer->email)
-            ->orderByDesc('created_at')
-            ->get();
+        // Jobs — vip_jobs table may not exist yet
+        try {
+            $jobs = Job::where('customer_email', $customer->email)
+                ->orderByDesc('created_at')
+                ->get();
+        } catch (\Exception $e) {
+            $jobs = collect();
+        }
 
-        $invoices = Invoice::where('customer_email', $customer->email)
-            ->orderByDesc('created_at')
-            ->get();
+        // Invoices — vip_invoices table may not exist yet
+        try {
+            $invoices = Invoice::where('customer_email', $customer->email)
+                ->orderByDesc('created_at')
+                ->get();
+        } catch (\Exception $e) {
+            $invoices = collect();
+        }
 
-        $orders = InstallationOrder::where('customer_email', $customer->email)
-            ->orderByDesc('created_at')
-            ->get();
+        // Installation orders — table may not exist yet
+        try {
+            $orders = InstallationOrder::where('customer_email', $customer->email)
+                ->orderByDesc('created_at')
+                ->get();
+        } catch (\Exception $e) {
+            $orders = collect();
+        }
 
         return response()->json([
             'customer' => $customer,
@@ -121,7 +141,7 @@ class CustomerManagementController extends Controller
             'orders'   => $orders->map(fn($o) => [
                 'id'              => $o->id,
                 'status'          => $o->status,
-                'install_address' => $o->install_address . ', ' . $o->install_city,
+                'install_address' => ($o->install_address ?? '') . ', ' . ($o->install_city ?? ''),
                 'scheduled_date'  => $o->scheduled_date?->format('M d, Y'),
                 'created_at'      => $o->created_at?->format('M d, Y'),
             ]),
