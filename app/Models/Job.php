@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Job extends Model
+{
+    use SoftDeletes;
+
+    protected $table = 'vip_jobs';
+
+    protected $fillable = [
+        'job_number', 'quote_id', 'invoice_id', 'customer_name', 'customer_email',
+        'customer_phone', 'install_address', 'install_city', 'install_state',
+        'install_zip', 'description', 'status', 'priority', 'assigned_to',
+        'scheduled_date', 'scheduled_time', 'estimated_duration', 'actual_start',
+        'actual_end', 'notes', 'completion_notes', 'created_by',
+    ];
+
+    protected $casts = [
+        'scheduled_date' => 'date',
+        'actual_start' => 'datetime',
+        'actual_end' => 'datetime',
+    ];
+
+    public function assignee()
+    {
+        return $this->belongsTo(VipUser::class, 'assigned_to');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(VipUser::class, 'created_by');
+    }
+
+    public function quote()
+    {
+        return $this->belongsTo(Quote::class);
+    }
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+
+    public function jobNotes()
+    {
+        return $this->hasMany(JobNote::class)->orderBy('created_at', 'desc');
+    }
+}
