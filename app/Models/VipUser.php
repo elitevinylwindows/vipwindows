@@ -13,7 +13,7 @@ class VipUser extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'phone', 'address', 'city', 'state', 'zip', 'notes',
-        'role', 'password', 'status',
+        'role', 'customer_type', 'password', 'status',
         'company_name', 'company_logo', 'company_phone', 'company_email', 'company_website',
     ];
 

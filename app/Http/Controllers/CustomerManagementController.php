@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\VipUser;
+use App\Models\Quote;
+use App\Models\Job;
+use App\Models\Invoice;
+use App\Models\InstallationOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -39,20 +43,22 @@ class CustomerManagementController extends Controller
             'city'    => 'nullable|string|max:100',
             'state'   => 'nullable|string|max:50',
             'zip'     => 'nullable|string|max:20',
-            'notes'   => 'nullable|string|max:1000',
+            'notes'         => 'nullable|string|max:1000',
+            'customer_type' => 'nullable|in:homeowner,business',
         ]);
 
         VipUser::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'phone'    => $validated['phone'] ?? null,
-            'address'  => $validated['address'] ?? null,
-            'city'     => $validated['city'] ?? null,
-            'state'    => $validated['state'] ?? null,
-            'zip'      => $validated['zip'] ?? null,
-            'notes'    => $validated['notes'] ?? null,
-            'role'     => 'customer',
-            'password' => Hash::make('VipCustomer2026!'), // default password
+            'name'          => $validated['name'],
+            'email'         => $validated['email'],
+            'phone'         => $validated['phone'] ?? null,
+            'address'       => $validated['address'] ?? null,
+            'city'          => $validated['city'] ?? null,
+            'state'         => $validated['state'] ?? null,
+            'zip'           => $validated['zip'] ?? null,
+            'notes'         => $validated['notes'] ?? null,
+            'customer_type' => $validated['customer_type'] ?? 'homeowner',
+            'role'          => 'customer',
+            'password'      => Hash::make('VipCustomer2026!'), // default password
         ]);
 
         return redirect()->route('admin.customers.index')->with('success', 'Customer added successfully. Default password: VipCustomer2026!');
@@ -61,7 +67,65 @@ class CustomerManagementController extends Controller
     public function show($id)
     {
         $customer = VipUser::where('role', 'customer')->findOrFail($id);
-        return view('customers.show', compact('customer'));
+
+        $quotes = Quote::with('items')
+            ->where(function ($q) use ($customer) {
+                $q->where('billing_email', $customer->email)
+                  ->orWhere('customer_number', $customer->email);
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        $jobs = Job::where('customer_email', $customer->email)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $invoices = Invoice::where('customer_email', $customer->email)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $orders = InstallationOrder::where('customer_email', $customer->email)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json([
+            'customer' => $customer,
+            'quotes'   => $quotes->map(fn($q) => [
+                'id'           => $q->id,
+                'quote_number' => $q->quote_number,
+                'status'       => $q->status,
+                'items_count'  => $q->items->count(),
+                'total'        => number_format($q->items->sum(fn($i) => $i->getRawOriginal('total')), 2),
+                'created_at'   => $q->created_at?->format('M d, Y'),
+            ]),
+            'jobs'     => $jobs->map(fn($j) => [
+                'id'             => $j->id,
+                'job_number'     => $j->job_number,
+                'status'         => $j->status,
+                'priority'       => $j->priority,
+                'install_address'=> $j->install_address,
+                'scheduled_date' => $j->scheduled_date?->format('M d, Y'),
+                'assigned_to'    => $j->assignee?->name ?? '—',
+                'description'    => $j->description,
+                'created_at'     => $j->created_at?->format('M d, Y'),
+            ]),
+            'invoices' => $invoices->map(fn($inv) => [
+                'id'             => $inv->id,
+                'invoice_number' => $inv->invoice_number,
+                'status'         => $inv->status,
+                'total'          => number_format($inv->total, 2),
+                'balance_due'    => number_format($inv->balance_due, 2),
+                'due_date'       => $inv->due_date?->format('M d, Y'),
+                'created_at'     => $inv->created_at?->format('M d, Y'),
+            ]),
+            'orders'   => $orders->map(fn($o) => [
+                'id'              => $o->id,
+                'status'          => $o->status,
+                'install_address' => $o->install_address . ', ' . $o->install_city,
+                'scheduled_date'  => $o->scheduled_date?->format('M d, Y'),
+                'created_at'      => $o->created_at?->format('M d, Y'),
+            ]),
+        ]);
     }
 
     public function edit($id)
@@ -81,8 +145,9 @@ class CustomerManagementController extends Controller
             'address' => 'nullable|string|max:300',
             'city'    => 'nullable|string|max:100',
             'state'   => 'nullable|string|max:50',
-            'zip'     => 'nullable|string|max:20',
-            'notes'   => 'nullable|string|max:1000',
+            'zip'           => 'nullable|string|max:20',
+            'notes'         => 'nullable|string|max:1000',
+            'customer_type' => 'nullable|in:homeowner,business',
         ]);
 
         $customer->update($validated);
