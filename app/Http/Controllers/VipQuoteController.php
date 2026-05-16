@@ -208,6 +208,57 @@ class VipQuoteController extends Controller
     }
 
     /**
+     * Return quote detail as JSON (for left-rail AJAX panel).
+     */
+    public function show($id)
+    {
+        $quote = Quote::with('items')->findOrFail($id);
+
+        return response()->json([
+            'quote' => [
+                'id'                => $quote->id,
+                'quote_number'      => $quote->quote_number,
+                'status'            => $quote->status,
+                'billing_name'      => $quote->billing_name,
+                'billing_email'     => $quote->billing_email,
+                'billing_address'   => $quote->billing_address,
+                'billing_city'      => $quote->billing_city,
+                'billing_state'     => $quote->billing_state,
+                'billing_zip'       => $quote->billing_zip,
+                'customer_number'   => $quote->customer_number,
+                'reference'         => $quote->reference,
+                'entry_date'        => $quote->entry_date,
+                'expected_delivery' => $quote->expected_delivery,
+                'valid_until'       => $quote->valid_until,
+                'entered_by'        => $quote->entered_by,
+                'discount'          => $quote->discount,
+                'notes'             => $quote->notes,
+                'created_at'        => $quote->created_at?->format('M d, Y'),
+            ],
+            'items' => $quote->items->map(fn($i) => [
+                'id'          => $i->id,
+                'description' => $i->description,
+                'series_type' => $i->series_type,
+                'width'       => $i->width,
+                'height'      => $i->height,
+                'glass'       => $i->glass,
+                'grid'        => $i->grid,
+                'qty'         => $i->qty,
+                'price'       => number_format($i->getRawOriginal('price'), 2),
+                'total'       => number_format($i->getRawOriginal('total'), 2),
+                'discount'    => $i->discount,
+                'color_config'   => $i->color_config,
+                'color_exterior' => $i->color_exterior,
+                'color_interior' => $i->color_interior,
+            ]),
+            'summary' => [
+                'items_count' => $quote->items->count(),
+                'subtotal'    => number_format($quote->items->sum(fn($i) => $i->getRawOriginal('total')), 2),
+            ],
+        ]);
+    }
+
+    /**
      * Show quote edit form.
      */
     public function edit($id)

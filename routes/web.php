@@ -130,6 +130,7 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::get('/quotes', [VipQuoteController::class, 'index'])->name('quotes.index');
     Route::get('/quotes/create', [VipQuoteController::class, 'create'])->name('quotes.create');
     Route::post('/quotes', [VipQuoteController::class, 'store'])->name('quotes.store');
+    Route::get('/quotes/{id}', [VipQuoteController::class, 'show'])->name('quotes.show');
     Route::get('/quotes/{id}/edit', [VipQuoteController::class, 'edit'])->name('quotes.edit');
     Route::post('/quotes/{id}/save-draft', [VipQuoteController::class, 'saveDraft'])->name('quotes.saveDraft');
     Route::post('/quotes/{id}/item', [VipQuoteController::class, 'storeItem'])->name('quotes.storeItem');
