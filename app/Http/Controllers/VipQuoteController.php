@@ -575,6 +575,42 @@ class VipQuoteController extends Controller
     }
 
     /**
+     * Shape data for the shape picker (shared Enterprise tables).
+     */
+    public function shapes()
+    {
+        $categories = DB::table('elitevw_shape_categories')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        $definitions = DB::table('elitevw_shape_definitions')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get()
+            ->groupBy('category_id');
+
+        $result = $categories->map(function ($cat) use ($definitions) {
+            return [
+                'id'                 => $cat->id,
+                'name'               => $cat->name,
+                'active_definitions' => ($definitions[$cat->id] ?? collect())->map(function ($d) {
+                    return [
+                        'id'          => $d->id,
+                        'code'        => $d->code,
+                        'name'        => $d->name,
+                        'description' => $d->description ?? '',
+                        'svg_path'    => $d->svg_path ?? '',
+                        'params'      => json_decode($d->params ?? '{}', true),
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        return response()->json($result);
+    }
+
+    /**
      * Generate VIP-specific quote number (VQ00001, VQ00002, etc.)
      */
     private function generateVipQuoteNumber(): string
