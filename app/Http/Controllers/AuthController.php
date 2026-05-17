@@ -26,7 +26,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended($this->redirectByRole(Auth::user()));
+            return redirect($this->redirectByRole(Auth::user()));
         }
 
         return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');

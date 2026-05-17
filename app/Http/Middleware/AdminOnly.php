@@ -12,7 +12,7 @@ class AdminOnly
     {
         $user = Auth::guard('vip')->user();
 
-        if (!$user || !$user->isStaff()) {
+        if (!$user || !$user->isAdmin()) {
             abort(403, 'Access denied.');
         }
 
