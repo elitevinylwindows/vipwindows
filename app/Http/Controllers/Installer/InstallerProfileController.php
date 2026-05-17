@@ -41,8 +41,13 @@ class InstallerProfileController extends Controller
             $validated = $request->validate([
                 'company_name'    => 'nullable|string|max:255',
                 'company_phone'   => 'nullable|string|max:50',
+                'company_fax'     => 'nullable|string|max:50',
                 'company_email'   => 'nullable|email|max:255',
                 'company_website' => 'nullable|string|max:255',
+                'company_address' => 'nullable|string|max:500',
+                'company_city'    => 'nullable|string|max:100',
+                'company_state'   => 'nullable|string|max:50',
+                'company_zip'     => 'nullable|string|max:20',
             ]);
             $user->update($validated);
             return redirect()->route('installer.profile')->with('success', 'Company info updated.');
@@ -68,21 +73,24 @@ class InstallerProfileController extends Controller
     public function uploadLogo(Request $request)
     {
         $request->validate([
+            'logo_type' => 'required|in:dark,light',
             'company_logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
         ]);
 
         $user = Auth::user();
+        $logoType = $request->input('logo_type'); // 'dark' or 'light'
+        $column = 'company_logo_' . $logoType;
 
         // Delete old logo if exists
-        if ($user->company_logo) {
-            $oldPath = public_path('uploads/installer-logos/' . $user->company_logo);
+        if ($user->$column) {
+            $oldPath = public_path('uploads/installer-logos/' . $user->$column);
             if (file_exists($oldPath)) {
                 unlink($oldPath);
             }
         }
 
         $file = $request->file('company_logo');
-        $filename = 'logo_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $filename = 'logo_' . $logoType . '_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
 
         // Ensure directory exists
         $uploadPath = public_path('uploads/installer-logos');
@@ -92,9 +100,10 @@ class InstallerProfileController extends Controller
 
         $file->move($uploadPath, $filename);
 
-        $user->update(['company_logo' => $filename]);
+        $user->update([$column => $filename]);
 
+        $label = $logoType === 'light' ? 'Light' : 'Dark';
         return redirect()->route('installer.profile')
-            ->with('success', 'Company logo updated successfully.');
+            ->with('success', "$label logo updated successfully.");
     }
 }

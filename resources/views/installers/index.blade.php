@@ -426,7 +426,7 @@
                     <h4>${esc(i.name)} ${statusBadge}</h4>
                     <div class="text-muted" style="font-size:.85rem">Installer since ${since}</div>
                 </div>
-                ${i.company_logo ? `<img src="/uploads/installer-logos/${i.company_logo}" style="height:40px;border-radius:6px;">` : ''}
+                ${(i.company_logo_dark || i.company_logo_light) ? `<img src="/uploads/installer-logos/${i.company_logo_dark || i.company_logo_light}" style="height:40px;border-radius:6px;">` : ''}
             </div>
 
             <div class="ins-stat-cards">

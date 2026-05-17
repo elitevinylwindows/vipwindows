@@ -11,9 +11,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         :root {
-            --vip-primary: #1a1a2e;
-            --vip-accent: #d4a843;
-            --vip-light: #fafbfd;
+            --vip-primary: #111111;
+            --vip-accent: #c9a84c;
+            --vip-light: #f7f6f3;
             --sidebar-width: 240px;
         }
         body { background: var(--vip-light); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
@@ -22,7 +22,7 @@
         .admin-sidebar {
             position: fixed; top: 0; left: 0; bottom: 0;
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(180deg, #0a0a0a 0%, #141414 100%);
             color: #fff;
             z-index: 1040;
             display: flex; flex-direction: column;
@@ -130,11 +130,11 @@
     {{-- Sidebar --}}
     <aside class="admin-sidebar" id="adminSidebar">
         <div class="sidebar-brand">
-            @if(Auth::user()->company_logo)
+            @if(Auth::user()->company_logo_light)
                 <a href="{{ route('installer.dashboard') }}">
-                    <img src="{{ asset('uploads/installer-logos/' . Auth::user()->company_logo) }}" alt="{{ Auth::user()->company_name }}" style="height:50px; max-width:180px; object-fit:contain;">
+                    <img src="{{ asset('uploads/installer-logos/' . Auth::user()->company_logo_light) }}" alt="{{ Auth::user()->company_name }}" style="height:50px; max-width:180px; object-fit:contain;">
                 </a>
-                <div class="small text-muted mt-1">{{ __('installer.powered_by') }} VIP Windows</div>
+                <div class="mt-1" style="font-size: .75rem; color: #fff; letter-spacing: .5px;">{{ __('installer.powered_by') }} <span style="color: var(--vip-accent); font-weight: 600;">VIP Windows</span></div>
             @else
                 <a href="{{ route('home') }}" target="_blank">
                     <img src="/images/logo.png" alt="VIP Windows" style="height:70px;">

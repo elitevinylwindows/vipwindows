@@ -203,7 +203,7 @@ class InstallerInvoiceController extends Controller
         $items = $invoice->items()->get();
         $user = Auth::user();
         $installerName = $user->company_name ?: $user->name;
-        $logoUrl = $user->company_logo ? url('uploads/installer-logos/' . $user->company_logo) : null;
+        $logoUrl = $user->company_logo_dark ? url('uploads/installer-logos/' . $user->company_logo_dark) : null;
 
         Mail::send([], [], function ($message) use ($invoice, $items, $installerName, $logoUrl, $user) {
             $html = '<div style="font-family:Arial,sans-serif; max-width:600px; margin:0 auto;">';

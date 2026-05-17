@@ -24,10 +24,10 @@ class BrandingHelper
                 'state'        => $user->company_state ?? '',
                 'zip'          => $user->company_zip ?? '',
                 'phone'        => $user->company_phone ?? '',
-                'fax'          => '',
-                'email'        => $user->email ?? '',
-                'website'      => '',
-                'logo_path'    => $user->company_logo ? 'uploads/installer-logos/' . $user->company_logo : null,
+                'fax'          => $user->company_fax ?? '',
+                'email'        => $user->company_email ?? $user->email ?? '',
+                'website'      => $user->company_website ?? '',
+                'logo_path'    => $user->company_logo_dark ? 'uploads/installer-logos/' . $user->company_logo_dark : null,
                 'is_dealer'    => false,
             ];
         }

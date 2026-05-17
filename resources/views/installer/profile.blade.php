@@ -135,12 +135,32 @@
                             <input type="text" name="company_phone" class="form-control" value="{{ old('company_phone', $user->company_phone) }}">
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label">Fax</label>
+                            <input type="text" name="company_fax" class="form-control" value="{{ old('company_fax', $user->company_fax) }}" placeholder="Optional">
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">{{ __('installer.email') }}</label>
                             <input type="email" name="company_email" class="form-control" value="{{ old('company_email', $user->company_email) }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Website</label>
                             <input type="text" name="company_website" class="form-control" value="{{ old('company_website', $user->company_website) }}" placeholder="https://...">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ __('installer.company_address') }}</label>
+                            <input type="text" name="company_address" class="form-control" value="{{ old('company_address', $user->company_address) }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('installer.city') }}</label>
+                            <input type="text" name="company_city" class="form-control" value="{{ old('company_city', $user->company_city) }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('installer.state') }}</label>
+                            <input type="text" name="company_state" class="form-control" value="{{ old('company_state', $user->company_state) }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('installer.zip') }}</label>
+                            <input type="text" name="company_zip" class="form-control" value="{{ old('company_zip', $user->company_zip) }}">
                         </div>
                     </div>
                 </div>
@@ -151,24 +171,28 @@
         {{-- Branding Section --}}
         <div class="profile-section" id="section-branding">
             <div class="section-title"><i class="bi bi-palette me-2"></i>{{ __('installer.company_logo') }}</div>
+
+            {{-- Light Logo (for dark sidebar) --}}
             <div class="form-card">
-                <h6>{{ __('installer.company_logo') }}</h6>
-                @if($user->company_logo)
+                <h6><i class="bi bi-moon-stars me-1"></i> Light Logo <span class="fw-normal text-muted">— for sidebar (dark background)</span></h6>
+                <p class="text-muted small mb-3">Upload a white or light-colored version of your logo. This will appear in the sidebar navigation panel.</p>
+                @if($user->company_logo_light)
                     <div class="mb-3">
-                        <label class="form-label text-muted small">Current Logo</label>
-                        <div>
-                            <img src="{{ asset('uploads/installer-logos/' . $user->company_logo) }}" alt="Company Logo" class="logo-preview">
+                        <label class="form-label text-muted small">Current Light Logo</label>
+                        <div style="background: #111; border-radius: .5rem; padding: .75rem; display: inline-block;">
+                            <img src="{{ asset('uploads/installer-logos/' . $user->company_logo_light) }}" alt="Light Logo" class="logo-preview" style="border: none;">
                         </div>
                     </div>
                 @endif
                 <form method="POST" action="{{ route('installer.profile.uploadLogo') }}" enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="logo_type" value="light">
                     <div class="row align-items-end g-3">
                         <div class="col-md-8">
-                            <label class="form-label">Upload New Logo</label>
+                            <label class="form-label">Upload Light Logo</label>
                             <input type="file" name="company_logo" class="form-control @error('company_logo') is-invalid @enderror" accept="image/*" required>
                             @error('company_logo') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            <div class="form-text">JPEG, PNG, GIF, SVG, WebP. Max 2MB.</div>
+                            <div class="form-text">White/light logo for dark backgrounds. JPEG, PNG, SVG, WebP. Max 2MB.</div>
                         </div>
                         <div class="col-md-4">
                             <button type="submit" class="btn btn-outline-dark w-100"><i class="bi bi-upload me-1"></i> Upload</button>
@@ -176,9 +200,39 @@
                     </div>
                 </form>
             </div>
+
+            {{-- Dark Logo (for quotes/invoices) --}}
             <div class="form-card">
-                <h6>Branding Preview</h6>
-                <p class="text-muted small">Your logo appears in the sidebar and on customer-facing documents (quotes, invoices). Recommended size: 300×100px or similar landscape ratio.</p>
+                <h6><i class="bi bi-sun me-1"></i> Dark Logo <span class="fw-normal text-muted">— for quotes & invoices (white background)</span></h6>
+                <p class="text-muted small mb-3">Upload a dark-colored version of your logo. This will appear on customer-facing documents like quotes, invoices, and PDFs.</p>
+                @if($user->company_logo_dark)
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Current Dark Logo</label>
+                        <div>
+                            <img src="{{ asset('uploads/installer-logos/' . $user->company_logo_dark) }}" alt="Dark Logo" class="logo-preview">
+                        </div>
+                    </div>
+                @endif
+                <form method="POST" action="{{ route('installer.profile.uploadLogo') }}" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="logo_type" value="dark">
+                    <div class="row align-items-end g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Upload Dark Logo</label>
+                            <input type="file" name="company_logo" class="form-control @error('company_logo') is-invalid @enderror" accept="image/*" required>
+                            @error('company_logo') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <div class="form-text">Dark/colored logo for white backgrounds. JPEG, PNG, SVG, WebP. Max 2MB.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-outline-dark w-100"><i class="bi bi-upload me-1"></i> Upload</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="form-card">
+                <h6>Recommended</h6>
+                <p class="text-muted small mb-0">300×100px or similar landscape ratio. The light logo goes in your sidebar, and the dark logo goes on quotes, invoices, and other documents your customers will see.</p>
             </div>
         </div>
 
