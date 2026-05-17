@@ -373,6 +373,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/profile', [InstallerProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [InstallerProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/logo', [InstallerProfileController::class, 'uploadLogo'])->name('profile.uploadLogo');
+    Route::get('/profile/logo', function () { return redirect()->route('installer.profile')->with('error', 'Logo upload failed — file may be too large. Max 2MB.'); });
 });
 
 // ─── Public booking (via link from admin) ─────────────────────
