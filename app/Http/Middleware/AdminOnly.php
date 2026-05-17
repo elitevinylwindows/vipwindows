@@ -12,10 +12,19 @@ class AdminOnly
     {
         $user = Auth::guard('vip')->user();
 
-        if (!$user || !$user->isAdmin()) {
-            abort(403, 'Access denied.');
+        if (!$user) {
+            return redirect()->route('login');
         }
 
-        return $next($request);
+        if ($user->isAdmin()) {
+            return $next($request);
+        }
+
+        // Redirect non-admins to their proper dashboard
+        if ($user->isInstaller()) {
+            return redirect()->route('installer.dashboard');
+        }
+
+        return redirect()->route('customer.dashboard');
     }
 }

@@ -15,10 +15,16 @@ class InstallerOnly
 
         $user = Auth::guard('vip')->user();
 
-        if (!$user->isInstaller() && !$user->isAdmin()) {
-            abort(403);
+        // Admins can access installer area
+        if ($user->isInstaller() || $user->isAdmin()) {
+            return $next($request);
         }
 
-        return $next($request);
+        // Redirect customers to their own dashboard
+        if ($user->role === 'customer') {
+            return redirect()->route('customer.dashboard');
+        }
+
+        abort(403);
     }
 }

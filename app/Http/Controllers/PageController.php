@@ -4,11 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\GalleryImage;
 use App\Models\ServiceArea;
+use Illuminate\Support\Facades\Auth;
 
 class PageController extends Controller
 {
     public function home()
     {
+        // Redirect authenticated users to their dashboard
+        if (Auth::guard('vip')->check()) {
+            $user = Auth::guard('vip')->user();
+
+            if ($user->isInstaller()) {
+                return redirect()->route('installer.dashboard');
+            }
+            if ($user->isAdmin() || $user->role === 'technician') {
+                return redirect()->route('admin.dashboard');
+            }
+            return redirect()->route('customer.dashboard');
+        }
+
         return view('pages.home');
     }
 

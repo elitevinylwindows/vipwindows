@@ -73,7 +73,7 @@ Route::middleware('auth:vip')->group(function () {
 });
 
 // ─── Customer area ────────────────────────────────────────────
-Route::middleware('auth:vip')->prefix('my')->name('customer.')->group(function () {
+Route::middleware(['auth:vip', 'customer'])->prefix('my')->name('customer.')->group(function () {
     Route::get('/', [CustomerController::class, 'dashboard'])->name('dashboard');
     Route::get('/book', [CustomerController::class, 'bookInstallation'])->name('book');
     Route::post('/book', [CustomerController::class, 'confirmBooking'])->name('book.confirm');
