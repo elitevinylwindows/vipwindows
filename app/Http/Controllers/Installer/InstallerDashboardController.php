@@ -14,15 +14,15 @@ class InstallerDashboardController extends Controller
     {
         $user = Auth::user();
 
-        $totalQuotes = Quote::where('created_by', $user->id)->count();
-        $sentQuotes = Quote::where('created_by', $user->id)->where('status', 'sent')->count();
+        $totalQuotes = Quote::where('entered_by', $user->name)->count();
+        $sentQuotes = Quote::where('entered_by', $user->name)->where('status', 'sent')->count();
         $activeJobs = Job::where('assigned_to', $user->id)->whereIn('status', ['scheduled', 'in_progress'])->count();
         $completedJobs = Job::where('assigned_to', $user->id)->where('status', 'completed')->count();
         $pendingInvoices = Invoice::where('created_by', $user->id)->whereIn('status', ['sent', 'partial'])->count();
         $totalEarnings = Invoice::where('created_by', $user->id)->where('status', 'paid')->sum('total');
 
         // Recent activity
-        $recentQuotes = Quote::where('created_by', $user->id)->latest()->take(5)->get();
+        $recentQuotes = Quote::where('entered_by', $user->name)->latest()->take(5)->get();
         $recentJobs = Job::where('assigned_to', $user->id)->latest()->take(5)->get();
 
         return view('installer.dashboard', compact(
