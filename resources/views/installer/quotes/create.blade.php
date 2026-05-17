@@ -183,7 +183,7 @@
                                 <label class="form-label small mb-0">{{ __('Customer Name') }}</label>
                                 <div style="position:relative;">
                                     <input type="text" name="customer_name" id="customer_name" class="form-control form-control-sm"
-                                           value="{{ $quote->customer_name ?? old('customer_name') }}" style="padding-right:28px;">
+                                           value="{{ $quote->customer_name ?? old('customer_name') }}" required style="padding-right:28px;">
                                     <button type="button" id="newCustomerBtn2" title="{{ __('New Customer') }}"
                                             style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:#6c757d; border:none; color:#fff; width:20px; height:20px; border-radius:50%; font-size:11px; line-height:1; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center;">
                                         <i class="fas fa-plus" style="font-size:9px;"></i>

@@ -186,11 +186,15 @@ class InstallerQuoteController extends Controller
             'measurement_type' => $request->measurement_type ?? 'Imperial',
         ]);
 
-        return response()->json([
-            'success' => true,
-            'quote_id' => $quote->id,
-            'redirect' => route('installer.quotes.edit', $quote->id),
-        ]);
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'quote_id' => $quote->id,
+                'redirect' => route('installer.quotes.edit', $quote->id),
+            ]);
+        }
+
+        return redirect()->route('installer.quotes.edit', $quote->id);
     }
 
     /**
