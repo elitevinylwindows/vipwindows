@@ -161,6 +161,10 @@
                 <i class="bi bi-receipt"></i> {{ __('installer.my_invoices') }}
             </a>
 
+            <a href="{{ route('installer.profile') }}#services" class="{{ request()->is('installer/services*') ? 'active' : '' }}" onclick="event.preventDefault(); window.location='{{ route('installer.profile') }}'; setTimeout(()=>{ document.querySelector('[data-section=services]')?.click(); },200);">
+                <i class="bi bi-tools"></i> My Services
+            </a>
+
             <div class="nav-label mt-3">{{ __('installer.customers') }}</div>
             <a href="{{ route('installer.customers.index') }}" class="{{ request()->routeIs('installer.customers.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> {{ __('installer.my_customers') }}

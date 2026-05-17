@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
+use App\Models\InstallerAvailability;
+use App\Models\InstallerAvailabilityOverride;
+use App\Models\InstallerBooking;
 use App\Models\Job;
 use App\Models\JobItem;
 use App\Models\JobNote;
@@ -37,9 +40,27 @@ class InstallerJobController extends Controller
         $inProgress = $jobs->where('status', 'in_progress')->count();
         $completed = $jobs->where('status', 'completed')->count();
 
+        // Get bookings for this month
+        $bookings = InstallerBooking::where('installer_id', Auth::id())
+            ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->orderBy('booking_date')
+            ->orderBy('booking_time')
+            ->get();
+
+        $bookingsByDate = $bookings->groupBy(fn($b) => $b->booking_date->format('Y-m-d'));
+        $pendingBookings = $bookings->where('status', 'pending')->count();
+
+        // Get availability settings
+        $availability = InstallerAvailability::where('installer_id', Auth::id())
+            ->orderBy('day_of_week')
+            ->get()
+            ->keyBy('day_of_week');
+
         return view('installer.calendar', compact(
             'jobs', 'jobsByDate', 'month', 'year', 'startOfMonth', 'endOfMonth',
-            'totalMonth', 'pending', 'scheduled', 'inProgress', 'completed'
+            'totalMonth', 'pending', 'scheduled', 'inProgress', 'completed',
+            'bookings', 'bookingsByDate', 'pendingBookings', 'availability'
         ));
     }
 

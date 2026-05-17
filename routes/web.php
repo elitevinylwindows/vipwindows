@@ -41,7 +41,10 @@ use App\Http\Controllers\Installer\InstallerQuoteController;
 use App\Http\Controllers\Installer\InstallerJobController;
 use App\Http\Controllers\Installer\InstallerInvoiceController;
 use App\Http\Controllers\Installer\InstallerCustomerController;
+use App\Http\Controllers\Installer\InstallerAvailabilityController;
 use App\Http\Controllers\Installer\InstallerProfileController;
+use App\Http\Controllers\Installer\InstallerServiceController;
+use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceRateController;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +79,7 @@ Route::middleware('auth:vip')->group(function () {
 Route::middleware(['auth:vip', 'customer'])->prefix('my')->name('customer.')->group(function () {
     Route::get('/', [CustomerController::class, 'dashboard'])->name('dashboard');
     Route::get('/book', [CustomerController::class, 'bookInstallation'])->name('book');
+    Route::get('/book/slots', [CustomerController::class, 'getSlots'])->name('book.slots');
     Route::post('/book', [CustomerController::class, 'confirmBooking'])->name('book.confirm');
 });
 
@@ -369,6 +373,21 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::put('/customers/{id}', [InstallerCustomerController::class, 'update'])->name('customers.update');
     Route::delete('/customers/{id}', [InstallerCustomerController::class, 'destroy'])->name('customers.destroy');
 
+    // My Services (pricing)
+    Route::get('/services', [InstallerServiceController::class, 'index'])->name('services');
+    Route::post('/services', [InstallerServiceController::class, 'store'])->name('services.store');
+    Route::put('/services/{id}', [InstallerServiceController::class, 'update'])->name('services.update');
+    Route::delete('/services/{id}', [InstallerServiceController::class, 'destroy'])->name('services.destroy');
+
+    // Availability & Bookings
+    Route::get('/availability', [InstallerAvailabilityController::class, 'index'])->name('availability');
+    Route::post('/availability/weekly', [InstallerAvailabilityController::class, 'saveWeekly'])->name('availability.weekly');
+    Route::post('/availability/override', [InstallerAvailabilityController::class, 'addOverride'])->name('availability.override');
+    Route::delete('/availability/override/{id}', [InstallerAvailabilityController::class, 'removeOverride'])->name('availability.override.delete');
+    Route::get('/availability/slots', [InstallerAvailabilityController::class, 'slotsForDate'])->name('availability.slots');
+    Route::get('/bookings', [InstallerAvailabilityController::class, 'bookings'])->name('bookings');
+    Route::put('/bookings/{id}', [InstallerAvailabilityController::class, 'updateBooking'])->name('bookings.update');
+
     // Profile
     Route::get('/profile', [InstallerProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [InstallerProfileController::class, 'update'])->name('profile.update');
@@ -377,8 +396,20 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
 });
 
 // ─── Public booking (via link from admin) ─────────────────────
-Route::get('/book/{order}', [CalendarController::class, 'showBooking'])->name('booking.show');
-Route::post('/book/{order}', [CalendarController::class, 'confirmBooking'])->name('booking.confirm');
+Route::get('/book/{order}', [CalendarController::class, 'showBooking'])->name('booking.show')->where('order', '[0-9]+');
+Route::post('/book/{order}', [CalendarController::class, 'confirmBooking'])->name('booking.confirm')->where('order', '[0-9]+');
+
+// ─── Public installer booking (shareable link, no login) ─────
+Route::get('/book/installer/{slug}', [PublicBookingController::class, 'show'])->name('public.book.installer');
+Route::get('/book/installer/{slug}/slots', [PublicBookingController::class, 'getSlots'])->name('public.book.slots');
+Route::post('/book/installer/{slug}', [PublicBookingController::class, 'confirm'])->name('public.book.confirm');
+Route::get('/book/installer/{slug}/success', [PublicBookingController::class, 'success'])->name('public.book.success');
+
+// ─── Public website booking (goes to VIP admin) ──────────────
+Route::get('/book-installation', [PublicBookingController::class, 'websiteBook'])->name('public.book.website');
+Route::get('/book-installation/slots', [PublicBookingController::class, 'websiteSlots'])->name('public.book.website.slots');
+Route::post('/book-installation', [PublicBookingController::class, 'websiteConfirm'])->name('public.book.website.confirm');
+Route::get('/book-installation/success', [PublicBookingController::class, 'websiteSuccess'])->name('public.book.website.success');
 
 // ─── Public consultation request ─────────────────────────────
 Route::post('/consultation-request', [ConsultationController::class, 'publicRequest'])->name('consultation.request');

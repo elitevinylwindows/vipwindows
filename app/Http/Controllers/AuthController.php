@@ -6,6 +6,7 @@ use App\Models\VipUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -54,7 +55,7 @@ class AuthController extends Controller
             'user_type' => 'required|in:customer,installer',
         ]);
 
-        $user = VipUser::create([
+        $userData = [
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'phone'    => $validated['phone'] ?? null,
@@ -64,7 +65,20 @@ class AuthController extends Controller
             'zip'      => $validated['zip'] ?? null,
             'role'     => $validated['user_type'],
             'password' => Hash::make($validated['password']),
-        ]);
+        ];
+
+        // Auto-generate booking slug for installers
+        if ($validated['user_type'] === 'installer') {
+            $baseSlug = Str::slug($validated['name']);
+            $slug = $baseSlug;
+            $counter = 1;
+            while (VipUser::where('booking_slug', $slug)->exists()) {
+                $slug = $baseSlug . '-' . $counter++;
+            }
+            $userData['booking_slug'] = $slug;
+        }
+
+        $user = VipUser::create($userData);
 
         Auth::login($user);
         return redirect($this->redirectByRole($user));

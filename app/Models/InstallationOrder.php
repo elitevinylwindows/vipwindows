@@ -12,6 +12,7 @@ class InstallationOrder extends Model
         'quote_id', 'portal_user_id', 'customer_name', 'customer_email', 'customer_phone',
         'install_address', 'install_address2', 'install_city', 'install_state', 'install_zip',
         'notes', 'status', 'scheduled_date', 'scheduled_slot', 'technician_id', 'created_by', 'completed_at',
+        'source', 'service_type', 'description',
     ];
 
     protected $casts = [

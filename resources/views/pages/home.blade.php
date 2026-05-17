@@ -11,7 +11,7 @@
             Licensed, insured, and backed by years of experience.
         </p>
         <div class="d-flex gap-3 justify-content-center flex-wrap">
-            <a href="{{ route('register') }}" class="btn btn-vip btn-lg px-4">
+            <a href="{{ route('public.book.website') }}" class="btn btn-vip btn-lg px-4">
                 <i class="bi bi-calendar-check me-2"></i> Book Installation
             </a>
             <a href="{{ route('services') }}" class="btn btn-outline-light btn-lg px-4">
@@ -148,9 +148,9 @@
 <section class="cta-section py-5 text-center">
     <div class="container py-3">
         <h2 class="fw-bold mb-3">Ready to Upgrade Your Windows?</h2>
-        <p class="mb-4 opacity-90">Create an account to book your installation or get in touch with our team.</p>
+        <p class="mb-4 opacity-90">Book your installation online or get in touch with our team.</p>
         <div class="d-flex gap-3 justify-content-center flex-wrap">
-            <a href="{{ route('register') }}" class="btn btn-dark btn-lg px-4">
+            <a href="{{ route('public.book.website') }}" class="btn btn-dark btn-lg px-4">
                 <i class="bi bi-calendar-check me-2"></i> Book Now
             </a>
             <a href="{{ route('contact') }}" class="btn btn-outline-dark btn-lg px-4">

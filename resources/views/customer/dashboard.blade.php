@@ -27,8 +27,8 @@
             </div>
             <div class="col-md-3">
                 <div class="card p-3 text-center">
-                    <div class="fs-3 fw-bold" style="color:var(--vip-accent);">{{ $orders->count() }}</div>
-                    <div class="text-muted small">Total Orders</div>
+                    <div class="fs-3 fw-bold" style="color:var(--vip-accent);">{{ $bookings->count() }}</div>
+                    <div class="text-muted small">Total Bookings</div>
                 </div>
             </div>
             <div class="col-md-3">
@@ -39,13 +39,13 @@
             </div>
             <div class="col-md-3">
                 <div class="card p-3 text-center">
-                    <div class="fs-3 fw-bold text-success">{{ $completed->count() }}</div>
+                    <div class="fs-3 fw-bold text-success">{{ $past->count() }}</div>
                     <div class="text-muted small">Completed</div>
                 </div>
             </div>
         </div>
 
-        {{-- Upcoming installations --}}
+        {{-- Upcoming bookings --}}
         @if($upcoming->count())
             <div class="card mb-4">
                 <div class="card-header bg-white fw-semibold">
@@ -55,16 +55,22 @@
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
-                                <tr><th>Order</th><th>Date</th><th>Time</th><th>Address</th><th>Status</th></tr>
+                                <tr><th>Booking</th><th>Date</th><th>Time</th><th>Service</th><th>Address</th><th>Status</th></tr>
                             </thead>
                             <tbody>
-                                @foreach($upcoming as $o)
+                                @foreach($upcoming as $b)
                                     <tr>
-                                        <td>#{{ $o->id }}</td>
-                                        <td>{{ $o->scheduled_date ? $o->scheduled_date->format('M d, Y') : '—' }}</td>
-                                        <td>{{ $o->scheduled_slot ?: '—' }}</td>
-                                        <td class="small">{{ $o->install_address }}, {{ $o->install_city }}</td>
-                                        <td><span class="badge" style="background:var(--vip-accent);color:#fff;">{{ ucwords(str_replace('_', ' ', $o->status)) }}</span></td>
+                                        <td class="fw-semibold">{{ $b->booking_number }}</td>
+                                        <td>{{ $b->booking_date->format('M d, Y') }}</td>
+                                        <td>{{ date('g:i A', strtotime($b->booking_time)) }}</td>
+                                        <td>{{ $b->service_type }}</td>
+                                        <td class="small">{{ $b->install_address }}@if($b->install_city), {{ $b->install_city }}@endif</td>
+                                        <td>
+                                            @php
+                                                $colors = ['pending'=>'warning','confirmed'=>'info','completed'=>'success','cancelled'=>'danger'];
+                                            @endphp
+                                            <span class="badge bg-{{ $colors[$b->status] ?? 'secondary' }}">{{ ucfirst($b->status) }}</span>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -97,11 +103,14 @@
                                         <td class="fw-semibold">{{ $quote->quote_number }}</td>
                                         <td>{{ $quote->created_at?->format('M d, Y') }}</td>
                                         <td>{{ $quote->items->count() }} item(s)</td>
-                                        <td class="fw-semibold">${{ number_format($quote->items->sum(fn($i) => $i->getRawOriginal('total')), 2) }}</td>
+                                        <td class="fw-semibold">${{ number_format($quote->grand_total, 2) }}</td>
                                         <td class="text-end">
                                             <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#viewQuote{{ $quote->id }}">
                                                 <i class="bi bi-eye me-1"></i> View
                                             </button>
+                                            <a href="{{ route('customer.book', ['installer_id' => $quote->installer_id, 'quote_id' => $quote->id]) }}" class="btn btn-sm btn-vip">
+                                                <i class="bi bi-calendar-check me-1"></i> Book
+                                            </a>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -126,7 +135,7 @@
                                 <div class="col-md-6">
                                     <p class="mb-1"><strong>Date:</strong> {{ $quote->created_at?->format('F j, Y') }}</p>
                                     @if($quote->valid_until)
-                                        <p class="mb-1"><strong>Valid Until:</strong> {{ $quote->valid_until }}</p>
+                                        <p class="mb-1"><strong>Valid Until:</strong> {{ $quote->valid_until->format('F j, Y') }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -147,19 +156,22 @@
                                             <td>{{ $item->description }}<br><small class="text-muted">{{ $item->series_type }}</small></td>
                                             <td class="text-center">{{ $item->width }}" x {{ $item->height }}"</td>
                                             <td class="text-center">{{ $item->qty }}</td>
-                                            <td class="text-end">${{ number_format($item->getRawOriginal('total'), 2) }}</td>
+                                            <td class="text-end">${{ number_format($item->total, 2) }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                                 <tfoot>
                                     <tr class="fw-bold">
                                         <td colspan="4" class="text-end">Total</td>
-                                        <td class="text-end">${{ number_format($quote->items->sum(fn($i) => $i->getRawOriginal('total')), 2) }}</td>
+                                        <td class="text-end">${{ number_format($quote->grand_total, 2) }}</td>
                                     </tr>
                                 </tfoot>
                             </table>
                         </div>
                         <div class="modal-footer">
+                            <a href="{{ route('customer.book', ['installer_id' => $quote->installer_id, 'quote_id' => $quote->id]) }}" class="btn btn-vip">
+                                <i class="bi bi-calendar-check me-1"></i> Book Installation
+                            </a>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
                     </div>
@@ -167,43 +179,37 @@
             </div>
         @endforeach
 
-        {{-- All orders --}}
-        <div class="card">
-            <div class="card-header bg-white fw-semibold">
-                <i class="bi bi-clock-history me-1"></i> Installation History
-            </div>
-            <div class="card-body p-0">
-                @if($orders->isEmpty())
-                    <div class="text-muted text-center py-5">
-                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                        No installations yet. Once your windows are ordered, they'll appear here.
-                    </div>
-                @else
+        {{-- Booking history --}}
+        @if($past->count())
+            <div class="card">
+                <div class="card-header bg-white fw-semibold">
+                    <i class="bi bi-clock-history me-1"></i> Past Bookings
+                </div>
+                <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
-                                <tr><th>Order</th><th>Date</th><th>Address</th><th>Status</th></tr>
+                                <tr><th>Booking</th><th>Date</th><th>Service</th><th>Address</th><th>Status</th></tr>
                             </thead>
                             <tbody>
-                                @foreach($orders as $o)
+                                @foreach($past as $b)
                                     <tr>
-                                        <td>#{{ $o->id }}</td>
-                                        <td>{{ $o->created_at->format('M d, Y') }}</td>
-                                        <td class="small">{{ $o->install_address }}, {{ $o->install_city }}, {{ $o->install_state }}</td>
+                                        <td class="fw-semibold">{{ $b->booking_number }}</td>
+                                        <td>{{ $b->booking_date->format('M d, Y') }}</td>
+                                        <td>{{ $b->service_type }}</td>
+                                        <td class="small">{{ $b->install_address }}@if($b->install_city), {{ $b->install_city }}@endif</td>
                                         <td>
-                                            @php
-                                                $colors = ['pending'=>'warning','scheduled'=>'info','in_progress'=>'primary','completed'=>'success','cancelled'=>'danger'];
-                                            @endphp
-                                            <span class="badge bg-{{ $colors[$o->status] ?? 'secondary' }}">{{ ucwords(str_replace('_', ' ', $o->status)) }}</span>
+                                            @php $colors = ['pending'=>'warning','confirmed'=>'info','completed'=>'success','cancelled'=>'danger']; @endphp
+                                            <span class="badge bg-{{ $colors[$b->status] ?? 'secondary' }}">{{ ucfirst($b->status) }}</span>
                                         </td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
-                @endif
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 </div>
 @endsection

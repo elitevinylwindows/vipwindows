@@ -63,6 +63,8 @@
             <a href="#" class="profile-tab active" data-section="personal"><i class="bi bi-person"></i> {{ __('installer.my_profile') }}</a>
             <a href="#" class="profile-tab" data-section="company"><i class="bi bi-building"></i> {{ __('installer.company_info') }}</a>
             <a href="#" class="profile-tab" data-section="branding"><i class="bi bi-palette"></i> {{ __('installer.company_logo') }}</a>
+            <a href="#" class="profile-tab" data-section="services"><i class="bi bi-tools"></i> My Services</a>
+            <a href="#" class="profile-tab" data-section="booking-link"><i class="bi bi-link-45deg"></i> Booking Link</a>
             <a href="#" class="profile-tab" data-section="pricing"><i class="bi bi-currency-dollar"></i> {{ __('installer.pricing') }}</a>
             <a href="#" class="profile-tab" data-section="security"><i class="bi bi-shield-lock"></i> {{ __('installer.security') }}</a>
         </nav>
@@ -236,6 +238,65 @@
             </div>
         </div>
 
+        {{-- Services Section --}}
+        <div class="profile-section" id="section-services">
+            <div class="section-title"><i class="bi bi-tools me-2"></i>My Services</div>
+            <p class="text-muted small mb-3">Define the services you offer. These will appear on your public booking page for customers to choose from.</p>
+
+            <div class="form-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Services</h6>
+                    <button class="btn btn-sm btn-vip" onclick="openServiceModal()"><i class="bi bi-plus me-1"></i> Add Service</button>
+                </div>
+                <div id="servicesListContainer">
+                    <div class="text-center py-3 text-muted small"><i class="bi bi-hourglass-split me-1"></i> Loading services...</div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Booking Link Section --}}
+        <div class="profile-section" id="section-booking-link">
+            <div class="section-title"><i class="bi bi-link-45deg me-2"></i>Public Booking Link</div>
+            <div class="form-card">
+                <h6>Your Shareable Booking Page</h6>
+                <p class="text-muted small mb-3">Share this link with your customers so they can book installations based on your availability and services.</p>
+
+                @if($user->booking_slug)
+                    <div class="input-group mb-2">
+                        <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                        <input type="text" class="form-control" id="bookingLinkInput" readonly
+                               value="{{ url('/book/installer/' . $user->booking_slug) }}">
+                        <button class="btn btn-outline-dark" onclick="copyBookingLink()">
+                            <i class="bi bi-clipboard me-1"></i> Copy
+                        </button>
+                    </div>
+                    <div id="copyFeedback" class="text-success small" style="display:none;"><i class="bi bi-check-circle me-1"></i>Copied to clipboard!</div>
+                    <div class="mt-3">
+                        <a href="{{ url('/book/installer/' . $user->booking_slug) }}" target="_blank" class="btn btn-sm btn-outline-dark">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Preview Booking Page
+                        </a>
+                    </div>
+                @else
+                    <div class="alert alert-warning small mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Your booking link will be generated automatically once you save your company name in the <strong>Company Info</strong> section.
+                    </div>
+                @endif
+            </div>
+
+            @if($user->booking_slug)
+            <div class="form-card">
+                <h6>How It Works</h6>
+                <ul class="text-muted small mb-0" style="padding-left: 1.2rem;">
+                    <li class="mb-1">Customers visit your booking link — no login required</li>
+                    <li class="mb-1">They select from the services you've set up</li>
+                    <li class="mb-1">They pick an available time slot from your calendar</li>
+                    <li class="mb-1">You receive the booking request on your Calendar page</li>
+                </ul>
+            </div>
+            @endif
+        </div>
+
         {{-- Pricing Section --}}
         <div class="profile-section" id="section-pricing">
             <div class="section-title"><i class="bi bi-currency-dollar me-2"></i>{{ __('installer.pricing') }}</div>
@@ -305,6 +366,56 @@
 </div>
 @endsection
 
+{{-- Service Modal --}}
+<div class="modal fade" id="serviceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold" id="serviceModalTitle">Add Service</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="serviceEditId">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Service Name</label>
+                    <input type="text" id="serviceName" class="form-control form-control-sm" placeholder="e.g. Window Installation" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small">Description</label>
+                    <textarea id="serviceDesc" class="form-control form-control-sm" rows="2" placeholder="Brief description of the service"></textarea>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Price ($)</label>
+                        <input type="number" id="servicePrice" class="form-control form-control-sm" step="0.01" min="0" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Price Type</label>
+                        <select id="servicePriceType" class="form-select form-select-sm">
+                            <option value="flat">Flat Rate</option>
+                            <option value="per_unit">Per Unit</option>
+                            <option value="per_hour">Per Hour</option>
+                            <option value="per_sqft">Per Sq Ft</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small">Estimated Duration (minutes)</label>
+                    <input type="number" id="serviceDuration" class="form-control form-control-sm" min="0" placeholder="e.g. 60">
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="serviceActive" checked>
+                    <label class="form-check-label small" for="serviceActive">Active (visible on booking page)</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-vip" onclick="saveService()"><i class="bi bi-check me-1"></i> Save Service</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -321,8 +432,112 @@ document.addEventListener('DOMContentLoaded', function() {
 
             this.classList.add('active');
             document.getElementById('section-' + target).classList.add('active');
+
+            if (target === 'services') loadServices();
         });
     });
 });
+
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+// ── Services CRUD ──────────────────────────
+function loadServices() {
+    fetch('{{ route("installer.services.index") }}', { headers: { 'Accept': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            const c = document.getElementById('servicesListContainer');
+            if (!data.services || !data.services.length) {
+                c.innerHTML = '<div class="text-center py-4 text-muted small"><i class="bi bi-tools fs-3 d-block mb-1"></i>No services yet. Add your first service above.</div>';
+                return;
+            }
+            let h = '<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Service</th><th>Price</th><th>Duration</th><th>Status</th><th></th></tr></thead><tbody>';
+            const typeLabels = { flat: 'Flat', per_unit: '/unit', per_hour: '/hr', per_sqft: '/sqft' };
+            data.services.forEach(s => {
+                h += `<tr>
+                    <td><div class="fw-semibold small">${s.name}</div>${s.description ? '<div class="text-muted" style="font-size:.75rem;">' + s.description + '</div>' : ''}</td>
+                    <td class="small">$${parseFloat(s.price).toFixed(2)} <span class="text-muted">${typeLabels[s.price_type] || s.price_type}</span></td>
+                    <td class="small text-muted">${s.estimated_duration ? s.estimated_duration + ' min' : '—'}</td>
+                    <td><span class="badge ${s.is_active ? 'bg-success' : 'bg-secondary'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-dark py-0 px-1" onclick='editService(${JSON.stringify(s)})'><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="deleteService(${s.id})"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            h += '</tbody></table></div>';
+            c.innerHTML = h;
+        });
+}
+
+function openServiceModal() {
+    document.getElementById('serviceEditId').value = '';
+    document.getElementById('serviceName').value = '';
+    document.getElementById('serviceDesc').value = '';
+    document.getElementById('servicePrice').value = '';
+    document.getElementById('servicePriceType').value = 'flat';
+    document.getElementById('serviceDuration').value = '';
+    document.getElementById('serviceActive').checked = true;
+    document.getElementById('serviceModalTitle').textContent = 'Add Service';
+    new bootstrap.Modal(document.getElementById('serviceModal')).show();
+}
+
+function editService(svc) {
+    document.getElementById('serviceEditId').value = svc.id;
+    document.getElementById('serviceName').value = svc.name;
+    document.getElementById('serviceDesc').value = svc.description || '';
+    document.getElementById('servicePrice').value = svc.price;
+    document.getElementById('servicePriceType').value = svc.price_type;
+    document.getElementById('serviceDuration').value = svc.estimated_duration || '';
+    document.getElementById('serviceActive').checked = !!svc.is_active;
+    document.getElementById('serviceModalTitle').textContent = 'Edit Service';
+    new bootstrap.Modal(document.getElementById('serviceModal')).show();
+}
+
+function saveService() {
+    const id = document.getElementById('serviceEditId').value;
+    const payload = {
+        name: document.getElementById('serviceName').value,
+        description: document.getElementById('serviceDesc').value,
+        price: document.getElementById('servicePrice').value,
+        price_type: document.getElementById('servicePriceType').value,
+        estimated_duration: document.getElementById('serviceDuration').value || null,
+        is_active: document.getElementById('serviceActive').checked ? 1 : 0,
+    };
+
+    const url = id ? `{{ url('installer/services') }}/${id}` : '{{ route("installer.services.store") }}';
+    const method = id ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method, headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('serviceModal')).hide();
+            loadServices();
+        }
+    });
+}
+
+function deleteService(id) {
+    if (!confirm('Delete this service?')) return;
+    fetch(`{{ url('installer/services') }}/${id}`, {
+        method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => { if (data.success) loadServices(); });
+}
+
+// ── Booking Link Copy ──────────────────────
+function copyBookingLink() {
+    const input = document.getElementById('bookingLinkInput');
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+        const fb = document.getElementById('copyFeedback');
+        fb.style.display = 'block';
+        setTimeout(() => fb.style.display = 'none', 2000);
+    });
+}
 </script>
 @endpush

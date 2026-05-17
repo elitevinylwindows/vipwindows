@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\VipUser;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class InstallerProfileController extends Controller
 {
@@ -50,6 +52,18 @@ class InstallerProfileController extends Controller
                 'company_zip'     => 'nullable|string|max:20',
             ]);
             $user->update($validated);
+
+            // Auto-generate booking slug if not set and company name exists
+            if (!$user->booking_slug && $validated['company_name']) {
+                $baseSlug = Str::slug($validated['company_name']);
+                $slug = $baseSlug;
+                $counter = 1;
+                while (VipUser::where('booking_slug', $slug)->where('id', '!=', $user->id)->exists()) {
+                    $slug = $baseSlug . '-' . $counter++;
+                }
+                $user->update(['booking_slug' => $slug]);
+            }
+
             return redirect()->route('installer.profile')->with('success', 'Company info updated.');
         }
 
