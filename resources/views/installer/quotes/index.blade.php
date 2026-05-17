@@ -94,8 +94,8 @@
             <h6>My Quotes</h6>
             <div class="iq-rail-search">
                 <input type="text" id="iqSearch" placeholder="Search quotes...">
-                <a href="{{ route('admin.quotes.create') }}" class="btn btn-sm btn-vip" title="New Quote">
-                    <i class="bi bi-plus-lg"></i>
+                <a href="{{ route('installer.quotes.index') }}" class="btn btn-sm btn-vip" title="Refresh">
+                    <i class="bi bi-arrow-clockwise"></i>
                 </a>
             </div>
             <div class="iq-rail-tabs">
@@ -139,7 +139,7 @@
             <div class="iq-empty-state">
                 <i class="bi bi-calculator"></i>
                 <p>Select a quote to view details</p>
-                <a href="{{ route('admin.quotes.create') }}" class="btn btn-vip btn-sm mt-2"><i class="bi bi-plus-circle me-1"></i> Create New Quote</a>
+                <p class="small text-muted mt-2">Select a quote from the list</p>
             </div>
         </div>
     </div>
@@ -153,7 +153,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailBody = document.getElementById('iqDetailBody');
     const detailTitle = document.getElementById('iqDetailTitle');
     const toolbarActions = document.getElementById('iqToolbarActions');
-    const csrf = document.querySelector('meta[name=csrf-token]').content;
 
     // Tab filters
     document.querySelectorAll('.iq-rail-tabs .tab-btn').forEach(btn => {
@@ -186,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadDetail(id) {
         detailBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-secondary"></div></div>';
 
-        fetch(`/admin/quotes/${id}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }})
+        fetch(`/installer/quotes/${id}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }})
             .then(r => r.json())
             .then(data => {
                 const q = data.quote;
@@ -195,8 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 detailTitle.textContent = q.quote_number;
 
                 toolbarActions.innerHTML = `
-                    <a href="/admin/quotes/${q.id}/edit" class="btn btn-sm btn-outline-primary me-2"><i class="bi bi-pencil"></i> Edit</a>
-                    <button class="btn btn-sm btn-outline-success" onclick="sendQuote(${q.id})"><i class="bi bi-send"></i> Send</button>
+                    <span class="badge ${q.status === 'sent' ? 'bg-success' : 'bg-secondary'}">${q.status ? q.status.charAt(0).toUpperCase() + q.status.slice(1) : 'Draft'}</span>
                 `;
 
                 let itemsHtml = '';
@@ -231,21 +229,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 detailBody.innerHTML = '<div class="alert alert-danger m-4">Failed to load quote details.</div>';
             });
     }
-
-    window.sendQuote = function(id) {
-        const email = prompt('Enter customer email to send quote:');
-        if (!email) return;
-        fetch(`/admin/quotes/${id}/send`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-            body: JSON.stringify({ email })
-        })
-        .then(r => r.json())
-        .then(d => {
-            if (d.success) { alert('Quote sent!'); location.reload(); }
-            else alert(d.message || 'Failed to send');
-        });
-    };
 
     // Auto-select first
     if (cards.length > 0) cards[0].click();

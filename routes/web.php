@@ -318,6 +318,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
 
     // Quotes
     Route::get('/quotes', [InstallerQuoteController::class, 'index'])->name('quotes.index');
+    Route::get('/quotes/{id}', [InstallerQuoteController::class, 'show'])->name('quotes.show');
 
     // Jobs
     Route::get('/jobs', [InstallerJobController::class, 'index'])->name('jobs.index');

@@ -19,6 +19,14 @@ class Quote extends Model
 
     public function installer()
     {
-        return $this->belongsTo(VipUser::class, 'created_by');
+        return $this->belongsTo(VipUser::class, 'installer_id');
+    }
+
+    /**
+     * Scope: quotes entered by a given user name.
+     */
+    public function scopeEnteredBy($query, string $name)
+    {
+        return $query->where('entered_by', $name);
     }
 }

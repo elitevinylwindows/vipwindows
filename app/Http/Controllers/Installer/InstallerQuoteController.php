@@ -23,4 +23,25 @@ class InstallerQuoteController extends Controller
 
         return view('installer.quotes.index', compact('quotes', 'status'));
     }
+
+    public function show($id)
+    {
+        $quote = Quote::where('entered_by', Auth::user()->name)->findOrFail($id);
+
+        $items = [];
+        try {
+            $items = $quote->items()->get()->toArray();
+        } catch (\Exception $e) {}
+
+        $subtotal = collect($items)->sum('total');
+
+        return response()->json([
+            'quote' => $quote,
+            'items' => $items,
+            'summary' => [
+                'items_count' => count($items),
+                'subtotal' => $subtotal,
+            ],
+        ]);
+    }
 }
