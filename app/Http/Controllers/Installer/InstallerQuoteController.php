@@ -13,7 +13,7 @@ class InstallerQuoteController extends Controller
     {
         $status = $request->get('status', 'all');
 
-        $query = Quote::where('created_by', Auth::id());
+        $query = Quote::where('entered_by', Auth::user()->name);
 
         if ($status !== 'all') {
             $query->where('status', $status);
