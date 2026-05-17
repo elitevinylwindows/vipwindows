@@ -334,10 +334,15 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::post('/quotes/{id}/send', [InstallerQuoteController::class, 'sendToCustomer'])->name('quotes.send');
     Route::delete('/quotes/{id}', [InstallerQuoteController::class, 'destroy'])->name('quotes.destroy');
 
+    // Calendar
+    Route::get('/calendar', [InstallerJobController::class, 'calendar'])->name('calendar');
+
     // Jobs
     Route::get('/jobs', [InstallerJobController::class, 'index'])->name('jobs.index');
     Route::post('/jobs', [InstallerJobController::class, 'store'])->name('jobs.store');
     Route::get('/jobs/{id}', [InstallerJobController::class, 'show'])->name('jobs.show');
+    Route::put('/jobs/{id}', [InstallerJobController::class, 'update'])->name('jobs.update');
+    Route::delete('/jobs/{id}', [InstallerJobController::class, 'destroy'])->name('jobs.destroy');
     Route::post('/jobs/{id}/status', [InstallerJobController::class, 'updateStatus'])->name('jobs.updateStatus');
     Route::post('/jobs/{id}/note', [InstallerJobController::class, 'addNote'])->name('jobs.addNote');
     Route::post('/jobs/{id}/item', [InstallerJobController::class, 'addItem'])->name('jobs.addItem');

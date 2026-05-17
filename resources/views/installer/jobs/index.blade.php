@@ -231,6 +231,80 @@
         </div>
     </div>
 </div>
+{{-- Edit Job Modal --}}
+<div class="modal fade" id="editJobModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background:var(--vip-primary); color:#fff; border:1px solid rgba(255,255,255,.1);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Job</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small text-white-50">Customer Name <span class="text-danger">*</span></label>
+                        <input type="text" name="customer_name" class="form-control bg-dark text-white border-secondary" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-white-50">Customer Email</label>
+                        <input type="email" name="customer_email" class="form-control bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-white-50">Customer Phone</label>
+                        <input type="text" name="customer_phone" class="form-control bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-white-50">Priority</label>
+                        <select name="priority" class="form-select bg-dark text-white border-secondary">
+                            <option value="normal">Normal</option>
+                            <option value="low">Low</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="col-12"><hr class="border-secondary my-1"><label class="form-label small text-white-50 mt-1">Install Address</label></div>
+                    <div class="col-md-12">
+                        <input type="text" name="install_address" class="form-control bg-dark text-white border-secondary" placeholder="Street address">
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" name="install_city" class="form-control bg-dark text-white border-secondary" placeholder="City">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" name="install_state" class="form-control bg-dark text-white border-secondary" placeholder="State">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="install_zip" class="form-control bg-dark text-white border-secondary" placeholder="Zip">
+                    </div>
+                    <div class="col-12"><hr class="border-secondary my-1"></div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-white-50">Scheduled Date</label>
+                        <input type="date" name="scheduled_date" class="form-control bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-white-50">Scheduled Time</label>
+                        <input type="time" name="scheduled_time" class="form-control bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-white-50">Est. Duration</label>
+                        <input type="text" name="estimated_duration" class="form-control bg-dark text-white border-secondary" placeholder="e.g. 2 hours">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small text-white-50">Description</label>
+                        <textarea name="description" rows="3" class="form-control bg-dark text-white border-secondary"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small text-white-50">Notes</label>
+                        <textarea name="notes" rows="2" class="form-control bg-dark text-white border-secondary"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="saveEditJob()"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -241,6 +315,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailTitle = document.getElementById('iqDetailTitle');
     const toolbarActions = document.getElementById('iqToolbarActions');
     const csrf = document.querySelector('meta[name=csrf-token]').content;
+    let currentJobId = null;
+    let currentJobData = null;
 
     // Tab filters
     document.querySelectorAll('.iq-rail-tabs .tab-btn').forEach(btn => {
@@ -282,12 +358,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 detailTitle.textContent = j.job_number || ('JOB-' + j.id);
 
                 // Toolbar actions
+                currentJobId = j.id;
+                currentJobData = j;
                 let actions = '';
                 if (j.status === 'pending' || j.status === 'scheduled') {
-                    actions += `<form method="POST" action="/installer/jobs/${j.id}/status" class="d-inline"><input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="status" value="in_progress"><button class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i>Start Job</button></form>`;
+                    actions += `<form method="POST" action="/installer/jobs/${j.id}/status" class="d-inline"><input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="status" value="in_progress"><button class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i>Start</button></form> `;
                 } else if (j.status === 'in_progress') {
-                    actions += `<form method="POST" action="/installer/jobs/${j.id}/status" class="d-inline"><input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="status" value="completed"><button class="btn btn-sm btn-success"><i class="bi bi-check-lg me-1"></i>Complete</button></form>`;
+                    actions += `<form method="POST" action="/installer/jobs/${j.id}/status" class="d-inline"><input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="status" value="completed"><button class="btn btn-sm btn-success"><i class="bi bi-check-lg me-1"></i>Complete</button></form> `;
                 }
+                actions += `<button class="btn btn-sm btn-outline-primary" onclick="openEditJob()" title="Edit"><i class="bi bi-pencil"></i></button> `;
+                actions += `<button class="btn btn-sm btn-outline-danger" onclick="deleteJob(${j.id}, '${j.job_number || 'JOB-' + j.id}')" title="Delete"><i class="bi bi-trash"></i></button>`;
                 toolbarActions.innerHTML = actions;
 
                 // Notes HTML
@@ -407,6 +487,79 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(r => r.json())
         .then(data => { if (data.success) loadDetail(jobId); })
         .catch(() => alert('Failed to toggle item.'));
+    };
+
+    // Edit job
+    window.openEditJob = function() {
+        if (!currentJobData) return;
+        const j = currentJobData;
+        const modal = document.getElementById('editJobModal');
+        modal.querySelector('[name="customer_name"]').value = j.customer_name || '';
+        modal.querySelector('[name="customer_email"]').value = j.customer_email || '';
+        modal.querySelector('[name="customer_phone"]').value = j.customer_phone || '';
+        modal.querySelector('[name="install_address"]').value = j.install_address || '';
+        modal.querySelector('[name="install_city"]').value = j.install_city || '';
+        modal.querySelector('[name="install_state"]').value = j.install_state || '';
+        modal.querySelector('[name="install_zip"]').value = j.install_zip || '';
+        modal.querySelector('[name="priority"]').value = j.priority || 'normal';
+        modal.querySelector('[name="scheduled_date"]').value = j.scheduled_date ? j.scheduled_date.substring(0,10) : '';
+        modal.querySelector('[name="scheduled_time"]').value = j.scheduled_time || '';
+        modal.querySelector('[name="estimated_duration"]').value = j.estimated_duration || '';
+        modal.querySelector('[name="description"]').value = j.description || '';
+        modal.querySelector('[name="notes"]').value = j.notes || '';
+        new bootstrap.Modal(modal).show();
+    };
+
+    window.saveEditJob = function() {
+        if (!currentJobId) return;
+        const modal = document.getElementById('editJobModal');
+        const formData = {};
+        modal.querySelectorAll('input[name], select[name], textarea[name]').forEach(el => {
+            formData[el.name] = el.value;
+        });
+
+        fetch(`/installer/jobs/${currentJobId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify(formData)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(modal).hide();
+                loadDetail(currentJobId);
+                // Update left rail card text
+                const card = document.querySelector(`.iq-card[data-id="${currentJobId}"]`);
+                if (card) {
+                    card.querySelector('.q-customer').innerHTML = '<i class="bi bi-person me-1"></i>' + (formData.customer_name || 'No customer');
+                }
+            } else {
+                alert('Failed to update job.');
+            }
+        })
+        .catch(() => alert('Failed to update job.'));
+    };
+
+    // Delete job
+    window.deleteJob = function(jobId, jobNumber) {
+        if (!confirm(`Delete job ${jobNumber}? This cannot be undone.`)) return;
+        fetch(`/installer/jobs/${jobId}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const card = document.querySelector(`.iq-card[data-id="${jobId}"]`);
+                if (card) card.remove();
+                detailBody.innerHTML = '<div class="iq-empty-state"><i class="bi bi-tools"></i><p>Job deleted. Select another job.</p></div>';
+                toolbarActions.innerHTML = '';
+                detailTitle.textContent = 'Job Details';
+            } else {
+                alert('Failed to delete job.');
+            }
+        })
+        .catch(() => alert('Failed to delete job.'));
     };
 
     // Auto-select first

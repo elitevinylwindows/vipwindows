@@ -154,6 +154,9 @@
             <a href="{{ route('installer.jobs.index') }}" class="{{ request()->routeIs('installer.jobs.*') ? 'active' : '' }}">
                 <i class="bi bi-tools"></i> My Jobs
             </a>
+            <a href="{{ route('installer.calendar') }}" class="{{ request()->routeIs('installer.calendar') ? 'active' : '' }}">
+                <i class="bi bi-calendar3"></i> Calendar
+            </a>
             <a href="{{ route('installer.invoices.index') }}" class="{{ request()->routeIs('installer.invoices.*') ? 'active' : '' }}">
                 <i class="bi bi-receipt"></i> My Invoices
             </a>

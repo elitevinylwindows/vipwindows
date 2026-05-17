@@ -11,6 +11,38 @@ use Illuminate\Support\Facades\Auth;
 
 class InstallerJobController extends Controller
 {
+    public function calendar(Request $request)
+    {
+        $month = $request->get('month', now()->month);
+        $year = $request->get('year', now()->year);
+
+        $startOfMonth = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $endOfMonth = $startOfMonth->copy()->endOfMonth();
+
+        // Get all jobs for the month
+        $jobs = Job::where('assigned_to', Auth::id())
+            ->whereNotNull('scheduled_date')
+            ->whereBetween('scheduled_date', [$startOfMonth, $endOfMonth])
+            ->orderBy('scheduled_date')
+            ->orderBy('scheduled_time')
+            ->get();
+
+        // Group by date
+        $jobsByDate = $jobs->groupBy(fn($j) => $j->scheduled_date->format('Y-m-d'));
+
+        // Stats
+        $totalMonth = $jobs->count();
+        $pending = $jobs->where('status', 'pending')->count();
+        $scheduled = $jobs->where('status', 'scheduled')->count();
+        $inProgress = $jobs->where('status', 'in_progress')->count();
+        $completed = $jobs->where('status', 'completed')->count();
+
+        return view('installer.calendar', compact(
+            'jobs', 'jobsByDate', 'month', 'year', 'startOfMonth', 'endOfMonth',
+            'totalMonth', 'pending', 'scheduled', 'inProgress', 'completed'
+        ));
+    }
+
     public function index(Request $request)
     {
         $status = $request->get('status', 'all');
@@ -175,5 +207,38 @@ class InstallerJobController extends Controller
         $item->update(['completed' => !$item->completed]);
 
         return response()->json(['success' => true, 'completed' => $item->completed]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+
+        $validated = $request->validate([
+            'customer_name'    => 'required|string|max:255',
+            'customer_email'   => 'nullable|email|max:255',
+            'customer_phone'   => 'nullable|string|max:50',
+            'install_address'  => 'nullable|string|max:500',
+            'install_city'     => 'nullable|string|max:100',
+            'install_state'    => 'nullable|string|max:50',
+            'install_zip'      => 'nullable|string|max:20',
+            'description'      => 'nullable|string|max:5000',
+            'priority'         => 'nullable|in:low,normal,high,urgent',
+            'scheduled_date'   => 'nullable|date',
+            'scheduled_time'   => 'nullable|string|max:20',
+            'estimated_duration' => 'nullable|string|max:50',
+            'notes'            => 'nullable|string|max:5000',
+        ]);
+
+        $job->update($validated);
+
+        return response()->json(['success' => true, 'job' => $job->fresh()]);
+    }
+
+    public function destroy($id)
+    {
+        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+        $job->delete();
+
+        return response()->json(['success' => true]);
     }
 }
