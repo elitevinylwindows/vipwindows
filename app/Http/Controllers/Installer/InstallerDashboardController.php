@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
-use App\Models\Quote;
+use App\Models\VipQuote as Quote;
 use App\Models\Job;
 use App\Models\Invoice;
 use Illuminate\Support\Facades\Auth;

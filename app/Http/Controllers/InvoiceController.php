@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Quote;
+use App\Models\VipQuote as Quote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -43,7 +43,7 @@ class InvoiceController extends Controller
             'due_date' => 'nullable|date',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
             'notes' => 'nullable|string',
-            'from_quote' => 'nullable|exists:elitevw_sales_quotes,id',
+            'from_quote' => 'nullable|exists:vip_quotes,id',
         ]);
 
         // Generate invoice number

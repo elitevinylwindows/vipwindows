@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
-use App\Models\Quote;
-use App\Models\QuoteItem;
+use App\Models\VipQuote as Quote;
+use App\Models\VipQuoteItem as QuoteItem;
 use App\Models\Series;
 use App\Models\SeriesConfiguration;
 use App\Models\ColorConfiguration;

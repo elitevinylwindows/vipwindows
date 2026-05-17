@@ -40,7 +40,7 @@ class InstallerCustomerController extends Controller
         $jobs = [];
         $invoices = [];
         try {
-            $quotes = \App\Models\Quote::where('billing_name', $customer->name)
+            $quotes = \App\Models\VipQuote::where('billing_name', $customer->name)
                 ->orWhere('billing_email', $customer->email)
                 ->latest()
                 ->take(20)

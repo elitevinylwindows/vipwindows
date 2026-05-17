@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Job;
 use App\Models\JobNote;
-use App\Models\Quote;
+use App\Models\VipQuote as Quote;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -62,7 +62,7 @@ class JobController extends Controller
             'scheduled_time' => 'nullable|string|max:20',
             'estimated_duration' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
-            'from_quote' => 'nullable|exists:elitevw_sales_quotes,id',
+            'from_quote' => 'nullable|exists:vip_quotes,id',
             'from_invoice' => 'nullable|exists:vip_invoices,id',
         ]);
 

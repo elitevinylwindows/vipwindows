@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CalendarSlot;
 use App\Models\InstallationOrder;
-use App\Models\Quote;
+use App\Models\VipQuote as Quote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
