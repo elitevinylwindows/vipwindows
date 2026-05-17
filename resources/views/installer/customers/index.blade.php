@@ -69,6 +69,31 @@
     .ic-info-card .value { font-size: .9rem; font-weight: 600; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ic-info-card .value.wrap { white-space: normal; overflow: visible; text-overflow: unset; }
 
+    /* Accordion styles */
+    .ic-accordion { margin-top: 1rem; }
+    .ic-accordion .accordion-button {
+        padding: .6rem 1rem; font-size: .85rem; font-weight: 600;
+        background: #fff; color: #111; box-shadow: none;
+    }
+    .ic-accordion .accordion-button:not(.collapsed) { background: rgba(201,168,76,.06); color: var(--vip-accent); }
+    .ic-accordion .accordion-button::after { width: .9rem; height: .9rem; background-size: .9rem; }
+    .ic-accordion .accordion-body { padding: .5rem; }
+    .ic-accordion .badge-count { font-size: .7rem; background: rgba(0,0,0,.08); color: #555; padding: 1px 7px; border-radius: 10px; margin-left: .5rem; }
+    .ic-mini-tbl { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    .ic-mini-tbl th { font-size: .65rem; text-transform: uppercase; letter-spacing: .5px; color: #888; padding: .4rem .6rem; border-bottom: 1px solid rgba(0,0,0,.08); background: #fafaf7; text-align: left; }
+    .ic-mini-tbl td { padding: .4rem .6rem; border-bottom: 1px solid rgba(0,0,0,.04); }
+    .ic-mini-tbl tr:hover td { background: rgba(201,168,76,.04); }
+    .ic-mini-tbl .badge-status { font-size: .6rem; padding: 2px 6px; border-radius: 3px; font-weight: 600; text-transform: uppercase; }
+    .badge-draft { background: #eee; color: #666; }
+    .badge-sent { background: #d4edda; color: #155724; }
+    .badge-approved { background: #cce5ff; color: #004085; }
+    .badge-paid { background: #d4edda; color: #155724; }
+    .badge-pending { background: #fff3cd; color: #856404; }
+    .badge-completed { background: #d4edda; color: #155724; }
+    .badge-active, .badge-in_progress { background: #cce5ff; color: #004085; }
+    .badge-scheduled { background: #e2e3f1; color: #383d6e; }
+    .ic-empty-tbl { text-align: center; padding: 1.5rem; color: rgba(0,0,0,.35); font-size: .8rem; }
+
     @media (max-width: 991.98px) {
         .ic-container { flex-direction: column; height: auto; }
         .ic-rail { width: 100%; min-width: 100%; max-height: 45vh; }
@@ -256,19 +281,56 @@ document.addEventListener('DOMContentLoaded', function() {
                     </form>
                 `;
 
-                const address = [c.address, c.city, c.state, c.zip].filter(Boolean).join(', ') || '—';
-                const esc = s => { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; };
+                const quotesHtml = buildQuotesTable(data.quotes || []);
+                const jobsHtml = buildJobsTable(data.jobs || []);
+                const invoicesHtml = buildInvoicesTable(data.invoices || []);
+                const qCount = (data.stats?.quotes || 0);
+                const jCount = (data.stats?.jobs || 0);
+                const iCount = (data.stats?.invoices || 0);
 
                 detailBody.innerHTML = `
                     <div class="ic-info-grid">
                         <div class="ic-info-card"><div class="label">Email</div><div class="value" title="${esc(c.email) || ''}">${esc(c.email) || '—'}</div></div>
                         <div class="ic-info-card"><div class="label">Phone</div><div class="value">${esc(c.phone) || '—'}</div></div>
                         <div class="ic-info-card"><div class="label">Type</div><div class="value"><span class="badge" style="background:rgba(201,168,76,.15);color:#8b6914;">${(c.customer_type || 'homeowner').charAt(0).toUpperCase() + (c.customer_type || 'homeowner').slice(1)}</span></div></div>
-                        <div class="ic-info-card"><div class="label">Quotes</div><div class="value" style="color:var(--vip-accent);">${data.stats?.quotes || 0}</div></div>
+                        <div class="ic-info-card"><div class="label">Quotes</div><div class="value" style="color:var(--vip-accent);">${qCount}</div></div>
                         <div class="ic-info-card"><div class="label">Address</div><div class="value wrap">${esc(c.address || '')}${c.city ? '<br>' + esc(c.city) + ', ' + esc(c.state || '') + ' ' + esc(c.zip || '') : ''}</div></div>
                         <div class="ic-info-card"><div class="label">Joined</div><div class="value">${c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}) : '—'}</div></div>
                     </div>
-                    ${c.notes ? `<div class="p-3 bg-white rounded border"><div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:4px">Notes</div><div style="font-size:.85rem">${esc(c.notes)}</div></div>` : ''}
+                    ${c.notes ? `<div class="p-3 bg-white rounded border mb-3"><div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:4px">Notes</div><div style="font-size:.85rem">${esc(c.notes)}</div></div>` : ''}
+
+                    <div class="ic-accordion accordion" id="custAccordion">
+                        <div class="accordion-item border rounded mb-2">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#accQuotes">
+                                    <i class="bi bi-file-earmark-text me-2"></i> Quotes <span class="badge-count">${qCount}</span>
+                                </button>
+                            </h2>
+                            <div id="accQuotes" class="accordion-collapse collapse show" data-bs-parent="#custAccordion">
+                                <div class="accordion-body">${quotesHtml}</div>
+                            </div>
+                        </div>
+                        <div class="accordion-item border rounded mb-2">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accJobs">
+                                    <i class="bi bi-tools me-2"></i> Jobs <span class="badge-count">${jCount}</span>
+                                </button>
+                            </h2>
+                            <div id="accJobs" class="accordion-collapse collapse" data-bs-parent="#custAccordion">
+                                <div class="accordion-body">${jobsHtml}</div>
+                            </div>
+                        </div>
+                        <div class="accordion-item border rounded mb-2">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accInvoices">
+                                    <i class="bi bi-receipt me-2"></i> Invoices <span class="badge-count">${iCount}</span>
+                                </button>
+                            </h2>
+                            <div id="accInvoices" class="accordion-collapse collapse" data-bs-parent="#custAccordion">
+                                <div class="accordion-body">${invoicesHtml}</div>
+                            </div>
+                        </div>
+                    </div>
                 `;
             })
             .catch(() => {
@@ -291,6 +353,50 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('ecNotes').value = c.notes || '';
         new bootstrap.Modal(document.getElementById('editCustomerModal')).show();
     };
+
+    function fmtDate(d) {
+        if (!d) return '—';
+        return new Date(d).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'});
+    }
+    function statusBadge(s) {
+        const cls = 'badge-' + (s || 'draft').toLowerCase().replace(/\s+/g, '_');
+        return `<span class="badge-status ${cls}">${(s || 'draft').charAt(0).toUpperCase() + (s || 'draft').slice(1)}</span>`;
+    }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    function buildQuotesTable(quotes) {
+        if (!quotes.length) return '<div class="ic-empty-tbl"><i class="bi bi-file-earmark-text d-block mb-1" style="font-size:1.3rem;opacity:.3;"></i>No quotes found</div>';
+        let rows = quotes.map(q => `<tr>
+            <td class="fw-semibold">${esc(q.quote_number)}</td>
+            <td>${statusBadge(q.status)}</td>
+            <td>${fmtDate(q.created_at)}</td>
+            <td>${fmtDate(q.valid_until)}</td>
+        </tr>`).join('');
+        return `<table class="ic-mini-tbl"><thead><tr><th>Quote #</th><th>Status</th><th>Date</th><th>Valid Until</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function buildJobsTable(jobs) {
+        if (!jobs.length) return '<div class="ic-empty-tbl"><i class="bi bi-tools d-block mb-1" style="font-size:1.3rem;opacity:.3;"></i>No jobs found</div>';
+        let rows = jobs.map(j => `<tr>
+            <td class="fw-semibold">${esc(j.job_number)}</td>
+            <td>${statusBadge(j.status)}</td>
+            <td>${fmtDate(j.scheduled_date)}</td>
+            <td class="text-muted small">${esc(j.description || '').substring(0, 40)}${(j.description || '').length > 40 ? '...' : ''}</td>
+        </tr>`).join('');
+        return `<table class="ic-mini-tbl"><thead><tr><th>Job #</th><th>Status</th><th>Scheduled</th><th>Description</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function buildInvoicesTable(invoices) {
+        if (!invoices.length) return '<div class="ic-empty-tbl"><i class="bi bi-receipt d-block mb-1" style="font-size:1.3rem;opacity:.3;"></i>No invoices found</div>';
+        let rows = invoices.map(i => `<tr>
+            <td class="fw-semibold">${esc(i.invoice_number)}</td>
+            <td>${statusBadge(i.status)}</td>
+            <td>$${parseFloat(i.total || 0).toFixed(2)}</td>
+            <td>$${parseFloat(i.balance_due || 0).toFixed(2)}</td>
+            <td>${fmtDate(i.due_date)}</td>
+        </tr>`).join('');
+        return `<table class="ic-mini-tbl"><thead><tr><th>Invoice #</th><th>Status</th><th>Total</th><th>Balance</th><th>Due</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
 
     if (cards.length > 0) cards[0].click();
 });
