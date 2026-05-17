@@ -27,7 +27,8 @@ class InstallerQuoteController extends Controller
     public function create()
     {
         $customers = \App\Models\VipUser::where('role', 'customer')->orderBy('name')->get();
-        return view('installer.quotes.create', compact('customers'));
+        $quotes = Quote::where('entered_by', Auth::user()->name)->latest()->take(50)->get();
+        return view('installer.quotes.create', compact('customers', 'quotes'));
     }
 
     public function store(Request $request)

@@ -43,6 +43,18 @@
     .iq-card.active { background: rgba(201,168,76,.12); border-color: var(--vip-accent); }
     .iq-card .q-number { font-weight: 600; font-size: .9rem; color: #fff; }
     .iq-card .q-customer { font-size: .78rem; color: rgba(255,255,255,.55); margin-top: 2px; }
+    .iq-card .q-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .iq-card .q-actions { display: none; gap: .25rem; }
+    .iq-card:hover .q-actions { display: flex; }
+    .iq-card .q-actions .btn-icon {
+        width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+        border-radius: 3px; border: none; cursor: pointer; font-size: .7rem;
+        transition: all .15s;
+    }
+    .iq-card .q-actions .btn-edit { background: rgba(201,168,76,.2); color: var(--vip-accent); }
+    .iq-card .q-actions .btn-edit:hover { background: rgba(201,168,76,.4); }
+    .iq-card .q-actions .btn-delete { background: rgba(220,53,69,.15); color: #dc3545; }
+    .iq-card .q-actions .btn-delete:hover { background: rgba(220,53,69,.3); }
     .iq-card .q-meta { display: flex; justify-content: space-between; align-items: center; margin-top: .35rem; }
     .iq-card .q-date { font-size: .7rem; color: rgba(255,255,255,.4); }
     .iq-card .q-badge { font-size: .6rem; padding: 2px 6px; border-radius: 3px; font-weight: 600; text-transform: uppercase; }
@@ -108,7 +120,13 @@
         <div class="iq-rail-list">
             @forelse($quotes as $quote)
                 <div class="iq-card" data-id="{{ $quote->id }}" data-search="{{ strtolower($quote->quote_number . ' ' . ($quote->billing_name ?? '') . ' ' . ($quote->customer_number ?? '')) }}">
-                    <div class="q-number">{{ $quote->quote_number }}</div>
+                    <div class="q-top">
+                        <div class="q-number">{{ $quote->quote_number }}</div>
+                        <div class="q-actions">
+                            <button class="btn-icon btn-edit" title="Edit" onclick="event.stopPropagation(); editQuote({{ $quote->id }})"><i class="bi bi-pencil"></i></button>
+                            <button class="btn-icon btn-delete" title="Delete" onclick="event.stopPropagation(); deleteQuote({{ $quote->id }}, '{{ $quote->quote_number }}')"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
                     <div class="q-customer"><i class="bi bi-person me-1"></i>{{ $quote->billing_name ?: $quote->customer_number ?: 'No customer' }}</div>
                     <div class="q-meta">
                         <span class="q-date">{{ $quote->created_at?->format('M d, Y') }}</span>
@@ -153,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailBody = document.getElementById('iqDetailBody');
     const detailTitle = document.getElementById('iqDetailTitle');
     const toolbarActions = document.getElementById('iqToolbarActions');
+    const csrf = document.querySelector('meta[name=csrf-token]').content;
 
     // Tab filters
     document.querySelectorAll('.iq-rail-tabs .tab-btn').forEach(btn => {
