@@ -316,14 +316,23 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
 Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('installer.')->group(function () {
     Route::get('/', [InstallerDashboardController::class, 'index'])->name('dashboard');
 
-    // Quotes
+    // Quotes (full configurator — mirrors enterprise)
     Route::get('/quotes', [InstallerQuoteController::class, 'index'])->name('quotes.index');
     Route::get('/quotes/create', [InstallerQuoteController::class, 'create'])->name('quotes.create');
     Route::post('/quotes', [InstallerQuoteController::class, 'store'])->name('quotes.store');
-    Route::get('/quotes/{id}/edit', [InstallerQuoteController::class, 'edit'])->name('quotes.edit');
-    Route::put('/quotes/{id}', [InstallerQuoteController::class, 'update'])->name('quotes.update');
-    Route::delete('/quotes/{id}', [InstallerQuoteController::class, 'destroy'])->name('quotes.destroy');
+    Route::post('/quotes/check-price', [InstallerQuoteController::class, 'checkPrice'])->name('quotes.checkPrice');
+    Route::get('/quotes/panel-layout', [InstallerQuoteController::class, 'panelLayout'])->name('quotes.panel-layout');
+    Route::get('/quotes/shapes', [InstallerQuoteController::class, 'shapes'])->name('quotes.shapes');
+    Route::get('/quotes/series-map', [InstallerQuoteController::class, 'seriesMap'])->name('quotes.seriesMap');
     Route::get('/quotes/{id}', [InstallerQuoteController::class, 'show'])->name('quotes.show');
+    Route::put('/quotes/{id}', [InstallerQuoteController::class, 'update'])->name('quotes.update');
+    Route::get('/quotes/{id}/edit', [InstallerQuoteController::class, 'edit'])->name('quotes.edit');
+    Route::post('/quotes/{id}/save-draft', [InstallerQuoteController::class, 'saveDraft'])->name('quotes.saveDraft');
+    Route::post('/quotes/{id}/item', [InstallerQuoteController::class, 'storeItem'])->name('quotes.storeItem');
+    Route::delete('/quotes/{id}/item/{itemId}', [InstallerQuoteController::class, 'deleteItem'])->name('quotes.deleteItem');
+    Route::post('/quotes/{id}/apply-discounts', [InstallerQuoteController::class, 'applyDiscounts'])->name('quotes.applyDiscounts');
+    Route::post('/quotes/{id}/send', [InstallerQuoteController::class, 'sendToCustomer'])->name('quotes.send');
+    Route::delete('/quotes/{id}', [InstallerQuoteController::class, 'destroy'])->name('quotes.destroy');
 
     // Jobs
     Route::get('/jobs', [InstallerJobController::class, 'index'])->name('jobs.index');

@@ -179,12 +179,6 @@
                 <span><span class="hub-icon"><i class="bi bi-file-earmark-text"></i></span> Quotes</span>
                 <span class="hub-count">{{ $totalQuotes }}</span>
             </a>
-            <a href="{{ route('installer.jobs.index') }}" class="hub-link {{ request()->routeIs('installer.jobs.*') ? 'active' : '' }}">
-                <span><span class="hub-icon"><i class="bi bi-tools"></i></span> Jobs</span>
-            </a>
-            <a href="{{ route('installer.invoices.index') }}" class="hub-link {{ request()->routeIs('installer.invoices.*') ? 'active' : '' }}">
-                <span><span class="hub-icon"><i class="bi bi-receipt"></i></span> Invoices</span>
-            </a>
         </div>
 
         <div class="hub-section">
@@ -203,12 +197,6 @@
             </a>
         </div>
 
-        <div class="hub-section">
-            <div class="hub-section-title">Customers</div>
-            <a href="{{ route('installer.customers.index') }}" class="hub-link {{ request()->routeIs('installer.customers.*') ? 'active' : '' }}">
-                <span><span class="hub-icon"><i class="bi bi-people"></i></span> My Customers</span>
-            </a>
-        </div>
     </div>
 
     {{-- Main Content --}}
@@ -231,9 +219,10 @@
 
         {{-- Tab bar --}}
         <div class="tab-bar">
-            <a href="{{ route('installer.quotes.index') }}" class="tab-btn {{ $status === 'all' ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i> Quotes</a>
-            <a href="{{ route('installer.jobs.index') }}" class="tab-btn"><i class="bi bi-tools"></i> Jobs</a>
-            <a href="{{ route('installer.invoices.index') }}" class="tab-btn"><i class="bi bi-receipt"></i> Invoices</a>
+            <a href="{{ route('installer.quotes.index') }}" class="tab-btn {{ $status === 'all' ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i> All Quotes</a>
+            <a href="{{ route('installer.quotes.index', ['status' => 'draft']) }}" class="tab-btn {{ $status === 'draft' ? 'active' : '' }}">Draft</a>
+            <a href="{{ route('installer.quotes.index', ['status' => 'sent']) }}" class="tab-btn {{ $status === 'sent' ? 'active' : '' }}">Sent</a>
+            <a href="{{ route('installer.quotes.index', ['status' => 'approved']) }}" class="tab-btn {{ $status === 'approved' ? 'active' : '' }}">Approved</a>
             <div class="search-box">
                 <i class="bi bi-search"></i>
                 <input type="text" id="iqSearch" placeholder="Search...">
