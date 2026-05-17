@@ -320,6 +320,9 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/quotes', [InstallerQuoteController::class, 'index'])->name('quotes.index');
     Route::get('/quotes/create', [InstallerQuoteController::class, 'create'])->name('quotes.create');
     Route::post('/quotes', [InstallerQuoteController::class, 'store'])->name('quotes.store');
+    Route::get('/quotes/{id}/edit', [InstallerQuoteController::class, 'edit'])->name('quotes.edit');
+    Route::put('/quotes/{id}', [InstallerQuoteController::class, 'update'])->name('quotes.update');
+    Route::delete('/quotes/{id}', [InstallerQuoteController::class, 'destroy'])->name('quotes.destroy');
     Route::get('/quotes/{id}', [InstallerQuoteController::class, 'show'])->name('quotes.show');
 
     // Jobs

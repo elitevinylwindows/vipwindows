@@ -249,6 +249,24 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
+    // Edit quote - navigate to edit page
+    window.editQuote = function(id) {
+        window.location.href = `/installer/quotes/${id}/edit`;
+    };
+
+    // Delete quote
+    window.deleteQuote = function(id, number) {
+        if (!confirm(`Delete quote ${number}? This cannot be undone.`)) return;
+        fetch(`/installer/quotes/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        })
+        .then(r => {
+            if (r.ok) location.reload();
+            else alert('Failed to delete quote.');
+        });
+    };
+
     // Auto-select first
     if (cards.length > 0) cards[0].click();
 });
