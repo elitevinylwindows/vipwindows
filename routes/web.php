@@ -330,6 +330,10 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
 
     // Customers
     Route::get('/customers', [InstallerCustomerController::class, 'index'])->name('customers.index');
+    Route::post('/customers', [InstallerCustomerController::class, 'store'])->name('customers.store');
+    Route::get('/customers/{id}', [InstallerCustomerController::class, 'show'])->name('customers.show');
+    Route::put('/customers/{id}', [InstallerCustomerController::class, 'update'])->name('customers.update');
+    Route::delete('/customers/{id}', [InstallerCustomerController::class, 'destroy'])->name('customers.destroy');
 
     // Profile
     Route::get('/profile', [InstallerProfileController::class, 'index'])->name('profile');

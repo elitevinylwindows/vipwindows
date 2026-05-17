@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sign In — VIP Windows</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
@@ -109,6 +111,21 @@
         <div class="text-center mt-2 small text-muted" id="portalHint">
             Sign in to book installations and track your projects.
         </div>
+
+        {{-- Demo Credentials --}}
+        <div class="mt-3 pt-3" style="border-top: 1px solid #e9ecef;">
+            <p class="text-muted text-center mb-2" style="font-size:.75rem; text-transform:uppercase; letter-spacing:1px;">Demo Accounts</p>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill demo-login-btn"
+                        data-email="installer@demo.vipwindows.net" data-password="demo1234">
+                    <i class="bi bi-tools me-1"></i> Installer
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill demo-login-btn"
+                        data-email="customer@demo.vipwindows.net" data-password="demo1234">
+                    <i class="bi bi-house-door me-1"></i> Customer
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -120,6 +137,16 @@
                 } else {
                     hint.textContent = 'Sign in to book installations and track your projects.';
                 }
+            });
+        });
+
+        // Demo login buttons
+        document.querySelectorAll('.demo-login-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const form = document.querySelector('form[action]');
+                form.querySelector('input[name="email"]').value = this.dataset.email;
+                form.querySelector('input[name="password"]').value = this.dataset.password;
+                form.submit();
             });
         });
     </script>

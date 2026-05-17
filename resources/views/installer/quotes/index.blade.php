@@ -1,127 +1,254 @@
 @extends('layouts.installer')
 @section('title', 'My Quotes')
 
-@section('content')
-<div class="container-fluid py-4 px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0"><i class="bi bi-calculator me-2"></i>My Quotes</h4>
-        <a href="{{ route('admin.quotes.create') }}" class="btn btn-vip">
-            <i class="bi bi-plus-circle me-1"></i> New Quote
-        </a>
-    </div>
+@push('styles')
+<style>
+    .iq-container { display: flex; height: calc(100vh - 56px); overflow: hidden; }
 
-    {{-- Status filter --}}
-    <div class="mb-4">
-        <div class="btn-group btn-group-sm" role="group">
-            <a href="{{ route('installer.quotes.index') }}" class="btn {{ $status === 'all' ? 'btn-dark' : 'btn-outline-dark' }}">All</a>
-            <a href="{{ route('installer.quotes.index', ['status' => 'draft']) }}" class="btn {{ $status === 'draft' ? 'btn-dark' : 'btn-outline-dark' }}">Draft</a>
-            <a href="{{ route('installer.quotes.index', ['status' => 'sent']) }}" class="btn {{ $status === 'sent' ? 'btn-dark' : 'btn-outline-dark' }}">Sent</a>
+    /* ── Left Rail ─────────────────────────────── */
+    .iq-rail {
+        width: 320px; min-width: 320px;
+        background: var(--vip-primary);
+        color: #fff;
+        display: flex; flex-direction: column;
+        border-right: 1px solid rgba(255,255,255,.06);
+    }
+    .iq-rail-header { padding: 1.25rem 1rem .75rem; }
+    .iq-rail-header h6 { font-size: .75rem; text-transform: uppercase; letter-spacing: 1.2px; color: rgba(255,255,255,.5); margin-bottom: .75rem; }
+    .iq-rail-search { display: flex; gap: .5rem; }
+    .iq-rail-search input {
+        flex: 1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+        color: #fff; border-radius: .375rem; padding: .4rem .75rem; font-size: .85rem;
+    }
+    .iq-rail-search input::placeholder { color: rgba(255,255,255,.4); }
+    .iq-rail-search input:focus { outline: none; border-color: var(--vip-accent); }
+
+    .iq-rail-tabs { display: flex; gap: 0; padding: 0 1rem; margin-top: .75rem; }
+    .iq-rail-tabs .tab-btn {
+        flex: 1; text-align: center; padding: .4rem .5rem; font-size: .75rem;
+        background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+        color: rgba(255,255,255,.6); cursor: pointer; transition: all .15s;
+    }
+    .iq-rail-tabs .tab-btn:first-child { border-radius: .3rem 0 0 .3rem; }
+    .iq-rail-tabs .tab-btn:last-child { border-radius: 0 .3rem .3rem 0; }
+    .iq-rail-tabs .tab-btn.active { background: var(--vip-accent); color: #fff; border-color: var(--vip-accent); }
+
+    .iq-rail-list { flex: 1; overflow-y: auto; padding: .5rem; }
+    .iq-card {
+        background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+        border-radius: .5rem; padding: .75rem 1rem; margin-bottom: .5rem;
+        cursor: pointer; transition: all .15s;
+    }
+    .iq-card:hover { background: rgba(255,255,255,.08); border-color: rgba(201,168,76,.3); }
+    .iq-card.active { background: rgba(201,168,76,.12); border-color: var(--vip-accent); }
+    .iq-card .q-number { font-weight: 600; font-size: .9rem; color: #fff; }
+    .iq-card .q-customer { font-size: .78rem; color: rgba(255,255,255,.55); margin-top: 2px; }
+    .iq-card .q-meta { display: flex; justify-content: space-between; align-items: center; margin-top: .35rem; }
+    .iq-card .q-date { font-size: .7rem; color: rgba(255,255,255,.4); }
+    .iq-card .q-badge { font-size: .6rem; padding: 2px 6px; border-radius: 3px; font-weight: 600; text-transform: uppercase; }
+    .q-badge-draft { background: rgba(108,117,125,.25); color: #adb5bd; }
+    .q-badge-sent { background: rgba(40,167,69,.25); color: #7ddf9b; }
+
+    .iq-rail-footer {
+        padding: .75rem 1rem; border-top: 1px solid rgba(255,255,255,.08);
+        font-size: .75rem; color: rgba(255,255,255,.4);
+        display: flex; justify-content: space-between;
+    }
+
+    /* ── Main Panel ────────────────────────────── */
+    .iq-main { flex: 1; overflow-y: auto; background: var(--vip-light); }
+    .iq-main-toolbar {
+        background: #fff; border-bottom: 1px solid rgba(0,0,0,.06);
+        padding: .75rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .iq-main-toolbar h5 { font-size: 1rem; font-weight: 700; margin: 0; }
+    .iq-detail-body { padding: 1.5rem; }
+
+    .iq-empty-state {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        height: 60vh; color: rgba(0,0,0,.35);
+    }
+    .iq-empty-state i { font-size: 3rem; margin-bottom: 1rem; }
+
+    .iq-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .iq-info-card { background: #fff; border-radius: .5rem; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .iq-info-card .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.45); margin-bottom: .25rem; }
+    .iq-info-card .value { font-size: 1rem; font-weight: 600; color: #111; }
+
+    .iq-items-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: .5rem; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .iq-items-table th { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.4); padding: .6rem 1rem; border-bottom: 1px solid rgba(0,0,0,.08); background: #fafafa; }
+    .iq-items-table td { padding: .6rem 1rem; font-size: .85rem; border-bottom: 1px solid rgba(0,0,0,.04); }
+
+    @media (max-width: 991.98px) {
+        .iq-container { flex-direction: column; height: auto; }
+        .iq-rail { width: 100%; min-width: 100%; max-height: 45vh; }
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="iq-container">
+    {{-- Left Rail --}}
+    <div class="iq-rail">
+        <div class="iq-rail-header">
+            <h6>My Quotes</h6>
+            <div class="iq-rail-search">
+                <input type="text" id="iqSearch" placeholder="Search quotes...">
+                <a href="{{ route('admin.quotes.create') }}" class="btn btn-sm btn-vip" title="New Quote">
+                    <i class="bi bi-plus-lg"></i>
+                </a>
+            </div>
+            <div class="iq-rail-tabs">
+                <div class="tab-btn {{ $status === 'all' ? 'active' : '' }}" data-status="all">All</div>
+                <div class="tab-btn {{ $status === 'draft' ? 'active' : '' }}" data-status="draft">Draft</div>
+                <div class="tab-btn {{ $status === 'sent' ? 'active' : '' }}" data-status="sent">Sent</div>
+            </div>
+        </div>
+
+        <div class="iq-rail-list">
+            @forelse($quotes as $quote)
+                <div class="iq-card" data-id="{{ $quote->id }}" data-search="{{ strtolower($quote->quote_number . ' ' . ($quote->billing_name ?? '') . ' ' . ($quote->customer_number ?? '')) }}">
+                    <div class="q-number">{{ $quote->quote_number }}</div>
+                    <div class="q-customer"><i class="bi bi-person me-1"></i>{{ $quote->billing_name ?: $quote->customer_number ?: 'No customer' }}</div>
+                    <div class="q-meta">
+                        <span class="q-date">{{ $quote->created_at?->format('M d, Y') }}</span>
+                        <span class="q-badge {{ $quote->status === 'sent' ? 'q-badge-sent' : 'q-badge-draft' }}">{{ ucfirst($quote->status) }}</span>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center py-4" style="color:rgba(255,255,255,.4);">
+                    <i class="bi bi-calculator" style="font-size:2rem;"></i>
+                    <p class="mt-2 mb-0">No quotes yet</p>
+                </div>
+            @endforelse
+        </div>
+
+        <div class="iq-rail-footer">
+            <span>{{ $quotes->total() }} quote{{ $quotes->total() !== 1 ? 's' : '' }}</span>
+            <span>{{ $quotes->where('status', 'draft')->count() }} drafts</span>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-body p-0">
-            @if($quotes->isEmpty())
-                <div class="text-center py-5 text-muted">
-                    <i class="bi bi-calculator fs-1 d-block mb-2"></i>
-                    No quotes yet. Create your first one.
-                </div>
-            @else
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Quote #</th>
-                                <th>Customer</th>
-                                <th>Items</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($quotes as $quote)
-                                <tr>
-                                    <td class="fw-semibold">{{ $quote->quote_number }}</td>
-                                    <td>{{ $quote->billing_name ?: $quote->customer_number ?: '—' }}</td>
-                                    <td>{{ $quote->items->count() }}</td>
-                                    <td>
-                                        @if($quote->status === 'draft')
-                                            <span class="badge bg-secondary">Draft</span>
-                                        @elseif($quote->status === 'sent')
-                                            <span class="badge bg-success">Sent</span>
-                                        @else
-                                            <span class="badge bg-info">{{ ucfirst($quote->status) }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-muted small">{{ $quote->created_at?->format('M d, Y') }}</td>
-                                    <td class="text-end">
-                                        <a href="{{ route('admin.quotes.edit', $quote->id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#sendQuote{{ $quote->id }}" title="Send to Customer">
-                                            <i class="bi bi-send"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                {{-- Send modal --}}
-                                <div class="modal fade" id="sendQuote{{ $quote->id }}" tabindex="-1">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Send Quote #{{ $quote->quote_number }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Customer Email</label>
-                                                    <input type="email" class="form-control send-email-input" placeholder="customer@email.com" required>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-vip send-quote-btn" data-quote-id="{{ $quote->id }}">
-                                                    <i class="bi bi-send me-1"></i> Send Quote
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-3">{{ $quotes->appends(request()->query())->links() }}</div>
-            @endif
+    {{-- Main Panel --}}
+    <div class="iq-main">
+        <div class="iq-main-toolbar">
+            <h5 id="iqDetailTitle">Quote Details</h5>
+            <div id="iqToolbarActions"></div>
+        </div>
+        <div class="iq-detail-body" id="iqDetailBody">
+            <div class="iq-empty-state">
+                <i class="bi bi-calculator"></i>
+                <p>Select a quote to view details</p>
+                <a href="{{ route('admin.quotes.create') }}" class="btn btn-vip btn-sm mt-2"><i class="bi bi-plus-circle me-1"></i> Create New Quote</a>
+            </div>
         </div>
     </div>
 </div>
+@endsection
 
 @push('scripts')
 <script>
-document.querySelectorAll('.send-quote-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const modal = this.closest('.modal');
-        const email = modal.querySelector('.send-email-input').value;
-        if (!email) return;
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.iq-card');
+    const detailBody = document.getElementById('iqDetailBody');
+    const detailTitle = document.getElementById('iqDetailTitle');
+    const toolbarActions = document.getElementById('iqToolbarActions');
+    const csrf = document.querySelector('meta[name=csrf-token]').content;
 
-        const quoteId = this.dataset.quoteId;
-        fetch(`/admin/quotes/${quoteId}/send`, {
+    // Tab filters
+    document.querySelectorAll('.iq-rail-tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const status = this.dataset.status;
+            const url = new URL(window.location);
+            if (status !== 'all') url.searchParams.set('status', status);
+            else url.searchParams.delete('status');
+            window.location = url;
+        });
+    });
+
+    // Search
+    document.getElementById('iqSearch').addEventListener('input', function() {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('.iq-card').forEach(card => {
+            card.style.display = (!term || card.dataset.search.includes(term)) ? '' : 'none';
+        });
+    });
+
+    // Load detail
+    cards.forEach(card => {
+        card.addEventListener('click', function() {
+            cards.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            loadDetail(this.dataset.id);
+        });
+    });
+
+    function loadDetail(id) {
+        detailBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-secondary"></div></div>';
+
+        fetch(`/admin/quotes/${id}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }})
+            .then(r => r.json())
+            .then(data => {
+                const q = data.quote;
+                const items = data.items || [];
+                const summary = data.summary || {};
+                detailTitle.textContent = q.quote_number;
+
+                toolbarActions.innerHTML = `
+                    <a href="/admin/quotes/${q.id}/edit" class="btn btn-sm btn-outline-primary me-2"><i class="bi bi-pencil"></i> Edit</a>
+                    <button class="btn btn-sm btn-outline-success" onclick="sendQuote(${q.id})"><i class="bi bi-send"></i> Send</button>
+                `;
+
+                let itemsHtml = '';
+                if (items.length) {
+                    itemsHtml = `<table class="iq-items-table">
+                        <thead><tr><th>Item</th><th>Size</th><th>Qty</th><th>Price</th></tr></thead>
+                        <tbody>${items.map(i => `<tr>
+                            <td><strong>${i.series_type || 'Window'}</strong><br><small class="text-muted">${i.description || ''}</small></td>
+                            <td>${i.width || ''}x${i.height || ''}</td>
+                            <td>${i.qty || 1}</td>
+                            <td>$${parseFloat(i.total || 0).toFixed(2)}</td>
+                        </tr>`).join('')}</tbody>
+                    </table>`;
+                } else {
+                    itemsHtml = '<p class="text-muted">No items added yet.</p>';
+                }
+
+                detailBody.innerHTML = `
+                    <div class="iq-info-grid">
+                        <div class="iq-info-card"><div class="label">Customer</div><div class="value">${q.billing_name || q.customer_number || '—'}</div></div>
+                        <div class="iq-info-card"><div class="label">Status</div><div class="value"><span class="badge ${q.status === 'sent' ? 'bg-success' : 'bg-secondary'}">${q.status ? q.status.charAt(0).toUpperCase() + q.status.slice(1) : 'Draft'}</span></div></div>
+                        <div class="iq-info-card"><div class="label">Items</div><div class="value">${summary.items_count || 0}</div></div>
+                        <div class="iq-info-card"><div class="label">Subtotal</div><div class="value" style="color:var(--vip-accent);">$${parseFloat(summary.subtotal || 0).toFixed(2)}</div></div>
+                        <div class="iq-info-card"><div class="label">Created</div><div class="value">${q.created_at || '—'}</div></div>
+                        ${q.valid_until ? `<div class="iq-info-card"><div class="label">Valid Until</div><div class="value">${q.valid_until}</div></div>` : ''}
+                    </div>
+                    <h6 class="mb-3" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5);"><i class="bi bi-list-ul me-1"></i>Line Items</h6>
+                    ${itemsHtml}
+                `;
+            })
+            .catch(() => {
+                detailBody.innerHTML = '<div class="alert alert-danger m-4">Failed to load quote details.</div>';
+            });
+    }
+
+    window.sendQuote = function(id) {
+        const email = prompt('Enter customer email to send quote:');
+        if (!email) return;
+        fetch(`/admin/quotes/${id}/send`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
             body: JSON.stringify({ email })
         })
         .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                bootstrap.Modal.getInstance(modal).hide();
-                location.reload();
-            } else {
-                alert(data.message || 'Failed to send');
-            }
+        .then(d => {
+            if (d.success) { alert('Quote sent!'); location.reload(); }
+            else alert(d.message || 'Failed to send');
         });
-    });
+    };
+
+    // Auto-select first
+    if (cards.length > 0) cards[0].click();
 });
 </script>
 @endpush
-@endsection
