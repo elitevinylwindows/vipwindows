@@ -1,229 +1,253 @@
 @extends('layouts.installer')
 @section('title', 'My Jobs')
 
+@push('styles')
+<style>
+    .iq-container { display: flex; height: calc(100vh - 56px); overflow: hidden; }
+
+    /* ── Left Rail ─────────────────────────────── */
+    .iq-rail {
+        width: 320px; min-width: 320px;
+        background: var(--vip-primary);
+        color: #fff;
+        display: flex; flex-direction: column;
+        border-right: 1px solid rgba(255,255,255,.06);
+    }
+    .iq-rail-header { padding: 1.25rem 1rem .75rem; }
+    .iq-rail-header h6 { font-size: .75rem; text-transform: uppercase; letter-spacing: 1.2px; color: rgba(255,255,255,.5); margin-bottom: .75rem; }
+    .iq-rail-search { display: flex; gap: .5rem; }
+    .iq-rail-search input {
+        flex: 1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+        color: #fff; border-radius: .375rem; padding: .4rem .75rem; font-size: .85rem;
+    }
+    .iq-rail-search input::placeholder { color: rgba(255,255,255,.4); }
+    .iq-rail-search input:focus { outline: none; border-color: var(--vip-accent); }
+
+    .iq-rail-tabs { display: flex; gap: 0; padding: 0 1rem; margin-top: .75rem; flex-wrap: wrap; }
+    .iq-rail-tabs .tab-btn {
+        flex: 1; text-align: center; padding: .4rem .25rem; font-size: .7rem;
+        background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+        color: rgba(255,255,255,.6); cursor: pointer; transition: all .15s;
+    }
+    .iq-rail-tabs .tab-btn:first-child { border-radius: .3rem 0 0 .3rem; }
+    .iq-rail-tabs .tab-btn:last-child { border-radius: 0 .3rem .3rem 0; }
+    .iq-rail-tabs .tab-btn.active { background: var(--vip-accent); color: #fff; border-color: var(--vip-accent); }
+
+    .iq-rail-list { flex: 1; overflow-y: auto; padding: .5rem; }
+    .iq-card {
+        background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+        border-radius: .5rem; padding: .75rem 1rem; margin-bottom: .5rem;
+        cursor: pointer; transition: all .15s;
+    }
+    .iq-card:hover { background: rgba(255,255,255,.08); border-color: rgba(201,168,76,.3); }
+    .iq-card.active { background: rgba(201,168,76,.12); border-color: var(--vip-accent); }
+    .iq-card .q-number { font-weight: 600; font-size: .9rem; color: #fff; }
+    .iq-card .q-customer { font-size: .78rem; color: rgba(255,255,255,.55); margin-top: 2px; }
+    .iq-card .q-meta { display: flex; justify-content: space-between; align-items: center; margin-top: .35rem; }
+    .iq-card .q-date { font-size: .7rem; color: rgba(255,255,255,.4); }
+    .iq-card .q-badge { font-size: .6rem; padding: 2px 6px; border-radius: 3px; font-weight: 600; text-transform: uppercase; }
+    .q-badge-pending { background: rgba(255,193,7,.25); color: #ffc107; }
+    .q-badge-scheduled { background: rgba(23,162,184,.25); color: #17a2b8; }
+    .q-badge-in_progress { background: rgba(0,123,255,.25); color: #5ba8ff; }
+    .q-badge-completed { background: rgba(40,167,69,.25); color: #7ddf9b; }
+    .q-badge-cancelled { background: rgba(220,53,69,.25); color: #dc3545; }
+
+    .iq-rail-footer {
+        padding: .75rem 1rem; border-top: 1px solid rgba(255,255,255,.08);
+        font-size: .75rem; color: rgba(255,255,255,.4);
+        display: flex; justify-content: space-between;
+    }
+
+    /* ── Main Panel ────────────────────────────── */
+    .iq-main { flex: 1; overflow-y: auto; background: var(--vip-light); }
+    .iq-main-toolbar {
+        background: #fff; border-bottom: 1px solid rgba(0,0,0,.06);
+        padding: .75rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .iq-main-toolbar h5 { font-size: 1rem; font-weight: 700; margin: 0; }
+    .iq-detail-body { padding: 1.5rem; }
+
+    .iq-empty-state {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        height: 60vh; color: rgba(0,0,0,.35);
+    }
+    .iq-empty-state i { font-size: 3rem; margin-bottom: 1rem; }
+
+    .iq-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .iq-info-card { background: #fff; border-radius: .5rem; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .iq-info-card .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.45); margin-bottom: .25rem; }
+    .iq-info-card .value { font-size: .9rem; font-weight: 600; color: #111; }
+
+    .note-card { background: #fff; border-radius: .375rem; padding: .6rem .75rem; margin-bottom: .5rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+
+    @media (max-width: 991.98px) {
+        .iq-container { flex-direction: column; height: auto; }
+        .iq-rail { width: 100%; min-width: 100%; max-height: 45vh; }
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="container-fluid py-4 px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0"><i class="bi bi-tools me-2"></i>My Jobs</h4>
-    </div>
+<div class="iq-container">
+    {{-- Left Rail --}}
+    <div class="iq-rail">
+        <div class="iq-rail-header">
+            <h6>My Jobs</h6>
+            <div class="iq-rail-search">
+                <input type="text" id="iqSearch" placeholder="Search jobs...">
+            </div>
+            <div class="iq-rail-tabs">
+                <div class="tab-btn {{ $status === 'all' ? 'active' : '' }}" data-status="all">All</div>
+                <div class="tab-btn {{ $status === 'pending' ? 'active' : '' }}" data-status="pending">Pending</div>
+                <div class="tab-btn {{ $status === 'scheduled' ? 'active' : '' }}" data-status="scheduled">Sched</div>
+                <div class="tab-btn {{ $status === 'in_progress' ? 'active' : '' }}" data-status="in_progress">Active</div>
+                <div class="tab-btn {{ $status === 'completed' ? 'active' : '' }}" data-status="completed">Done</div>
+            </div>
+        </div>
 
-    {{-- Stats row --}}
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="card-body py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-muted small">Today</div>
-                            <h4 class="fw-bold mb-0">{{ $todayJobs }}</h4>
-                        </div>
-                        <i class="bi bi-calendar-day text-primary fs-4"></i>
+        <div class="iq-rail-list">
+            @forelse($jobs as $job)
+                <div class="iq-card" data-id="{{ $job->id }}" data-search="{{ strtolower(($job->job_number ?? '') . ' ' . ($job->customer_name ?? '') . ' ' . ($job->install_city ?? '')) }}">
+                    <div class="q-number">{{ $job->job_number ?? 'JOB-' . $job->id }}</div>
+                    <div class="q-customer"><i class="bi bi-person me-1"></i>{{ $job->customer_name ?: 'No customer' }}</div>
+                    <div class="q-meta">
+                        <span class="q-date">{{ $job->scheduled_date?->format('M d, Y') ?? 'Not scheduled' }}</span>
+                        <span class="q-badge q-badge-{{ $job->status }}">{{ ucfirst(str_replace('_', ' ', $job->status)) }}</span>
                     </div>
                 </div>
-            </div>
+            @empty
+                <div class="text-center py-4" style="color:rgba(255,255,255,.4);">
+                    <i class="bi bi-tools" style="font-size:2rem;"></i>
+                    <p class="mt-2 mb-0">No jobs assigned yet</p>
+                </div>
+            @endforelse
         </div>
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="card-body py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-muted small">This Week</div>
-                            <h4 class="fw-bold mb-0">{{ $weekJobs }}</h4>
-                        </div>
-                        <i class="bi bi-calendar-week text-info fs-4"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="card-body py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-muted small">In Progress</div>
-                            <h4 class="fw-bold mb-0">{{ $inProgress }}</h4>
-                        </div>
-                        <i class="bi bi-arrow-repeat text-warning fs-4"></i>
-                    </div>
-                </div>
-            </div>
+
+        <div class="iq-rail-footer">
+            <span>{{ $jobs->total() }} job{{ $jobs->total() !== 1 ? 's' : '' }}</span>
+            <span>{{ $jobs->where('status', 'in_progress')->count() }} active</span>
         </div>
     </div>
 
-    {{-- Status filter --}}
-    <div class="mb-4">
-        <div class="btn-group btn-group-sm" role="group">
-            <a href="{{ route('installer.jobs.index') }}" class="btn {{ $status === 'all' ? 'btn-dark' : 'btn-outline-dark' }}">All</a>
-            <a href="{{ route('installer.jobs.index', ['status' => 'pending']) }}" class="btn {{ $status === 'pending' ? 'btn-dark' : 'btn-outline-dark' }}">Pending</a>
-            <a href="{{ route('installer.jobs.index', ['status' => 'scheduled']) }}" class="btn {{ $status === 'scheduled' ? 'btn-dark' : 'btn-outline-dark' }}">Scheduled</a>
-            <a href="{{ route('installer.jobs.index', ['status' => 'in_progress']) }}" class="btn {{ $status === 'in_progress' ? 'btn-dark' : 'btn-outline-dark' }}">In Progress</a>
-            <a href="{{ route('installer.jobs.index', ['status' => 'completed']) }}" class="btn {{ $status === 'completed' ? 'btn-dark' : 'btn-outline-dark' }}">Completed</a>
+    {{-- Main Panel --}}
+    <div class="iq-main">
+        <div class="iq-main-toolbar">
+            <h5 id="iqDetailTitle">Job Details</h5>
+            <div id="iqToolbarActions"></div>
         </div>
-    </div>
-
-    <div class="card">
-        <div class="card-body p-0">
-            @if($jobs->isEmpty())
-                <div class="text-center py-5 text-muted">
-                    <i class="bi bi-tools fs-1 d-block mb-2"></i>
-                    No jobs assigned to you yet.
-                </div>
-            @else
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Job #</th>
-                                <th>Customer</th>
-                                <th>Location</th>
-                                <th>Scheduled</th>
-                                <th>Priority</th>
-                                <th>Status</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($jobs as $job)
-                                <tr>
-                                    <td class="fw-semibold">{{ $job->job_number }}</td>
-                                    <td>
-                                        {{ $job->customer_name ?: '—' }}
-                                        @if($job->customer_phone)
-                                            <div class="text-muted small">{{ $job->customer_phone }}</div>
-                                        @endif
-                                    </td>
-                                    <td class="small text-muted">
-                                        @if($job->install_address)
-                                            {{ $job->install_address }}<br>
-                                            {{ $job->install_city }}, {{ $job->install_state }} {{ $job->install_zip }}
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($job->scheduled_date)
-                                            <span class="fw-semibold">{{ $job->scheduled_date->format('M d, Y') }}</span>
-                                            @if($job->scheduled_time)
-                                                <div class="text-muted small">{{ $job->scheduled_time }}</div>
-                                            @endif
-                                        @else
-                                            <span class="text-muted">Not scheduled</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @switch($job->priority)
-                                            @case('urgent')
-                                                <span class="badge bg-danger">Urgent</span>
-                                                @break
-                                            @case('high')
-                                                <span class="badge bg-warning text-dark">High</span>
-                                                @break
-                                            @case('normal')
-                                                <span class="badge bg-secondary">Normal</span>
-                                                @break
-                                            @case('low')
-                                                <span class="badge bg-light text-dark">Low</span>
-                                                @break
-                                            @default
-                                                <span class="badge bg-secondary">Normal</span>
-                                        @endswitch
-                                    </td>
-                                    <td><span class="badge badge-{{ $job->status }}">{{ ucfirst(str_replace('_', ' ', $job->status)) }}</span></td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#jobDetail{{ $job->id }}" title="Details">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        @if(in_array($job->status, ['pending', 'scheduled']))
-                                            <form method="POST" action="{{ route('installer.jobs.updateStatus', $job->id) }}" class="d-inline">
-                                                @csrf
-                                                <input type="hidden" name="status" value="in_progress">
-                                                <button class="btn btn-sm btn-outline-primary" title="Start Job"><i class="bi bi-play-fill"></i></button>
-                                            </form>
-                                        @elseif($job->status === 'in_progress')
-                                            <form method="POST" action="{{ route('installer.jobs.updateStatus', $job->id) }}" class="d-inline">
-                                                @csrf
-                                                <input type="hidden" name="status" value="completed">
-                                                <button class="btn btn-sm btn-outline-success" title="Complete Job"><i class="bi bi-check-lg"></i></button>
-                                            </form>
-                                        @endif
-                                    </td>
-                                </tr>
-
-                                {{-- Job detail modal --}}
-                                <div class="modal fade" id="jobDetail{{ $job->id }}" tabindex="-1">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">{{ $job->job_number }} — {{ $job->customer_name }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="row mb-3">
-                                                    <div class="col-md-6">
-                                                        <strong>Customer:</strong> {{ $job->customer_name }}<br>
-                                                        @if($job->customer_email)<strong>Email:</strong> {{ $job->customer_email }}<br>@endif
-                                                        @if($job->customer_phone)<strong>Phone:</strong> {{ $job->customer_phone }}<br>@endif
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        @if($job->install_address)
-                                                            <strong>Install Address:</strong><br>
-                                                            {{ $job->install_address }}<br>
-                                                            {{ $job->install_city }}, {{ $job->install_state }} {{ $job->install_zip }}
-                                                        @endif
-                                                    </div>
-                                                </div>
-
-                                                @if($job->description)
-                                                    <div class="mb-3">
-                                                        <strong>Description:</strong>
-                                                        <p class="mb-0">{{ $job->description }}</p>
-                                                    </div>
-                                                @endif
-
-                                                @if($job->notes)
-                                                    <div class="mb-3">
-                                                        <strong>Notes:</strong>
-                                                        <p class="mb-0">{{ $job->notes }}</p>
-                                                    </div>
-                                                @endif
-
-                                                {{-- Job notes --}}
-                                                <hr>
-                                                <h6 class="fw-semibold mb-3">Activity Notes</h6>
-
-                                                @if($job->jobNotes->count())
-                                                    @foreach($job->jobNotes as $note)
-                                                        <div class="border rounded p-2 mb-2">
-                                                            <div class="d-flex justify-content-between">
-                                                                <strong class="small">{{ $note->author?->name ?? 'System' }}</strong>
-                                                                <span class="text-muted small">{{ $note->created_at->format('M d, Y g:ia') }}</span>
-                                                            </div>
-                                                            <p class="mb-0 small mt-1">{{ $note->note }}</p>
-                                                        </div>
-                                                    @endforeach
-                                                @else
-                                                    <p class="text-muted small">No notes yet.</p>
-                                                @endif
-
-                                                {{-- Add note form --}}
-                                                <form method="POST" action="{{ route('installer.jobs.addNote', $job->id) }}" class="mt-3">
-                                                    @csrf
-                                                    <div class="input-group">
-                                                        <input type="text" name="note" class="form-control" placeholder="Add a note..." required>
-                                                        <button class="btn btn-vip" type="submit"><i class="bi bi-plus"></i> Add</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-3">{{ $jobs->appends(request()->query())->links() }}</div>
-            @endif
+        <div class="iq-detail-body" id="iqDetailBody">
+            <div class="iq-empty-state">
+                <i class="bi bi-tools"></i>
+                <p>Select a job to view details</p>
+            </div>
         </div>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.iq-card');
+    const detailBody = document.getElementById('iqDetailBody');
+    const detailTitle = document.getElementById('iqDetailTitle');
+    const toolbarActions = document.getElementById('iqToolbarActions');
+    const csrf = document.querySelector('meta[name=csrf-token]').content;
+
+    // Tab filters
+    document.querySelectorAll('.iq-rail-tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const status = this.dataset.status;
+            const url = new URL(window.location);
+            if (status !== 'all') url.searchParams.set('status', status);
+            else url.searchParams.delete('status');
+            window.location = url;
+        });
+    });
+
+    // Search
+    document.getElementById('iqSearch').addEventListener('input', function() {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('.iq-card').forEach(card => {
+            card.style.display = (!term || card.dataset.search.includes(term)) ? '' : 'none';
+        });
+    });
+
+    // Load detail
+    cards.forEach(card => {
+        card.addEventListener('click', function() {
+            cards.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            loadDetail(this.dataset.id);
+        });
+    });
+
+    function loadDetail(id) {
+        detailBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-secondary"></div></div>';
+
+        fetch(`/installer/jobs/${id}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }})
+            .then(r => r.json())
+            .then(data => {
+                const j = data.job;
+                const notes = data.notes || [];
+                detailTitle.textContent = j.job_number || ('JOB-' + j.id);
+
+                // Toolbar actions
+                let actions = '';
+                if (j.status === 'pending' || j.status === 'scheduled') {
+                    actions += `<form method="POST" action="/installer/jobs/${j.id}/status" class="d-inline"><input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="status" value="in_progress"><button class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i>Start Job</button></form>`;
+                } else if (j.status === 'in_progress') {
+                    actions += `<form method="POST" action="/installer/jobs/${j.id}/status" class="d-inline"><input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="status" value="completed"><button class="btn btn-sm btn-success"><i class="bi bi-check-lg me-1"></i>Complete</button></form>`;
+                }
+                toolbarActions.innerHTML = actions;
+
+                // Notes HTML
+                let notesHtml = '';
+                if (notes.length) {
+                    notesHtml = notes.map(n => `<div class="note-card"><div class="d-flex justify-content-between"><strong class="small">${n.author || 'System'}</strong><span class="text-muted small">${n.created_at || ''}</span></div><p class="mb-0 small mt-1">${n.note}</p></div>`).join('');
+                } else {
+                    notesHtml = '<p class="text-muted small">No notes yet.</p>';
+                }
+
+                detailBody.innerHTML = `
+                    <div class="iq-info-grid">
+                        <div class="iq-info-card"><div class="label">Customer</div><div class="value">${j.customer_name || '—'}</div></div>
+                        <div class="iq-info-card"><div class="label">Phone</div><div class="value">${j.customer_phone || '—'}</div></div>
+                        <div class="iq-info-card"><div class="label">Status</div><div class="value"><span class="badge badge-${j.status}">${j.status ? j.status.replace('_',' ').replace(/^./,c=>c.toUpperCase()) : '—'}</span></div></div>
+                        <div class="iq-info-card"><div class="label">Scheduled</div><div class="value">${j.scheduled_date || 'Not set'}${j.scheduled_time ? ' @ ' + j.scheduled_time : ''}</div></div>
+                        <div class="iq-info-card"><div class="label">Priority</div><div class="value">${j.priority ? j.priority.charAt(0).toUpperCase() + j.priority.slice(1) : 'Normal'}</div></div>
+                        <div class="iq-info-card"><div class="label">Email</div><div class="value">${j.customer_email || '—'}</div></div>
+                    </div>
+
+                    ${j.install_address ? `
+                    <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                        <div class="card-body py-2 px-3">
+                            <div class="small text-muted text-uppercase mb-1" style="letter-spacing:.5px;">Install Address</div>
+                            <div>${j.install_address}<br>${j.install_city || ''}, ${j.install_state || ''} ${j.install_zip || ''}</div>
+                        </div>
+                    </div>` : ''}
+
+                    ${j.description ? `<div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);"><div class="card-body py-2 px-3"><div class="small text-muted text-uppercase mb-1" style="letter-spacing:.5px;">Description</div><p class="mb-0">${j.description}</p></div></div>` : ''}
+
+                    <h6 class="mb-2 mt-4" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5);"><i class="bi bi-chat-left-text me-1"></i>Notes</h6>
+                    ${notesHtml}
+
+                    <form method="POST" action="/installer/jobs/${j.id}/note" class="mt-3">
+                        <input type="hidden" name="_token" value="${csrf}">
+                        <div class="input-group">
+                            <input type="text" name="note" class="form-control" placeholder="Add a note..." required>
+                            <button class="btn btn-vip" type="submit"><i class="bi bi-plus"></i></button>
+                        </div>
+                    </form>
+                `;
+            })
+            .catch(() => {
+                detailBody.innerHTML = '<div class="alert alert-danger m-4">Failed to load job details.</div>';
+            });
+    }
+
+    // Auto-select first
+    if (cards.length > 0) cards[0].click();
+});
+</script>
+@endpush

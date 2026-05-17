@@ -35,10 +35,23 @@ class InstallerJobController extends Controller
     public function show($id)
     {
         $job = Job::where('assigned_to', Auth::id())
-            ->with(['jobNotes.author', 'quote', 'invoice'])
             ->findOrFail($id);
 
-        return response()->json($job);
+        $notes = [];
+        try {
+            $notes = $job->jobNotes()->with('author')->latest()->get()->map(function ($n) {
+                return [
+                    'note' => $n->note,
+                    'author' => $n->author?->name ?? 'System',
+                    'created_at' => $n->created_at?->format('M d, Y g:ia'),
+                ];
+            })->toArray();
+        } catch (\Exception $e) {}
+
+        return response()->json([
+            'job' => $job,
+            'notes' => $notes,
+        ]);
     }
 
     public function updateStatus(Request $request, $id)

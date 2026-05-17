@@ -94,8 +94,8 @@
             <h6>My Quotes</h6>
             <div class="iq-rail-search">
                 <input type="text" id="iqSearch" placeholder="Search quotes...">
-                <a href="{{ route('installer.quotes.index') }}" class="btn btn-sm btn-vip" title="Refresh">
-                    <i class="bi bi-arrow-clockwise"></i>
+                <a href="{{ route('installer.quotes.create') }}" class="btn btn-sm btn-vip" title="New Quote">
+                    <i class="bi bi-plus-lg"></i>
                 </a>
             </div>
             <div class="iq-rail-tabs">

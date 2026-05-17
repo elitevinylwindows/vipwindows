@@ -197,7 +197,35 @@
                 </button>
                 <h6 class="mb-0 fw-semibold text-muted">@yield('title', 'Installer Portal')</h6>
             </div>
-            <div class="small text-muted">{{ now()->format('l, M d, Y') }}</div>
+            <div class="d-flex align-items-center gap-3">
+                {{-- Language Switcher --}}
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size:.8rem;">
+                        <i class="bi bi-globe me-1"></i>{{ strtoupper(app()->getLocale()) }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item {{ app()->getLocale() === 'en' ? 'active' : '' }}" href="?lang=en"> English</a></li>
+                        <li><a class="dropdown-item {{ app()->getLocale() === 'es' ? 'active' : '' }}" href="?lang=es"> Español</a></li>
+                    </ul>
+                </div>
+
+                {{-- Profile Dropdown --}}
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size:.8rem;">
+                        <i class="bi bi-person-circle me-1"></i>{{ Auth::user()->name }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{{ route('installer.profile') }}"><i class="bi bi-person-gear me-2"></i>My Profile</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-left me-2"></i>Sign Out</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         {{-- Flash messages --}}

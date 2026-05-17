@@ -318,6 +318,8 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
 
     // Quotes
     Route::get('/quotes', [InstallerQuoteController::class, 'index'])->name('quotes.index');
+    Route::get('/quotes/create', [InstallerQuoteController::class, 'create'])->name('quotes.create');
+    Route::post('/quotes', [InstallerQuoteController::class, 'store'])->name('quotes.store');
     Route::get('/quotes/{id}', [InstallerQuoteController::class, 'show'])->name('quotes.show');
 
     // Jobs
@@ -328,6 +330,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
 
     // Invoices
     Route::get('/invoices', [InstallerInvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/{id}', [InstallerInvoiceController::class, 'show'])->name('invoices.show');
 
     // Customers
     Route::get('/customers', [InstallerCustomerController::class, 'index'])->name('customers.index');

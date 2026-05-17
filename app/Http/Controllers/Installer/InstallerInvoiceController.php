@@ -14,7 +14,6 @@ class InstallerInvoiceController extends Controller
         $status = $request->get('status', 'all');
 
         $query = Invoice::where('created_by', Auth::id())
-            ->with('items')
             ->orderByDesc('created_at');
 
         if ($status !== 'all') {
@@ -24,5 +23,20 @@ class InstallerInvoiceController extends Controller
         $invoices = $query->paginate(20);
 
         return view('installer.invoices.index', compact('invoices', 'status'));
+    }
+
+    public function show($id)
+    {
+        $invoice = Invoice::where('created_by', Auth::id())->findOrFail($id);
+
+        $items = [];
+        try {
+            $items = $invoice->items()->get()->toArray();
+        } catch (\Exception $e) {}
+
+        return response()->json([
+            'invoice' => $invoice,
+            'items' => $items,
+        ]);
     }
 }

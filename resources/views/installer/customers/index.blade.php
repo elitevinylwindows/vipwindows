@@ -66,7 +66,8 @@
     .ic-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .ic-info-card { background: #fff; border-radius: .5rem; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
     .ic-info-card .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.45); margin-bottom: .25rem; }
-    .ic-info-card .value { font-size: 1rem; font-weight: 600; color: #111; word-break: break-all; overflow-wrap: anywhere; }
+    .ic-info-card .value { font-size: .9rem; font-weight: 600; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ic-info-card .value.wrap { white-space: normal; overflow: visible; text-overflow: unset; }
 
     @media (max-width: 991.98px) {
         .ic-container { flex-direction: column; height: auto; }
@@ -260,11 +261,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 detailBody.innerHTML = `
                     <div class="ic-info-grid">
-                        <div class="ic-info-card"><div class="label">Email</div><div class="value">${esc(c.email) || '—'}</div></div>
+                        <div class="ic-info-card"><div class="label">Email</div><div class="value" title="${esc(c.email) || ''}">${esc(c.email) || '—'}</div></div>
                         <div class="ic-info-card"><div class="label">Phone</div><div class="value">${esc(c.phone) || '—'}</div></div>
                         <div class="ic-info-card"><div class="label">Type</div><div class="value"><span class="badge" style="background:rgba(201,168,76,.15);color:#8b6914;">${(c.customer_type || 'homeowner').charAt(0).toUpperCase() + (c.customer_type || 'homeowner').slice(1)}</span></div></div>
                         <div class="ic-info-card"><div class="label">Quotes</div><div class="value" style="color:var(--vip-accent);">${data.stats?.quotes || 0}</div></div>
-                        <div class="ic-info-card"><div class="label">Address</div><div class="value">${esc(address)}</div></div>
+                        <div class="ic-info-card"><div class="label">Address</div><div class="value wrap">${esc(c.address || '')}${c.city ? '<br>' + esc(c.city) + ', ' + esc(c.state || '') + ' ' + esc(c.zip || '') : ''}</div></div>
                         <div class="ic-info-card"><div class="label">Joined</div><div class="value">${c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}) : '—'}</div></div>
                     </div>
                     ${c.notes ? `<div class="p-3 bg-white rounded border"><div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:4px">Notes</div><div style="font-size:.85rem">${esc(c.notes)}</div></div>` : ''}
