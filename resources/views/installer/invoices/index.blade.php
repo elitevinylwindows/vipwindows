@@ -94,7 +94,10 @@
     {{-- Left Rail --}}
     <div class="iq-rail">
         <div class="iq-rail-header">
-            <h6>My Invoices</h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">My Invoices</h6>
+                <button class="btn btn-sm btn-vip" data-bs-toggle="modal" data-bs-target="#createInvoiceModal"><i class="bi bi-plus-lg me-1"></i>New Invoice</button>
+            </div>
             <div class="iq-rail-search">
                 <input type="text" id="iqSearch" placeholder="Search invoices...">
             </div>
@@ -146,6 +149,61 @@
         </div>
     </div>
 </div>
+{{-- Create Invoice Modal --}}
+<div class="modal fade" id="createInvoiceModal" tabindex="-1" aria-labelledby="createInvoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background:var(--vip-primary); color:#fff; border:1px solid rgba(255,255,255,.1);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title" id="createInvoiceModalLabel"><i class="bi bi-receipt me-2"></i>New Invoice</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createInvoiceForm" method="POST" action="{{ route('installer.invoices.store') }}">
+                @csrf
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-white-50">Customer Name <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_name" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-white-50">Customer Email</label>
+                            <input type="email" name="customer_email" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-white-50">Customer Phone</label>
+                            <input type="text" name="customer_phone" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-white-50">Due Date</label>
+                            <input type="date" name="due_date" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small text-white-50">Customer Address</label>
+                            <input type="text" name="customer_address" class="form-control bg-dark text-white border-secondary" placeholder="Customer address">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small text-white-50">Billing Address</label>
+                            <input type="text" name="billing_address" class="form-control bg-dark text-white border-secondary" placeholder="Billing address (if different)">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-white-50">Tax Rate (%)</label>
+                            <input type="number" name="tax_rate" class="form-control bg-dark text-white border-secondary" value="0" step="0.01" min="0" max="100">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small text-white-50">Notes</label>
+                            <input type="text" name="notes" class="form-control bg-dark text-white border-secondary" placeholder="Optional notes">
+                        </div>
+                    </div>
+                    <p class="small text-white-50 mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>You can add line items after creating the invoice.</p>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-vip btn-sm"><i class="bi bi-check-lg me-1"></i>Create Invoice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -155,6 +213,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailBody = document.getElementById('iqDetailBody');
     const detailTitle = document.getElementById('iqDetailTitle');
     const toolbarActions = document.getElementById('iqToolbarActions');
+    const csrf = document.querySelector('meta[name=csrf-token]').content;
+    let currentInvoiceId = null;
 
     // Tab filters
     document.querySelectorAll('.iq-rail-tabs .tab-btn').forEach(btn => {
@@ -194,17 +254,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 const items = data.items || [];
                 detailTitle.textContent = inv.invoice_number;
 
-                toolbarActions.innerHTML = `<span class="badge ${inv.status === 'paid' ? 'bg-success' : inv.status === 'overdue' ? 'bg-danger' : inv.status === 'sent' ? 'bg-primary' : 'bg-secondary'}">${inv.status ? inv.status.charAt(0).toUpperCase() + inv.status.slice(1) : 'Draft'}</span>`;
+                currentInvoiceId = inv.id;
+                let tbActions = `<span class="badge ${inv.status === 'paid' ? 'bg-success' : inv.status === 'overdue' ? 'bg-danger' : inv.status === 'sent' ? 'bg-primary' : 'bg-secondary'} me-2">${inv.status ? inv.status.charAt(0).toUpperCase() + inv.status.slice(1) : 'Draft'}</span>`;
+                if (inv.customer_email && inv.status !== 'paid') {
+                    tbActions += `<button class="btn btn-sm btn-vip" onclick="sendInvoice(${inv.id})"><i class="bi bi-send me-1"></i>Send</button>`;
+                }
+                toolbarActions.innerHTML = tbActions;
 
                 let itemsHtml = '';
                 if (items.length) {
                     itemsHtml = `<table class="inv-items-table">
-                        <thead><tr><th>Description</th><th class="text-end">Qty</th><th class="text-end">Rate</th><th class="text-end">Amount</th></tr></thead>
+                        <thead><tr><th>Description</th><th class="text-end">Qty</th><th class="text-end">Rate</th><th class="text-end">Amount</th><th style="width:40px;"></th></tr></thead>
                         <tbody>${items.map(i => `<tr>
                             <td>${i.description || i.name || 'Item'}</td>
                             <td class="text-end">${i.qty || i.quantity || 1}</td>
                             <td class="text-end">$${parseFloat(i.rate || i.unit_price || 0).toFixed(2)}</td>
                             <td class="text-end fw-semibold">$${parseFloat(i.amount || i.total || 0).toFixed(2)}</td>
+                            <td class="text-center"><button class="btn btn-sm text-danger p-0" onclick="removeLineItem(${inv.id}, ${i.id})" title="Remove"><i class="bi bi-x-lg"></i></button></td>
                         </tr>`).join('')}</tbody>
                     </table>`;
                 } else {
@@ -225,6 +291,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <h6 class="mb-3" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5);"><i class="bi bi-list-ul me-1"></i>Line Items</h6>
                     ${itemsHtml}
+
+                    <div class="card mt-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                        <div class="card-body py-2 px-3">
+                            <div class="small text-muted text-uppercase mb-2" style="letter-spacing:.5px;">Add Line Item</div>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-5"><input type="text" id="addItemDesc" class="form-control form-control-sm" placeholder="Description"></div>
+                                <div class="col-md-2"><input type="number" id="addItemQty" class="form-control form-control-sm" placeholder="Qty" value="1" min="0.01" step="0.01"></div>
+                                <div class="col-md-3"><input type="number" id="addItemPrice" class="form-control form-control-sm" placeholder="Unit Price" min="0" step="0.01"></div>
+                                <div class="col-md-2"><button class="btn btn-sm btn-vip w-100" onclick="addLineItem(${inv.id})"><i class="bi bi-plus"></i> Add</button></div>
+                            </div>
+                        </div>
+                    </div>
                 `;
             })
             .catch(() => {
@@ -234,6 +312,62 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Auto-select first
     if (cards.length > 0) cards[0].click();
+
+    // Add line item
+    window.addLineItem = function(invoiceId) {
+        const desc = document.getElementById('addItemDesc')?.value?.trim();
+        const qty = parseFloat(document.getElementById('addItemQty')?.value);
+        const price = parseFloat(document.getElementById('addItemPrice')?.value);
+
+        if (!desc) { alert('Please enter a description.'); return; }
+        if (!qty || qty <= 0) { alert('Please enter a valid quantity.'); return; }
+        if (isNaN(price) || price < 0) { alert('Please enter a valid price.'); return; }
+
+        fetch(`/installer/invoices/${invoiceId}/item`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ description: desc, qty: qty, unit_price: price })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) loadDetail(invoiceId);
+            else alert(data.error || 'Failed to add item.');
+        })
+        .catch(() => alert('Failed to add item.'));
+    };
+
+    // Remove line item
+    window.removeLineItem = function(invoiceId, itemId) {
+        if (!confirm('Remove this line item?')) return;
+        fetch(`/installer/invoices/${invoiceId}/item/${itemId}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) loadDetail(invoiceId);
+        })
+        .catch(() => alert('Failed to remove item.'));
+    };
+
+    // Send invoice to customer
+    window.sendInvoice = function(invoiceId) {
+        if (!confirm('Send this invoice to the customer?')) return;
+        fetch(`/installer/invoices/${invoiceId}/send`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Invoice sent!');
+                loadDetail(invoiceId);
+            } else {
+                alert(data.error || 'Failed to send invoice.');
+            }
+        })
+        .catch(() => alert('Failed to send invoice.'));
+    };
 });
 </script>
 @endpush

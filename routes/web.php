@@ -336,13 +336,18 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
 
     // Jobs
     Route::get('/jobs', [InstallerJobController::class, 'index'])->name('jobs.index');
+    Route::post('/jobs', [InstallerJobController::class, 'store'])->name('jobs.store');
     Route::get('/jobs/{id}', [InstallerJobController::class, 'show'])->name('jobs.show');
     Route::post('/jobs/{id}/status', [InstallerJobController::class, 'updateStatus'])->name('jobs.updateStatus');
     Route::post('/jobs/{id}/note', [InstallerJobController::class, 'addNote'])->name('jobs.addNote');
 
     // Invoices
     Route::get('/invoices', [InstallerInvoiceController::class, 'index'])->name('invoices.index');
+    Route::post('/invoices', [InstallerInvoiceController::class, 'store'])->name('invoices.store');
     Route::get('/invoices/{id}', [InstallerInvoiceController::class, 'show'])->name('invoices.show');
+    Route::post('/invoices/{id}/item', [InstallerInvoiceController::class, 'addItem'])->name('invoices.addItem');
+    Route::delete('/invoices/{id}/item/{itemId}', [InstallerInvoiceController::class, 'removeItem'])->name('invoices.removeItem');
+    Route::post('/invoices/{id}/send', [InstallerInvoiceController::class, 'sendToCustomer'])->name('invoices.send');
 
     // Customers
     Route::get('/customers', [InstallerCustomerController::class, 'index'])->name('customers.index');

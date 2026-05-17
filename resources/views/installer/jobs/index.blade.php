@@ -92,7 +92,10 @@
     {{-- Left Rail --}}
     <div class="iq-rail">
         <div class="iq-rail-header">
-            <h6>My Jobs</h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">My Jobs</h6>
+                <button class="btn btn-sm btn-vip" data-bs-toggle="modal" data-bs-target="#createJobModal"><i class="bi bi-plus-lg me-1"></i>New Job</button>
+            </div>
             <div class="iq-rail-search">
                 <input type="text" id="iqSearch" placeholder="Search jobs...">
             </div>
@@ -140,6 +143,85 @@
                 <i class="bi bi-tools"></i>
                 <p>Select a job to view details</p>
             </div>
+        </div>
+    </div>
+</div>
+{{-- Create Job Modal --}}
+<div class="modal fade" id="createJobModal" tabindex="-1" aria-labelledby="createJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background:var(--vip-primary); color:#fff; border:1px solid rgba(255,255,255,.1);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title" id="createJobModalLabel"><i class="bi bi-tools me-2"></i>New Job</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createJobForm" method="POST" action="{{ route('installer.jobs.store') }}">
+                @csrf
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-white-50">Customer Name <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_name" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-white-50">Customer Email</label>
+                            <input type="email" name="customer_email" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-white-50">Customer Phone</label>
+                            <input type="text" name="customer_phone" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-white-50">Priority</label>
+                            <select name="priority" class="form-select bg-dark text-white border-secondary">
+                                <option value="normal" selected>Normal</option>
+                                <option value="low">Low</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12"><hr class="border-secondary my-1"><label class="form-label small text-white-50 mt-1">Install Address</label></div>
+                        <div class="col-md-12">
+                            <input type="text" name="install_address" class="form-control bg-dark text-white border-secondary" placeholder="Street address">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" name="install_city" class="form-control bg-dark text-white border-secondary" placeholder="City">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="install_state" class="form-control bg-dark text-white border-secondary" placeholder="State">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" name="install_zip" class="form-control bg-dark text-white border-secondary" placeholder="Zip">
+                        </div>
+
+                        <div class="col-12"><hr class="border-secondary my-1"></div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-white-50">Scheduled Date</label>
+                            <input type="date" name="scheduled_date" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-white-50">Scheduled Time</label>
+                            <input type="time" name="scheduled_time" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-white-50">Est. Duration</label>
+                            <input type="text" name="estimated_duration" class="form-control bg-dark text-white border-secondary" placeholder="e.g. 2 hours">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-white-50">Description</label>
+                            <textarea name="description" rows="3" class="form-control bg-dark text-white border-secondary" placeholder="Job details..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-white-50">Notes</label>
+                            <textarea name="notes" rows="2" class="form-control bg-dark text-white border-secondary" placeholder="Internal notes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-vip btn-sm"><i class="bi bi-check-lg me-1"></i>Create Job</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
