@@ -40,7 +40,7 @@ class InstallerManagementController extends Controller
 
         // Get installer stats
         try {
-            $quoteCount = \App\Models\Quote::where('created_by', $installer->id)->count();
+            $quoteCount = \App\Models\Quote::where('entered_by', $installer->name)->count();
         } catch (\Exception $e) { $quoteCount = 0; }
 
         try {
@@ -48,7 +48,7 @@ class InstallerManagementController extends Controller
         } catch (\Exception $e) { $jobCount = 0; }
 
         try {
-            $invoiceCount = \App\Models\Invoice::where('created_by', $installer->id)->count();
+            $invoiceCount = \App\Models\Invoice::where('entered_by', $installer->name)->count();
         } catch (\Exception $e) { $invoiceCount = 0; }
 
         // Get assigned services

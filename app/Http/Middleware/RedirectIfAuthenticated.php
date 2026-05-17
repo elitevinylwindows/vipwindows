@@ -14,7 +14,14 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect()->route('dashboard');
+                $user = Auth::guard($guard)->user();
+
+                return match ($user->role) {
+                    'admin', 'technician' => redirect()->route('admin.dashboard'),
+                    'installer'           => redirect()->route('installer.dashboard'),
+                    'customer'            => redirect()->route('customer.dashboard'),
+                    default               => redirect('/'),
+                };
             }
         }
 
