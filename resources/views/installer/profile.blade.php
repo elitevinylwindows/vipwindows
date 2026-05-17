@@ -1,5 +1,5 @@
 @extends('layouts.installer')
-@section('title', 'My Profile')
+@section('title', __('installer.my_profile'))
 
 @push('styles')
 <style>
@@ -57,14 +57,14 @@
     {{-- Left Rail Menu --}}
     <div class="profile-rail">
         <div class="profile-rail-header">
-            <h6>Settings</h6>
+            <h6>{{ __('installer.account') }}</h6>
         </div>
         <nav class="profile-rail-nav">
-            <a href="#" class="profile-tab active" data-section="personal"><i class="bi bi-person"></i> My Profile</a>
-            <a href="#" class="profile-tab" data-section="company"><i class="bi bi-building"></i> Company Info</a>
-            <a href="#" class="profile-tab" data-section="branding"><i class="bi bi-palette"></i> Branding</a>
-            <a href="#" class="profile-tab" data-section="pricing"><i class="bi bi-currency-dollar"></i> Pricing</a>
-            <a href="#" class="profile-tab" data-section="security"><i class="bi bi-shield-lock"></i> Security</a>
+            <a href="#" class="profile-tab active" data-section="personal"><i class="bi bi-person"></i> {{ __('installer.my_profile') }}</a>
+            <a href="#" class="profile-tab" data-section="company"><i class="bi bi-building"></i> {{ __('installer.company_info') }}</a>
+            <a href="#" class="profile-tab" data-section="branding"><i class="bi bi-palette"></i> {{ __('installer.company_logo') }}</a>
+            <a href="#" class="profile-tab" data-section="pricing"><i class="bi bi-currency-dollar"></i> {{ __('installer.pricing') }}</a>
+            <a href="#" class="profile-tab" data-section="security"><i class="bi bi-shield-lock"></i> {{ __('installer.security') }}</a>
         </nav>
     </div>
 
@@ -72,70 +72,70 @@
     <div class="profile-main">
         {{-- Personal Info Section --}}
         <div class="profile-section active" id="section-personal">
-            <div class="section-title"><i class="bi bi-person me-2"></i>My Profile</div>
+            <div class="section-title"><i class="bi bi-person me-2"></i>{{ __('installer.my_profile') }}</div>
             <form method="POST" action="{{ route('installer.profile.update') }}">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="_section" value="personal">
                 <div class="form-card">
-                    <h6>Personal Details</h6>
+                    <h6>{{ __('installer.personal_info') }}</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Full Name</label>
+                            <label class="form-label">{{ __('installer.name') }}</label>
                             <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required>
                             @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Email Address</label>
+                            <label class="form-label">{{ __('installer.email') }}</label>
                             <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $user->email) }}" required>
                             @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Phone</label>
+                            <label class="form-label">{{ __('installer.phone') }}</label>
                             <input type="text" name="phone" class="form-control" value="{{ old('phone', $user->phone) }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Address</label>
+                            <label class="form-label">{{ __('installer.address') }}</label>
                             <input type="text" name="address" class="form-control" value="{{ old('address', $user->address) }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">City</label>
+                            <label class="form-label">{{ __('installer.city') }}</label>
                             <input type="text" name="city" class="form-control" value="{{ old('city', $user->city) }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">State</label>
+                            <label class="form-label">{{ __('installer.state') }}</label>
                             <input type="text" name="state" class="form-control" value="{{ old('state', $user->state) }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">ZIP</label>
+                            <label class="form-label">{{ __('installer.zip') }}</label>
                             <input type="text" name="zip" class="form-control" value="{{ old('zip', $user->zip) }}">
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-vip"><i class="bi bi-check-circle me-1"></i> Save Profile</button>
+                <button type="submit" class="btn btn-vip"><i class="bi bi-check-circle me-1"></i> {{ __('installer.update_profile') }}</button>
             </form>
         </div>
 
         {{-- Company Info Section --}}
         <div class="profile-section" id="section-company">
-            <div class="section-title"><i class="bi bi-building me-2"></i>Company Information</div>
+            <div class="section-title"><i class="bi bi-building me-2"></i>{{ __('installer.company_info') }}</div>
             <form method="POST" action="{{ route('installer.profile.update') }}">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="_section" value="company">
                 <div class="form-card">
-                    <h6>Company Details</h6>
+                    <h6>{{ __('installer.company_info') }}</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Company Name</label>
+                            <label class="form-label">{{ __('installer.company_name') }}</label>
                             <input type="text" name="company_name" class="form-control" value="{{ old('company_name', $user->company_name) }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Company Phone</label>
+                            <label class="form-label">{{ __('installer.company_phone') }}</label>
                             <input type="text" name="company_phone" class="form-control" value="{{ old('company_phone', $user->company_phone) }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Company Email</label>
+                            <label class="form-label">{{ __('installer.email') }}</label>
                             <input type="email" name="company_email" class="form-control" value="{{ old('company_email', $user->company_email) }}">
                         </div>
                         <div class="col-md-6">
@@ -144,15 +144,15 @@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-vip"><i class="bi bi-check-circle me-1"></i> Save Company Info</button>
+                <button type="submit" class="btn btn-vip"><i class="bi bi-check-circle me-1"></i> {{ __('installer.save') }}</button>
             </form>
         </div>
 
         {{-- Branding Section --}}
         <div class="profile-section" id="section-branding">
-            <div class="section-title"><i class="bi bi-palette me-2"></i>Branding</div>
+            <div class="section-title"><i class="bi bi-palette me-2"></i>{{ __('installer.company_logo') }}</div>
             <div class="form-card">
-                <h6>Company Logo</h6>
+                <h6>{{ __('installer.company_logo') }}</h6>
                 @if($user->company_logo)
                     <div class="mb-3">
                         <label class="form-label text-muted small">Current Logo</label>
@@ -184,17 +184,17 @@
 
         {{-- Pricing Section --}}
         <div class="profile-section" id="section-pricing">
-            <div class="section-title"><i class="bi bi-currency-dollar me-2"></i>Pricing Markup</div>
+            <div class="section-title"><i class="bi bi-currency-dollar me-2"></i>{{ __('installer.pricing') }}</div>
             <form method="POST" action="{{ route('installer.profile.update') }}">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="_section" value="pricing">
                 <div class="form-card">
-                    <h6>Your Markup</h6>
+                    <h6>{{ __('installer.markup_percentage') }}</h6>
                     <p class="text-muted small mb-3">Set your markup on top of the admin base price. You can use a percentage, a flat amount, or both. The final price your customers see will be: <strong>Admin Price + (Admin Price &times; Markup %) + Flat Add-on</strong>.</p>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Markup Percentage (%)</label>
+                            <label class="form-label">{{ __('installer.markup_percentage') }} (%)</label>
                             <div class="input-group">
                                 <input type="number" name="price_markup_pct" class="form-control @error('price_markup_pct') is-invalid @enderror"
                                        value="{{ old('price_markup_pct', $user->price_markup_pct ?? 0) }}" step="0.01" min="0" max="500">
@@ -204,7 +204,7 @@
                             <small class="text-muted">e.g. 20 means +20% on admin price</small>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Flat Add-on ($)</label>
+                            <label class="form-label">{{ __('installer.markup_flat') }} ($)</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
                                 <input type="number" name="price_markup_flat" class="form-control @error('price_markup_flat') is-invalid @enderror"
@@ -219,32 +219,32 @@
                     <h6>Example</h6>
                     <p class="text-muted small mb-0" id="pricingExample">If admin price is $100, with <strong>{{ $user->price_markup_pct ?? 0 }}%</strong> markup and <strong>${{ number_format($user->price_markup_flat ?? 0, 2) }}</strong> flat add-on, your price = <strong>${{ number_format(100 * (1 + ($user->price_markup_pct ?? 0) / 100) + ($user->price_markup_flat ?? 0), 2) }}</strong></p>
                 </div>
-                <button type="submit" class="btn btn-vip"><i class="bi bi-check-circle me-1"></i> Save Pricing</button>
+                <button type="submit" class="btn btn-vip"><i class="bi bi-check-circle me-1"></i> {{ __('installer.save') }}</button>
             </form>
         </div>
 
         {{-- Security Section --}}
         <div class="profile-section" id="section-security">
-            <div class="section-title"><i class="bi bi-shield-lock me-2"></i>Security</div>
+            <div class="section-title"><i class="bi bi-shield-lock me-2"></i>{{ __('installer.security') }}</div>
             <form method="POST" action="{{ route('installer.profile.update') }}">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="_section" value="security">
                 <div class="form-card">
-                    <h6>Change Password</h6>
+                    <h6>{{ __('installer.change_password') }}</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">New Password</label>
+                            <label class="form-label">{{ __('installer.new_password') }}</label>
                             <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Min 8 characters">
                             @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Confirm Password</label>
+                            <label class="form-label">{{ __('installer.confirm_password') }}</label>
                             <input type="password" name="password_confirmation" class="form-control" placeholder="Confirm new password">
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-vip"><i class="bi bi-check-circle me-1"></i> Update Password</button>
+                <button type="submit" class="btn btn-vip"><i class="bi bi-check-circle me-1"></i> {{ __('installer.change_password') }}</button>
             </form>
         </div>
     </div>

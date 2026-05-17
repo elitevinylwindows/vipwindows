@@ -1,5 +1,5 @@
 @extends('layouts.installer')
-@section('title', 'Calendar')
+@section('title', __('installer.calendar'))
 
 @push('styles')
 <style>
@@ -117,25 +117,25 @@
     {{-- Sidebar --}}
     <div class="cal-sidebar">
         <div class="cal-sidebar-header">
-            <h6>{{ $monthLabel }} Overview</h6>
+            <h6>{{ $monthLabel }} {{ __('installer.overview') }}</h6>
             <div class="cal-stat">
-                <span><span class="dot" style="background:#333; display:inline-block;"></span> Total Jobs</span>
+                <span><span class="dot" style="background:#333; display:inline-block;"></span> {{ __('installer.total_jobs') }}</span>
                 <span class="count">{{ $totalMonth }}</span>
             </div>
             <div class="cal-stat">
-                <span><span class="dot" style="background:#ffc107; display:inline-block;"></span> Pending</span>
+                <span><span class="dot" style="background:#ffc107; display:inline-block;"></span> {{ __('installer.pending') }}</span>
                 <span class="count" style="color:#ffc107;">{{ $pending }}</span>
             </div>
             <div class="cal-stat">
-                <span><span class="dot" style="background:#17a2b8; display:inline-block;"></span> Scheduled</span>
+                <span><span class="dot" style="background:#17a2b8; display:inline-block;"></span> {{ __('installer.scheduled') }}</span>
                 <span class="count" style="color:#17a2b8;">{{ $scheduled }}</span>
             </div>
             <div class="cal-stat">
-                <span><span class="dot" style="background:#007bff; display:inline-block;"></span> In Progress</span>
+                <span><span class="dot" style="background:#007bff; display:inline-block;"></span> {{ __('installer.in_progress') }}</span>
                 <span class="count" style="color:#007bff;">{{ $inProgress }}</span>
             </div>
             <div class="cal-stat">
-                <span><span class="dot" style="background:#28a745; display:inline-block;"></span> Completed</span>
+                <span><span class="dot" style="background:#28a745; display:inline-block;"></span> {{ __('installer.completed') }}</span>
                 <span class="count" style="color:#28a745;">{{ $completed }}</span>
             </div>
         </div>
@@ -147,7 +147,7 @@
 
             @if($upcoming->count())
                 <div class="cal-day-section">
-                    <div class="day-header">Upcoming Jobs</div>
+                    <div class="day-header">{{ __('installer.upcoming_jobs') }}</div>
                     @foreach($upcoming as $uj)
                         <a href="{{ route('installer.jobs.index') }}?highlight={{ $uj->id }}" class="cal-job-card status-{{ $uj->status }}" style="text-decoration:none; display:block;">
                             <div class="jc-title">{{ $uj->job_number }}</div>
@@ -162,7 +162,7 @@
             @else
                 <div class="text-center py-4 text-muted">
                     <i class="bi bi-calendar-check" style="font-size:2rem; opacity:.3;"></i>
-                    <p class="mt-2 small">No upcoming jobs this month</p>
+                    <p class="mt-2 small">{{ __('installer.no_upcoming_jobs') }}</p>
                 </div>
             @endif
         </div>
@@ -173,17 +173,17 @@
         <div class="cal-toolbar">
             <div class="nav-btns">
                 <a href="{{ route('installer.calendar', ['month' => $prevMonth->month, 'year' => $prevMonth->year]) }}" title="Previous"><i class="bi bi-chevron-left"></i></a>
-                <a href="{{ route('installer.calendar') }}" title="Today" style="width:auto; padding:0 10px; font-size:.75rem; font-weight:600;">Today</a>
+                <a href="{{ route('installer.calendar') }}" title="{{ __('installer.today') }}" style="width:auto; padding:0 10px; font-size:.75rem; font-weight:600;">{{ __('installer.today') }}</a>
                 <a href="{{ route('installer.calendar', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}" title="Next"><i class="bi bi-chevron-right"></i></a>
             </div>
             <h5>{{ $monthLabel }}</h5>
-            <a href="{{ route('installer.jobs.index') }}" class="btn btn-sm btn-vip"><i class="bi bi-list-ul me-1"></i>All Jobs</a>
+            <a href="{{ route('installer.jobs.index') }}" class="btn btn-sm btn-vip"><i class="bi bi-list-ul me-1"></i>{{ __('installer.all_jobs') }}</a>
         </div>
 
         <div class="cal-grid-wrap">
             <div class="cal-grid">
                 {{-- Day headers --}}
-                @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $dn)
+                @foreach([__('installer.sun'),__('installer.mon'),__('installer.tue'),__('installer.wed'),__('installer.thu'),__('installer.fri'),__('installer.sat')] as $dn)
                     <div class="day-name">{{ $dn }}</div>
                 @endforeach
 
@@ -205,7 +205,7 @@
                                 <span class="cell-job s-{{ $dj->status }}">{{ $dj->customer_name ? substr($dj->customer_name, 0, 12) : $dj->job_number }}</span>
                             @endforeach
                             @if($dayJobs->count() > $maxShow)
-                                <span class="cell-more">+{{ $dayJobs->count() - $maxShow }} more</span>
+                                <span class="cell-more">+{{ $dayJobs->count() - $maxShow }} {{ __('installer.more') }}</span>
                             @endif
                         </div>
                     </div>

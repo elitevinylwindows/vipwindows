@@ -637,6 +637,164 @@ class InstallerQuoteController extends Controller
     }
 
     /**
+     * AJAX: Get available series types/configurations for a series.
+     */
+    public function getSeriesTypes($seriesId)
+    {
+        // Source 1: legacy series_types table
+        $legacyTypes = DB::table('elitevw_master_series_types')
+            ->where('series_id', $seriesId)
+            ->pluck('series_type');
+
+        $flattened = collect();
+        foreach ($legacyTypes as $json) {
+            $decoded = json_decode($json, true);
+            if (is_array($decoded)) {
+                $flattened = $flattened->merge($decoded);
+            } else {
+                $flattened = $flattened->merge(explode(',', $json));
+            }
+        }
+
+        // Source 2: active configs from series_configurations
+        $seriesName = DB::table('elitevw_master_series')
+            ->where('id', $seriesId)
+            ->value('series');
+
+        if ($seriesName) {
+            $seriesProductTypeIds = DB::table('elitevw_master_productkeys_producttypes')
+                ->where('series', $seriesName)
+                ->pluck('id');
+
+            if ($seriesProductTypeIds->isNotEmpty()) {
+                $configIds = DB::table('elitevw_master_series_configuration_product_type')
+                    ->whereIn('product_type_id', $seriesProductTypeIds)
+                    ->pluck('series_configuration_id')
+                    ->unique();
+
+                $activeConfigs = DB::table('elitevw_master_series_configurations')
+                    ->whereIn('id', $configIds)
+                    ->where('is_active', true)
+                    ->pluck('series_type');
+
+                $flattened = $flattened->merge($activeConfigs);
+            }
+        }
+
+        return response()->json(
+            $flattened->map(fn($t) => strtoupper(trim($t)))
+                ->unique()
+                ->filter()
+                ->sort()
+                ->values()
+        );
+    }
+
+    /**
+     * AJAX: Render window diagram SVG preview.
+     */
+    public function windowPreview(Request $request)
+    {
+        $colorCode = $request->input('color', 'WH');
+        $hexColor  = $request->input('hexColor');
+
+        if (!$hexColor && $colorCode && $colorCode !== 'WH') {
+            $hexColor = DB::table('elitevw_master_ext_colors')->where('code', $colorCode)->value('hex_color')
+                     ?? DB::table('elitevw_master_laminate_colors')->where('code', $colorCode)->value('hex_color');
+        }
+
+        return view('components.window-diagram', [
+            'type'         => $request->input('type', 'PW'),
+            'width'        => $request->input('width', 36),
+            'height'       => $request->input('height', 60),
+            'maxSize'      => $request->input('maxSize', 280),
+            'noDimensions' => $request->boolean('noDimensions', false),
+            'color'        => $colorCode,
+            'hexColor'     => $hexColor,
+            'gridPattern'  => $request->input('gridPattern', ''),
+            'gridDetail'   => $request->input('gridDetail', ''),
+            'shapeCode'    => $request->input('shapeCode', ''),
+            'shapeParams'  => $request->input('shapeParams', ''),
+            'mainWidths'   => $request->input('mainWidths', ''),
+            'topWidths'    => $request->input('topWidths', ''),
+            'botWidths'    => $request->input('botWidths', ''),
+            'mainLabels'   => $request->input('mainLabels', ''),
+            'topLabels'    => $request->input('topLabels', ''),
+            'botLabels'    => $request->input('botLabels', ''),
+            'rowHeights'   => $request->input('rowHeights', ''),
+        ]);
+    }
+
+    /**
+     * AJAX: Get price for schema dropdown selections (frame type, grid, etc).
+     */
+    public function getSchemaPrice(Request $request)
+    {
+        // If addon_category is passed, look up from the Add-On Manager table
+        if ($request->has('addon_category')) {
+            $addonKey = $request->input('dropdown_value');
+            $category = $request->input('addon_category');
+            $seriesId = $request->input('series');
+
+            $addon = DB::table('elitevw_price_addons')
+                ->where('series_id', $seriesId)
+                ->where('addon_category', $category)
+                ->where('addon_key', $addonKey)
+                ->where('active', true)
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'price'   => $addon ? (float) $addon->price : 0,
+            ]);
+        }
+
+        $validated = $request->validate([
+            'dropdown_value' => 'required|string',
+            'series_type' => 'required|string',
+            'series' => 'required|string',
+        ]);
+
+        $series = Series::where('id', $validated['series'])->first();
+        if (!$series) {
+            return response()->json(['price' => 0]);
+        }
+
+        $seriesType = SeriesConfiguration::with([
+            'productTypes' => function ($query) use ($series) {
+                $query->where('series', $series->series);
+            }
+        ])
+            ->where('series_type', $validated['series_type'])
+            ->first();
+
+        if (!$seriesType || $seriesType->productTypes->isEmpty()) {
+            return response()->json(['price' => 0]);
+        }
+
+        // Try to find the add-on price from the price_addons table
+        $column = str_replace('/', '_', strtolower($validated['dropdown_value']));
+        $addOnPrice = DB::table('elitevw_price_addons')
+            ->where('series_id', $validated['series'])
+            ->where('addon_key', $validated['dropdown_value'])
+            ->where('active', true)
+            ->value('price') ?? 0;
+
+        return response()->json(['price' => (float) $addOnPrice]);
+    }
+
+    /**
+     * Update item quantity.
+     */
+    public function updateItemQty(Request $request, $quoteId, $itemId)
+    {
+        $item = QuoteItem::where('quote_id', $quoteId)->findOrFail($itemId);
+        $qty = max(1, intval($request->input('qty', 1)));
+        $item->update(['qty' => $qty]);
+        return response()->json(['success' => true, 'qty' => $qty]);
+    }
+
+    /**
      * Generate installer-specific quote number.
      */
     private function generateQuoteNumber(): string

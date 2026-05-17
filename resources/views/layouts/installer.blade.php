@@ -4,16 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Installer Portal') — VIP Windows</title>
+    <title>@yield('title', __('installer.installer_portal')) — VIP Windows</title>
     <link rel="icon" href="/favicon.ico" sizes="32x32">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         :root {
-            --vip-primary: #111111;
-            --vip-accent: #c9a84c;
-            --vip-light: #f7f6f3;
+            --vip-primary: #1a1a2e;
+            --vip-accent: #d4a843;
+            --vip-light: #fafbfd;
             --sidebar-width: 240px;
         }
         body { background: var(--vip-light); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
@@ -22,7 +22,7 @@
         .admin-sidebar {
             position: fixed; top: 0; left: 0; bottom: 0;
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, #0a0a0a 0%, #141414 100%);
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
             color: #fff;
             z-index: 1040;
             display: flex; flex-direction: column;
@@ -134,54 +134,54 @@
                 <a href="{{ route('installer.dashboard') }}">
                     <img src="{{ asset('uploads/installer-logos/' . Auth::user()->company_logo) }}" alt="{{ Auth::user()->company_name }}" style="height:50px; max-width:180px; object-fit:contain;">
                 </a>
-                <div class="small text-muted mt-1">powered by VIP Windows</div>
+                <div class="small text-muted mt-1">{{ __('installer.powered_by') }} VIP Windows</div>
             @else
                 <a href="{{ route('home') }}" target="_blank">
                     <img src="/images/logo.png" alt="VIP Windows" style="height:70px;">
                 </a>
             @endif
-            <div class="portal-badge">Installer Portal</div>
+            <div class="portal-badge">{{ __('installer.installer_portal') }}</div>
         </div>
 
         <nav class="sidebar-nav">
-            <div class="nav-label">Main</div>
+            <div class="nav-label">{{ __('installer.main') }}</div>
             <a href="{{ route('installer.dashboard') }}" class="{{ request()->routeIs('installer.dashboard') ? 'active' : '' }}">
-                <i class="bi bi-speedometer2"></i> Dashboard
+                <i class="bi bi-speedometer2"></i> {{ __('installer.dashboard') }}
             </a>
             <a href="{{ route('installer.quotes.index') }}" class="{{ request()->routeIs('installer.quotes.*') ? 'active' : '' }}">
-                <i class="bi bi-calculator"></i> My Quotes
+                <i class="bi bi-calculator"></i> {{ __('installer.my_quotes') }}
             </a>
             <a href="{{ route('installer.jobs.index') }}" class="{{ request()->routeIs('installer.jobs.*') ? 'active' : '' }}">
-                <i class="bi bi-tools"></i> My Jobs
+                <i class="bi bi-tools"></i> {{ __('installer.my_jobs') }}
             </a>
             <a href="{{ route('installer.calendar') }}" class="{{ request()->routeIs('installer.calendar') ? 'active' : '' }}">
-                <i class="bi bi-calendar3"></i> Calendar
+                <i class="bi bi-calendar3"></i> {{ __('installer.calendar') }}
             </a>
             <a href="{{ route('installer.invoices.index') }}" class="{{ request()->routeIs('installer.invoices.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i> My Invoices
+                <i class="bi bi-receipt"></i> {{ __('installer.my_invoices') }}
             </a>
 
-            <div class="nav-label mt-3">Customers</div>
+            <div class="nav-label mt-3">{{ __('installer.customers') }}</div>
             <a href="{{ route('installer.customers.index') }}" class="{{ request()->routeIs('installer.customers.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> My Customers
+                <i class="bi bi-people"></i> {{ __('installer.my_customers') }}
             </a>
 
-            <div class="nav-label mt-3">Account</div>
+            <div class="nav-label mt-3">{{ __('installer.account') }}</div>
             <a href="{{ route('installer.profile') }}" class="{{ request()->routeIs('installer.profile*') ? 'active' : '' }}">
-                <i class="bi bi-person-gear"></i> My Profile
+                <i class="bi bi-person-gear"></i> {{ __('installer.my_profile') }}
             </a>
             <a href="{{ route('home') }}" target="_blank">
-                <i class="bi bi-globe"></i> View Website
+                <i class="bi bi-globe"></i> {{ __('installer.view_website') }}
             </a>
         </nav>
 
         <div class="sidebar-user">
             <div class="user-name"><i class="bi bi-person-circle me-1"></i> {{ Auth::user()->name }}</div>
-            <div class="user-role">Installer</div>
+            <div class="user-role">{{ __('installer.installer') }}</div>
             <form method="POST" action="{{ route('logout') }}" class="mt-2">
                 @csrf
                 <button class="btn btn-sm btn-outline-light w-100 opacity-50" type="submit">
-                    <i class="bi bi-box-arrow-left me-1"></i> Sign Out
+                    <i class="bi bi-box-arrow-left me-1"></i> {{ __('installer.sign_out') }}
                 </button>
             </form>
         </div>
@@ -198,7 +198,7 @@
                 <button class="btn btn-sm btn-outline-dark sidebar-toggle" onclick="document.getElementById('adminSidebar').classList.toggle('show')">
                     <i class="bi bi-list"></i>
                 </button>
-                <h6 class="mb-0 fw-semibold text-muted">@yield('title', 'Installer Portal')</h6>
+                <h6 class="mb-0 fw-semibold text-muted">@yield('title', __('installer.installer_portal'))</h6>
             </div>
             <div class="d-flex align-items-center gap-3">
                 {{-- Language Switcher --}}
@@ -218,12 +218,12 @@
                         <i class="bi bi-person-circle me-1"></i>{{ Auth::user()->name }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="{{ route('installer.profile') }}"><i class="bi bi-person-gear me-2"></i>My Profile</a></li>
+                        <li><a class="dropdown-item" href="{{ route('installer.profile') }}"><i class="bi bi-person-gear me-2"></i>{{ __('installer.my_profile') }}</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-left me-2"></i>Sign Out</button>
+                                <button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-left me-2"></i>{{ __('installer.sign_out') }}</button>
                             </form>
                         </li>
                     </ul>
@@ -256,7 +256,9 @@
 
         {{-- Footer --}}
         <footer class="py-3 text-center small">
-            &copy; {{ date('Y') }} VIP Windows. All rights reserved.
+            <span style="color: rgba(0,0,0,.35);">{{ __('installer.powered_by') }}</span>
+            <a href="{{ route('home') }}" target="_blank" style="color: var(--vip-accent); text-decoration: none; font-weight: 600;">VIP Windows</a>
+            <span style="color: rgba(0,0,0,.25);">&middot; &copy; {{ date('Y') }}</span>
         </footer>
     </div>
 

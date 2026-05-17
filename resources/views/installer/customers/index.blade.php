@@ -1,5 +1,5 @@
 @extends('layouts.installer')
-@section('title', 'My Customers')
+@section('title', __('installer.my_customers'))
 
 @push('styles')
 <style>
@@ -106,7 +106,7 @@
     {{-- Left Rail --}}
     <div class="ic-rail">
         <div class="ic-rail-header">
-            <h6>My Customers</h6>
+            <h6>{{ __('installer.my_customers') }}</h6>
             <div class="ic-rail-search">
                 <input type="text" id="icSearch" placeholder="Search customers...">
                 <button class="btn btn-sm btn-vip" data-bs-toggle="modal" data-bs-target="#addCustomerModal" title="Add Customer">
@@ -114,7 +114,7 @@
                 </button>
             </div>
             <div class="ic-rail-tabs">
-                <div class="tab-btn {{ !request('type') ? 'active' : '' }}" data-type="">All</div>
+                <div class="tab-btn {{ !request('type') ? 'active' : '' }}" data-type="">{{ __('installer.all') }}</div>
                 <div class="tab-btn {{ request('type') === 'homeowner' ? 'active' : '' }}" data-type="homeowner">Homeowner</div>
                 <div class="tab-btn {{ request('type') === 'business' ? 'active' : '' }}" data-type="business">Business</div>
             </div>
@@ -135,7 +135,7 @@
             @empty
                 <div class="text-center py-4" style="color:rgba(255,255,255,.4);">
                     <i class="bi bi-people" style="font-size:2rem;"></i>
-                    <p class="mt-2 mb-0">No customers yet</p>
+                    <p class="mt-2 mb-0">{{ __('installer.no_customers_found') }}</p>
                 </div>
             @endforelse
         </div>
@@ -148,13 +148,13 @@
     {{-- Main Panel --}}
     <div class="ic-main">
         <div class="ic-main-toolbar">
-            <h5 id="icDetailTitle">Customer Details</h5>
+            <h5 id="icDetailTitle">{{ __('installer.customer_details') }}</h5>
             <div id="icToolbarActions"></div>
         </div>
         <div class="ic-detail-body" id="icDetailBody">
             <div class="ic-empty-state">
                 <i class="bi bi-people"></i>
-                <p>Select a customer to view details</p>
+                <p>{{ __('installer.select_customer') }}</p>
             </div>
         </div>
     </div>
@@ -166,26 +166,26 @@
         <form method="POST" action="{{ route('installer.customers.store') }}">
             @csrf
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title"><i class="bi bi-person-plus me-1"></i> Add Customer</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header"><h5 class="modal-title"><i class="bi bi-person-plus me-1"></i> {{ __('installer.add_customer') }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-8"><label class="form-label">Full Name *</label><input type="text" name="name" class="form-control" required></div>
-                        <div class="col-4"><label class="form-label">Type</label>
+                        <div class="col-8"><label class="form-label">{{ __('installer.name') }} *</label><input type="text" name="name" class="form-control" required></div>
+                        <div class="col-4"><label class="form-label">{{ __('installer.item_type') }}</label>
                             <select name="customer_type" class="form-select">
                                 <option value="homeowner">Homeowner</option>
                                 <option value="business">Business</option>
                             </select>
                         </div>
-                        <div class="col-6"><label class="form-label">Email *</label><input type="email" name="email" class="form-control" required></div>
-                        <div class="col-6"><label class="form-label">Phone</label><input type="text" name="phone" class="form-control"></div>
-                        <div class="col-12"><label class="form-label">Address</label><input type="text" name="address" class="form-control"></div>
-                        <div class="col-5"><label class="form-label">City</label><input type="text" name="city" class="form-control"></div>
-                        <div class="col-4"><label class="form-label">State</label><input type="text" name="state" class="form-control" value="CA"></div>
-                        <div class="col-3"><label class="form-label">ZIP</label><input type="text" name="zip" class="form-control"></div>
-                        <div class="col-12"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+                        <div class="col-6"><label class="form-label">{{ __('installer.email') }} *</label><input type="email" name="email" class="form-control" required></div>
+                        <div class="col-6"><label class="form-label">{{ __('installer.phone') }}</label><input type="text" name="phone" class="form-control"></div>
+                        <div class="col-12"><label class="form-label">{{ __('installer.address') }}</label><input type="text" name="address" class="form-control"></div>
+                        <div class="col-5"><label class="form-label">{{ __('installer.city') }}</label><input type="text" name="city" class="form-control"></div>
+                        <div class="col-4"><label class="form-label">{{ __('installer.state') }}</label><input type="text" name="state" class="form-control" value="CA"></div>
+                        <div class="col-3"><label class="form-label">{{ __('installer.zip') }}</label><input type="text" name="zip" class="form-control"></div>
+                        <div class="col-12"><label class="form-label">{{ __('installer.notes') }}</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
                     </div>
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-vip">Add Customer</button></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('installer.cancel') }}</button><button type="submit" class="btn btn-vip">{{ __('installer.add_customer') }}</button></div>
             </div>
         </form>
     </div>
@@ -198,26 +198,26 @@
             @csrf
             @method('PUT')
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title"><i class="bi bi-pencil me-1"></i> Edit Customer</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header"><h5 class="modal-title"><i class="bi bi-pencil me-1"></i> {{ __('installer.edit') }} {{ __('installer.customers') }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-8"><label class="form-label">Full Name *</label><input type="text" name="name" id="ecName" class="form-control" required></div>
-                        <div class="col-4"><label class="form-label">Type</label>
+                        <div class="col-8"><label class="form-label">{{ __('installer.name') }} *</label><input type="text" name="name" id="ecName" class="form-control" required></div>
+                        <div class="col-4"><label class="form-label">{{ __('installer.item_type') }}</label>
                             <select name="customer_type" id="ecType" class="form-select">
                                 <option value="homeowner">Homeowner</option>
                                 <option value="business">Business</option>
                             </select>
                         </div>
-                        <div class="col-6"><label class="form-label">Email *</label><input type="email" name="email" id="ecEmail" class="form-control" required></div>
-                        <div class="col-6"><label class="form-label">Phone</label><input type="text" name="phone" id="ecPhone" class="form-control"></div>
-                        <div class="col-12"><label class="form-label">Address</label><input type="text" name="address" id="ecAddress" class="form-control"></div>
-                        <div class="col-5"><label class="form-label">City</label><input type="text" name="city" id="ecCity" class="form-control"></div>
-                        <div class="col-4"><label class="form-label">State</label><input type="text" name="state" id="ecState" class="form-control"></div>
-                        <div class="col-3"><label class="form-label">ZIP</label><input type="text" name="zip" id="ecZip" class="form-control"></div>
-                        <div class="col-12"><label class="form-label">Notes</label><textarea name="notes" id="ecNotes" class="form-control" rows="2"></textarea></div>
+                        <div class="col-6"><label class="form-label">{{ __('installer.email') }} *</label><input type="email" name="email" id="ecEmail" class="form-control" required></div>
+                        <div class="col-6"><label class="form-label">{{ __('installer.phone') }}</label><input type="text" name="phone" id="ecPhone" class="form-control"></div>
+                        <div class="col-12"><label class="form-label">{{ __('installer.address') }}</label><input type="text" name="address" id="ecAddress" class="form-control"></div>
+                        <div class="col-5"><label class="form-label">{{ __('installer.city') }}</label><input type="text" name="city" id="ecCity" class="form-control"></div>
+                        <div class="col-4"><label class="form-label">{{ __('installer.state') }}</label><input type="text" name="state" id="ecState" class="form-control"></div>
+                        <div class="col-3"><label class="form-label">{{ __('installer.zip') }}</label><input type="text" name="zip" id="ecZip" class="form-control"></div>
+                        <div class="col-12"><label class="form-label">{{ __('installer.notes') }}</label><textarea name="notes" id="ecNotes" class="form-control" rows="2"></textarea></div>
                     </div>
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-vip">Save Changes</button></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('installer.cancel') }}</button><button type="submit" class="btn btn-vip">{{ __('installer.save_changes') }}</button></div>
             </div>
         </form>
     </div>

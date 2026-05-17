@@ -1,20 +1,20 @@
 @extends('layouts.installer')
-@section('title', 'Dashboard')
+@section('title', __('installer.dashboard'))
 
 @section('content')
 <div class="container-fluid py-4 px-4">
     {{-- Welcome header + quick actions --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-1">Welcome back, {{ Auth::user()->name }}</h4>
-            <p class="text-muted mb-0 small">Here's your activity overview.</p>
+            <h4 class="fw-bold mb-1">{{ __('installer.welcome_back') }}, {{ Auth::user()->name }}</h4>
+            <p class="text-muted mb-0 small">{{ __('installer.recent_activity') }}</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('admin.quotes.create') }}" class="btn btn-vip">
-                <i class="bi bi-plus-circle me-1"></i> New Quote
+                <i class="bi bi-plus-circle me-1"></i> {{ __('installer.new_quote') }}
             </a>
             <a href="{{ route('installer.jobs.index') }}" class="btn btn-outline-dark">
-                <i class="bi bi-calendar3 me-1"></i> View Schedule
+                <i class="bi bi-calendar3 me-1"></i> {{ __('installer.view_calendar') }}
             </a>
         </div>
     </div>
@@ -26,7 +26,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="text-muted small mb-1">Total Quotes</div>
+                            <div class="text-muted small mb-1">{{ __('installer.total_quotes') }}</div>
                             <h3 class="fw-bold mb-0">{{ $totalQuotes }}</h3>
                         </div>
                         <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;background:rgba(201,168,76,.15);">
@@ -41,7 +41,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="text-muted small mb-1">Sent Quotes</div>
+                            <div class="text-muted small mb-1">{{ __('installer.sent') }} {{ __('installer.quotes') }}</div>
                             <h3 class="fw-bold mb-0">{{ $sentQuotes }}</h3>
                         </div>
                         <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;background:rgba(0,0,0,.06);">
@@ -56,7 +56,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="text-muted small mb-1">Active Jobs</div>
+                            <div class="text-muted small mb-1">{{ __('installer.in_progress') }}</div>
                             <h3 class="fw-bold mb-0">{{ $activeJobs }}</h3>
                         </div>
                         <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;background:rgba(0,123,255,.12);">
@@ -71,7 +71,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="text-muted small mb-1">Completed Jobs</div>
+                            <div class="text-muted small mb-1">{{ __('installer.completed') }}</div>
                             <h3 class="fw-bold mb-0">{{ $completedJobs }}</h3>
                         </div>
                         <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;background:rgba(40,167,69,.12);">
@@ -86,7 +86,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="text-muted small mb-1">Pending Invoices</div>
+                            <div class="text-muted small mb-1">{{ __('installer.pending_invoices') }}</div>
                             <h3 class="fw-bold mb-0">{{ $pendingInvoices }}</h3>
                         </div>
                         <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;background:rgba(255,193,7,.15);">
@@ -101,7 +101,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="text-muted small mb-1">Total Earnings</div>
+                            <div class="text-muted small mb-1">{{ __('installer.total') }}</div>
                             <h3 class="fw-bold mb-0">${{ number_format($totalEarnings, 2) }}</h3>
                         </div>
                         <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;background:rgba(40,167,69,.12);">
@@ -119,22 +119,22 @@
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0"><i class="bi bi-calculator me-2"></i>Recent Quotes</h6>
-                    <a href="{{ route('installer.quotes.index') }}" class="btn btn-sm btn-outline-dark">View All</a>
+                    <h6 class="fw-semibold mb-0"><i class="bi bi-calculator me-2"></i>{{ __('installer.my_quotes') }}</h6>
+                    <a href="{{ route('installer.quotes.index') }}" class="btn btn-sm btn-outline-dark">{{ __('installer.all') }}</a>
                 </div>
                 <div class="card-body p-0">
                     @if($recentQuotes->isEmpty())
-                        <div class="text-center py-4 text-muted small">No quotes yet.</div>
+                        <div class="text-center py-4 text-muted small">{{ __('installer.no_quotes_found') }}</div>
                     @else
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Quote #</th>
-                                        <th>Customer</th>
-                                        <th>Items</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
+                                        <th>{{ __('installer.quote_number') }}</th>
+                                        <th>{{ __('installer.customer_name') }}</th>
+                                        <th>{{ __('installer.quantity') }}</th>
+                                        <th>{{ __('installer.status') }}</th>
+                                        <th>{{ __('installer.created') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -145,9 +145,9 @@
                                             <td>{{ $quote->items->count() }}</td>
                                             <td>
                                                 @if($quote->status === 'draft')
-                                                    <span class="badge bg-secondary">Draft</span>
+                                                    <span class="badge bg-secondary">{{ __('installer.draft') }}</span>
                                                 @elseif($quote->status === 'sent')
-                                                    <span class="badge bg-success">Sent</span>
+                                                    <span class="badge bg-success">{{ __('installer.sent') }}</span>
                                                 @else
                                                     <span class="badge bg-info">{{ ucfirst($quote->status) }}</span>
                                                 @endif
@@ -167,21 +167,21 @@
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0"><i class="bi bi-tools me-2"></i>Recent Jobs</h6>
-                    <a href="{{ route('installer.jobs.index') }}" class="btn btn-sm btn-outline-dark">View All</a>
+                    <h6 class="fw-semibold mb-0"><i class="bi bi-tools me-2"></i>{{ __('installer.my_jobs') }}</h6>
+                    <a href="{{ route('installer.jobs.index') }}" class="btn btn-sm btn-outline-dark">{{ __('installer.all') }}</a>
                 </div>
                 <div class="card-body p-0">
                     @if($recentJobs->isEmpty())
-                        <div class="text-center py-4 text-muted small">No jobs assigned yet.</div>
+                        <div class="text-center py-4 text-muted small">{{ __('installer.no_jobs_found') }}</div>
                     @else
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Job #</th>
-                                        <th>Customer</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
+                                        <th>{{ __('installer.job_number') }}</th>
+                                        <th>{{ __('installer.customer_name') }}</th>
+                                        <th>{{ __('installer.status') }}</th>
+                                        <th>{{ __('installer.created') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

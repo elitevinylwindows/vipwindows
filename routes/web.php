@@ -321,6 +321,9 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/quotes/create', [InstallerQuoteController::class, 'create'])->name('quotes.create');
     Route::post('/quotes', [InstallerQuoteController::class, 'store'])->name('quotes.store');
     Route::post('/quotes/check-price', [InstallerQuoteController::class, 'checkPrice'])->name('quotes.checkPrice');
+    Route::get('/quotes/series-types/{seriesId}', [InstallerQuoteController::class, 'getSeriesTypes'])->name('quotes.seriesTypes');
+    Route::get('/quotes/window-preview', [InstallerQuoteController::class, 'windowPreview'])->name('quotes.windowPreview');
+    Route::post('/quotes/schema/price', [InstallerQuoteController::class, 'getSchemaPrice'])->name('quotes.schemaPrice');
     Route::get('/quotes/panel-layout', [InstallerQuoteController::class, 'panelLayout'])->name('quotes.panel-layout');
     Route::get('/quotes/shapes', [InstallerQuoteController::class, 'shapes'])->name('quotes.shapes');
     Route::get('/quotes/series-map', [InstallerQuoteController::class, 'seriesMap'])->name('quotes.seriesMap');
@@ -329,6 +332,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/quotes/{id}/edit', [InstallerQuoteController::class, 'edit'])->name('quotes.edit');
     Route::post('/quotes/{id}/save-draft', [InstallerQuoteController::class, 'saveDraft'])->name('quotes.saveDraft');
     Route::post('/quotes/{id}/item', [InstallerQuoteController::class, 'storeItem'])->name('quotes.storeItem');
+    Route::post('/quotes/{id}/items/{itemId}/qty', [InstallerQuoteController::class, 'updateItemQty'])->name('quotes.updateItemQty');
     Route::delete('/quotes/{id}/item/{itemId}', [InstallerQuoteController::class, 'deleteItem'])->name('quotes.deleteItem');
     Route::post('/quotes/{id}/apply-discounts', [InstallerQuoteController::class, 'applyDiscounts'])->name('quotes.applyDiscounts');
     Route::post('/quotes/{id}/send', [InstallerQuoteController::class, 'sendToCustomer'])->name('quotes.send');

@@ -1,5 +1,5 @@
 @extends('layouts.installer')
-@section('title', 'My Invoices')
+@section('title', __('installer.my_invoices'))
 
 @push('styles')
 <style>
@@ -95,18 +95,18 @@
     <div class="iq-rail">
         <div class="iq-rail-header">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="mb-0">My Invoices</h6>
-                <button class="btn btn-sm btn-vip" data-bs-toggle="modal" data-bs-target="#createInvoiceModal"><i class="bi bi-plus-lg me-1"></i>New Invoice</button>
+                <h6 class="mb-0">{{ __('installer.my_invoices') }}</h6>
+                <button class="btn btn-sm btn-vip" data-bs-toggle="modal" data-bs-target="#createInvoiceModal"><i class="bi bi-plus-lg me-1"></i>{{ __('installer.new_invoice') }}</button>
             </div>
             <div class="iq-rail-search">
                 <input type="text" id="iqSearch" placeholder="Search invoices...">
             </div>
             <div class="iq-rail-tabs">
-                <div class="tab-btn {{ $status === 'all' ? 'active' : '' }}" data-status="all">All</div>
-                <div class="tab-btn {{ $status === 'draft' ? 'active' : '' }}" data-status="draft">Draft</div>
-                <div class="tab-btn {{ $status === 'sent' ? 'active' : '' }}" data-status="sent">Sent</div>
-                <div class="tab-btn {{ $status === 'paid' ? 'active' : '' }}" data-status="paid">Paid</div>
-                <div class="tab-btn {{ $status === 'overdue' ? 'active' : '' }}" data-status="overdue">Due</div>
+                <div class="tab-btn {{ $status === 'all' ? 'active' : '' }}" data-status="all">{{ __('installer.all') }}</div>
+                <div class="tab-btn {{ $status === 'draft' ? 'active' : '' }}" data-status="draft">{{ __('installer.draft') }}</div>
+                <div class="tab-btn {{ $status === 'sent' ? 'active' : '' }}" data-status="sent">{{ __('installer.sent') }}</div>
+                <div class="tab-btn {{ $status === 'paid' ? 'active' : '' }}" data-status="paid">{{ __('installer.paid') }}</div>
+                <div class="tab-btn {{ $status === 'overdue' ? 'active' : '' }}" data-status="overdue">{{ __('installer.overdue') }}</div>
             </div>
         </div>
 
@@ -124,7 +124,7 @@
             @empty
                 <div class="text-center py-4" style="color:rgba(255,255,255,.4);">
                     <i class="bi bi-receipt" style="font-size:2rem;"></i>
-                    <p class="mt-2 mb-0">No invoices yet</p>
+                    <p class="mt-2 mb-0">{{ __('installer.no_invoices_found') }}</p>
                 </div>
             @endforelse
         </div>
@@ -138,13 +138,13 @@
     {{-- Main Panel --}}
     <div class="iq-main">
         <div class="iq-main-toolbar">
-            <h5 id="iqDetailTitle">Invoice Details</h5>
+            <h5 id="iqDetailTitle">{{ __('installer.invoice_details') }}</h5>
             <div id="iqToolbarActions"></div>
         </div>
         <div class="iq-detail-body" id="iqDetailBody">
             <div class="iq-empty-state">
                 <i class="bi bi-receipt"></i>
-                <p>Select an invoice to view details</p>
+                <p>{{ __('installer.select_invoice') }}</p>
             </div>
         </div>
     </div>
@@ -154,7 +154,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="background:var(--vip-primary); color:#fff; border:1px solid rgba(255,255,255,.1);">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title" id="createInvoiceModalLabel"><i class="bi bi-receipt me-2"></i>New Invoice</h5>
+                <h5 class="modal-title" id="createInvoiceModalLabel"><i class="bi bi-receipt me-2"></i>{{ __('installer.new_invoice') }}</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="createInvoiceForm" method="POST" action="{{ route('installer.invoices.store') }}">
@@ -162,43 +162,43 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label small text-white-50">Customer Name <span class="text-danger">*</span></label>
+                            <label class="form-label small text-white-50">{{ __('installer.customer_name') }} <span class="text-danger">*</span></label>
                             <input type="text" name="customer_name" class="form-control bg-dark text-white border-secondary" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-white-50">Customer Email</label>
+                            <label class="form-label small text-white-50">{{ __('installer.customer_email') }}</label>
                             <input type="email" name="customer_email" class="form-control bg-dark text-white border-secondary">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-white-50">Customer Phone</label>
+                            <label class="form-label small text-white-50">{{ __('installer.customer_phone') }}</label>
                             <input type="text" name="customer_phone" class="form-control bg-dark text-white border-secondary">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-white-50">Due Date</label>
+                            <label class="form-label small text-white-50">{{ __('installer.due_date') }}</label>
                             <input type="date" name="due_date" class="form-control bg-dark text-white border-secondary">
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label small text-white-50">Customer Address</label>
+                            <label class="form-label small text-white-50">{{ __('installer.address') }}</label>
                             <input type="text" name="customer_address" class="form-control bg-dark text-white border-secondary" placeholder="Customer address">
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label small text-white-50">Billing Address</label>
+                            <label class="form-label small text-white-50">{{ __('installer.billing_address') }}</label>
                             <input type="text" name="billing_address" class="form-control bg-dark text-white border-secondary" placeholder="Billing address (if different)">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small text-white-50">Tax Rate (%)</label>
+                            <label class="form-label small text-white-50">{{ __('installer.tax_rate') }}</label>
                             <input type="number" name="tax_rate" class="form-control bg-dark text-white border-secondary" value="0" step="0.01" min="0" max="100">
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label small text-white-50">Notes</label>
+                            <label class="form-label small text-white-50">{{ __('installer.notes') }}</label>
                             <input type="text" name="notes" class="form-control bg-dark text-white border-secondary" placeholder="Optional notes">
                         </div>
                     </div>
                     <p class="small text-white-50 mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>You can add line items after creating the invoice.</p>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-vip btn-sm"><i class="bi bi-check-lg me-1"></i>Create Invoice</button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">{{ __('installer.cancel') }}</button>
+                    <button type="submit" class="btn btn-vip btn-sm"><i class="bi bi-check-lg me-1"></i>{{ __('installer.create_invoice') }}</button>
                 </div>
             </form>
         </div>

@@ -1731,7 +1731,7 @@
                             <div class="header-section">
                                 <div class="header-logo">
                                     @if($branding->logo_path)
-                                        <img src="{{ Storage::url($branding->logo_path) }}" alt="Logo">
+                                        <img src="{{ asset($branding->logo_path) }}" alt="Logo">
                                     @endif
                                 </div>
                                 <div class="company-info">
@@ -3226,7 +3226,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Fetch SVG at larger size for the modal
         var config = (document.getElementById('series_type')?.value || 'PW').toUpperCase();
-        var previewUrl = '/admin/quotes/window-preview?type=' + encodeURIComponent(config) + '&width=' + totalW + '&height=' + totalH + '&maxSize=400';
+        var previewUrl = '/installer/quotes/window-preview?type=' + encodeURIComponent(config) + '&width=' + totalW + '&height=' + totalH + '&maxSize=400';
 
         // Add panel widths for proportional rendering
         var mainP = [], topP = [], botP = [];
@@ -3848,7 +3848,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         _lastFetchedCustNumber = number;
 
-        fetch(`/admin/customers/${number}`)
+        fetch(`/installer/customers/${number}`)
             .then(r => r.json())
             .then(d => {
                 if (d && d.customer_name) {
@@ -4084,7 +4084,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        fetch(`/admin/customers/${custNumber}/update`, {
+        fetch(`/installer/customers/${custNumber}/update`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
             body: JSON.stringify(data)
@@ -4143,7 +4143,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (customerNumberInput?.value?.trim() && customerNameInput?.value?.trim()) {
         lockCustomerHeaderFields(true);
         // Fetch full customer data so Edit Customer button works
-        fetch('/admin/customers/' + encodeURIComponent(customerNumberInput.value.trim()), {
+        fetch('/installer/customers/' + encodeURIComponent(customerNumberInput.value.trim()), {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(r => r.json())
@@ -4331,7 +4331,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
         function doUpdate() {
-            return fetch(`/admin/customers/${custNumber}/update`, {
+            return fetch(`/installer/customers/${custNumber}/update`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 body: JSON.stringify(data)
@@ -4340,7 +4340,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // If new customer, create first then update
         const savePromise = _isNewCustomer
-            ? fetch('/admin/customers/quick-create', {
+            ? fetch('/installer/customers/quick-create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 body: JSON.stringify({ customer_number: custNumber, customer_name: data.customer_name || 'New Customer' })
@@ -4401,7 +4401,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ── New Customer "+" button handler ──
     document.getElementById('newCustomerBtn')?.addEventListener('click', function() {
         this.disabled = true;
-        fetch('/admin/customers/next-number')
+        fetch('/installer/customers/next-number')
             .then(r => r.json())
             .then(data => {
                 if (data.next_number) {
@@ -4620,7 +4620,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         // Filter window types based on series
         if (typeof filterWindowTypesBySeries === 'function') filterWindowTypesBySeries(currentSeries);
-        fetch(`/admin/series-types/${currentSeries}`)
+        fetch(`/installer/quotes/series-types/${currentSeries}`)
             .then(r => r.json())
             .then(types => {
                 const currentValue = seriesTypeSelect.value;
@@ -4898,7 +4898,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function generateSmallDiagramSVG(seriesType, w, h, colorCode, hexColor) {
         try {
-            let url = `/admin/quotes/window-preview?type=${encodeURIComponent(seriesType)}&width=${w}&height=${h}&maxSize=120`;
+            let url = `/installer/quotes/window-preview?type=${encodeURIComponent(seriesType)}&width=${w}&height=${h}&maxSize=120`;
             if (colorCode) url += `&color=${encodeURIComponent(colorCode)}`;
             if (hexColor) url += `&hexColor=${encodeURIComponent(hexColor)}`;
             const r = await fetch(url);
@@ -4992,7 +4992,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const extColor = itemData?.color_exterior || 'WH';
                 const extOpt = document.querySelector(`#lamExteriorSelect option[value="${extColor}"]`) || document.querySelector(`#baseWindowColor option[value="${extColor}"]`);
                 const extHex = extOpt?.dataset?.hex || '';
-                let url = `/admin/quotes/window-preview?type=${encodeURIComponent(type)}&width=${w}&height=${h}&maxSize=240&color=${encodeURIComponent(extColor)}`;
+                let url = `/installer/quotes/window-preview?type=${encodeURIComponent(type)}&width=${w}&height=${h}&maxSize=240&color=${encodeURIComponent(extColor)}`;
                 if (extHex) url += `&hexColor=${encodeURIComponent(extHex)}`;
                 fetch(url)
                     .then(r => r.text())
@@ -5034,7 +5034,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 currentSeries = item.series_id;
                 if (seriesIdField) seriesIdField.value = item.series_id;
                 // Fetch config options then set the right one
-                fetch(`/admin/series-types/${item.series_id}`)
+                fetch(`/installer/quotes/series-types/${item.series_id}`)
                     .then(r => r.json())
                     .then(types => {
                         seriesTypeSelect.innerHTML = '<option value="">Select configuration</option>';
@@ -5381,7 +5381,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const selected = this.value, previous = this.dataset.previousValue || null;
         if (previous && frameAddons[previous]) delete frameAddons[previous];
         this.dataset.previousValue = selected;
-        fetch('/admin/quotes/schema/price', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: JSON.stringify({ dropdown_value: selected, series_type: currentType, series: currentSeries }) })
+        fetch('/installer/quotes/schema/price', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: JSON.stringify({ dropdown_value: selected, series_type: currentType, series: currentSeries }) })
         .then(r => r.json()).then(d => { if (d.price > 0) frameAddons[selected] = d.price; updateDisplay(); });
 
         // Update frame bottom options based on selected frame type
@@ -5453,7 +5453,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const selected = this.value, previous = this.dataset.previousValue || null;
         if (previous && glassAddons[previous]) delete glassAddons[previous];
         this.dataset.previousValue = selected;
-        fetch('/admin/quotes/schema/price', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: JSON.stringify({ dropdown_value: selected, series_type: currentType, series: currentSeries }) })
+        fetch('/installer/quotes/schema/price', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: JSON.stringify({ dropdown_value: selected, series_type: currentType, series: currentSeries }) })
         .then(r => r.json()).then(d => { if (d.price > 0) glassAddons[selected] = d.price; updateDisplay(); });
     });
 
@@ -5629,7 +5629,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (totalElem) totalElem.textContent = 'Price: $' + newTotal;
         }
         recalcTotals();
-        fetch(`/admin/quotes/${quoteId}/items/${itemId}/qty`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: JSON.stringify({ qty: qty }) })
+        fetch(`/installer/quotes/${quoteId}/items/${itemId}/qty`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: JSON.stringify({ qty: qty }) })
         .then(r => r.json()).then(d => { if (d.success) console.log('Qty updated successfully'); }).catch(err => console.error('Error updating qty:', err));
     }
     
@@ -5873,7 +5873,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const extColor = extSelect?.value || 'WH';
         const extHex = extSelect?.selectedOptions?.[0]?.dataset?.hex || '';
 
-        let url = `/admin/quotes/window-preview?type=${encodeURIComponent(config)}&width=${W}&height=${H}&maxSize=240&color=${encodeURIComponent(extColor)}`;
+        let url = `/installer/quotes/window-preview?type=${encodeURIComponent(config)}&width=${W}&height=${H}&maxSize=240&color=${encodeURIComponent(extColor)}`;
         if (extHex) url += `&hexColor=${encodeURIComponent(extHex)}`;
 
         // Append panel dimensions for proportional rendering
@@ -6050,7 +6050,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (seriesSelect?.value && !seriesTypeSelect?.value) {
         currentSeries = seriesSelect.value;
         if (seriesIdField) seriesIdField.value = currentSeries;
-        fetch(`/admin/series-types/${currentSeries}`)
+        fetch(`/installer/quotes/series-types/${currentSeries}`)
             .then(r => r.json())
             .then(types => {
                 seriesTypeSelect.innerHTML = '<option value="">Select configuration</option>';
@@ -6110,7 +6110,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
             try {
-                const r = await fetch(`/admin/quotes/window-preview?type=${encodeURIComponent(configName)}&width=36&height=60&maxSize=90&noDimensions=1`);
+                const r = await fetch(`/installer/quotes/window-preview?type=${encodeURIComponent(configName)}&width=36&height=60&maxSize=90&noDimensions=1`);
                 const svg = await r.text();
                 if (svg && svg.includes('<svg')) {
                     svgCache[configName] = svg;

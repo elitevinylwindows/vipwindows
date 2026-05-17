@@ -1,5 +1,5 @@
 @extends('layouts.installer')
-@section('title', 'My Quotes')
+@section('title', __('installer.my_quotes'))
 
 @push('styles')
 <style>
@@ -158,41 +158,41 @@
 <div class="sales-container">
     {{-- Sales Hub Left Rail --}}
     <div class="sales-hub">
-        <div class="hub-brand"><i class="bi bi-bar-chart-line"></i> SALES HUB</div>
+        <div class="hub-brand"><i class="bi bi-bar-chart-line"></i> {{ __('installer.sales_hub') }}</div>
 
         <div class="hub-section">
             <a href="{{ route('installer.dashboard') }}" class="hub-link">
-                <span><span class="hub-icon"><i class="bi bi-speedometer2"></i></span> Dashboard</span>
+                <span><span class="hub-icon"><i class="bi bi-speedometer2"></i></span> {{ __('installer.dashboard') }}</span>
             </a>
         </div>
 
         <div class="hub-section">
-            <div class="hub-section-title">Quick Actions</div>
+            <div class="hub-section-title">{{ __('installer.quick_actions') }}</div>
             <a href="{{ route('installer.quotes.create') }}" class="hub-link {{ request()->routeIs('installer.quotes.create') ? 'active' : '' }}">
-                <span><span class="hub-icon"><i class="bi bi-plus-circle-fill text-danger"></i></span> New Quote</span>
+                <span><span class="hub-icon"><i class="bi bi-plus-circle-fill text-danger"></i></span> {{ __('installer.new_quote') }}</span>
             </a>
         </div>
 
         <div class="hub-section">
-            <div class="hub-section-title">Pipeline</div>
+            <div class="hub-section-title">{{ __('installer.pipeline') }}</div>
             <a href="{{ route('installer.quotes.index') }}" class="hub-link {{ request()->routeIs('installer.quotes.index') && !request('status') ? 'active' : '' }}">
-                <span><span class="hub-icon"><i class="bi bi-file-earmark-text"></i></span> Quotes</span>
+                <span><span class="hub-icon"><i class="bi bi-file-earmark-text"></i></span> {{ __('installer.quotes') }}</span>
                 <span class="hub-count">{{ $totalQuotes }}</span>
             </a>
         </div>
 
         <div class="hub-section">
-            <div class="hub-section-title">Quote Status</div>
+            <div class="hub-section-title">{{ __('installer.quote_status') }}</div>
             <a href="{{ route('installer.quotes.index', ['status' => 'draft']) }}" class="hub-status-item {{ $status === 'draft' ? 'active-filter' : '' }}">
-                <span><span class="hub-status-dot" style="background:#6c757d; display:inline-block;"></span> Draft</span>
+                <span><span class="hub-status-dot" style="background:#6c757d; display:inline-block;"></span> {{ __('installer.draft') }}</span>
                 <span class="hub-count">{{ $draftCount }}</span>
             </a>
             <a href="{{ route('installer.quotes.index', ['status' => 'sent']) }}" class="hub-status-item {{ $status === 'sent' ? 'active-filter' : '' }}">
-                <span><span class="hub-status-dot" style="background:#28a745; display:inline-block;"></span> Sent</span>
+                <span><span class="hub-status-dot" style="background:#28a745; display:inline-block;"></span> {{ __('installer.sent') }}</span>
                 <span class="hub-count">{{ $sentCount }}</span>
             </a>
             <a href="{{ route('installer.quotes.index', ['status' => 'approved']) }}" class="hub-status-item {{ $status === 'approved' ? 'active-filter' : '' }}">
-                <span><span class="hub-status-dot" style="background:#007bff; display:inline-block;"></span> Approved</span>
+                <span><span class="hub-status-dot" style="background:#007bff; display:inline-block;"></span> {{ __('installer.approved') }}</span>
                 <span class="hub-count">{{ $approvedCount }}</span>
             </a>
         </div>
@@ -204,30 +204,30 @@
         {{-- Breadcrumb --}}
         <div class="sales-topbar">
             <div class="crumb">
-                <a href="{{ route('installer.dashboard') }}">Dashboard</a> &rsaquo;
+                <a href="{{ route('installer.dashboard') }}">{{ __('installer.dashboard') }}</a> &rsaquo;
                 <strong>Quotes{{ $status !== 'all' ? ' / ' . ucfirst($status) : '' }}</strong>
             </div>
         </div>
 
         {{-- Stats --}}
         <div class="stats-bar">
-            <div class="stat-box"><div class="stat-value">{{ $totalQuotes }}</div><div class="stat-label">Quotes</div></div>
-            <div class="stat-box"><div class="stat-value">{{ $draftCount }}</div><div class="stat-label">Drafts</div></div>
-            <div class="stat-box"><div class="stat-value">{{ $sentCount }}</div><div class="stat-label">Sent</div></div>
-            <div class="stat-box accent"><div class="stat-value">{{ $approvedCount }}</div><div class="stat-label">Approved</div></div>
+            <div class="stat-box"><div class="stat-value">{{ $totalQuotes }}</div><div class="stat-label">{{ __('installer.quotes') }}</div></div>
+            <div class="stat-box"><div class="stat-value">{{ $draftCount }}</div><div class="stat-label">{{ __('installer.draft') }}</div></div>
+            <div class="stat-box"><div class="stat-value">{{ $sentCount }}</div><div class="stat-label">{{ __('installer.sent') }}</div></div>
+            <div class="stat-box accent"><div class="stat-value">{{ $approvedCount }}</div><div class="stat-label">{{ __('installer.approved') }}</div></div>
         </div>
 
         {{-- Tab bar --}}
         <div class="tab-bar">
-            <a href="{{ route('installer.quotes.index') }}" class="tab-btn {{ $status === 'all' ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i> All Quotes</a>
-            <a href="{{ route('installer.quotes.index', ['status' => 'draft']) }}" class="tab-btn {{ $status === 'draft' ? 'active' : '' }}">Draft</a>
-            <a href="{{ route('installer.quotes.index', ['status' => 'sent']) }}" class="tab-btn {{ $status === 'sent' ? 'active' : '' }}">Sent</a>
-            <a href="{{ route('installer.quotes.index', ['status' => 'approved']) }}" class="tab-btn {{ $status === 'approved' ? 'active' : '' }}">Approved</a>
+            <a href="{{ route('installer.quotes.index') }}" class="tab-btn {{ $status === 'all' ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i> {{ __('installer.all_quotes') }}</a>
+            <a href="{{ route('installer.quotes.index', ['status' => 'draft']) }}" class="tab-btn {{ $status === 'draft' ? 'active' : '' }}">{{ __('installer.draft') }}</a>
+            <a href="{{ route('installer.quotes.index', ['status' => 'sent']) }}" class="tab-btn {{ $status === 'sent' ? 'active' : '' }}">{{ __('installer.sent') }}</a>
+            <a href="{{ route('installer.quotes.index', ['status' => 'approved']) }}" class="tab-btn {{ $status === 'approved' ? 'active' : '' }}">{{ __('installer.approved') }}</a>
             <div class="search-box">
                 <i class="bi bi-search"></i>
                 <input type="text" id="iqSearch" placeholder="Search...">
             </div>
-            <a href="{{ route('installer.quotes.create') }}" class="btn-new"><i class="bi bi-plus-lg"></i> New Quote</a>
+            <a href="{{ route('installer.quotes.create') }}" class="btn-new"><i class="bi bi-plus-lg"></i> {{ __('installer.new_quote') }}</a>
         </div>
 
         {{-- Table + Detail --}}
@@ -237,13 +237,13 @@
                     <table class="q-tbl">
                         <thead>
                             <tr>
-                                <th>Quote #</th>
-                                <th>Customer</th>
-                                <th>Items</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th>Expires</th>
+                                <th>{{ __('installer.quote_number') }}</th>
+                                <th>{{ __('installer.customer_name') }}</th>
+                                <th>{{ __('installer.quantity') }}</th>
+                                <th>{{ __('installer.total') }}</th>
+                                <th>{{ __('installer.status') }}</th>
+                                <th>{{ __('installer.created') }}</th>
+                                <th>{{ __('installer.expected_delivery') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -259,7 +259,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">No quotes found. <a href="{{ route('installer.quotes.create') }}">Create your first quote</a>.</td>
+                                    <td colspan="7" class="text-center py-4 text-muted">{{ __('installer.no_quotes_found') }}. <a href="{{ route('installer.quotes.create') }}">{{ __('installer.create_quote') }}</a>.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -274,7 +274,7 @@
             <div class="detail-panel" id="detailPanel">
                 <div class="dp-empty" id="dpEmpty">
                     <i class="bi bi-bar-chart-line"></i>
-                    <p class="small">Select a quote to view details</p>
+                    <p class="small">{{ __('installer.select_quote') }}</p>
                 </div>
                 <div id="dpContent" style="display:none; flex:1; display:flex; flex-direction:column;">
                     <div class="dp-header">
