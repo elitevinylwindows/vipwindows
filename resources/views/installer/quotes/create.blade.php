@@ -1737,11 +1737,11 @@
                                 <div class="company-info">
                                     <div class="company-info-inner">
                                         <strong style="font-size: 14px;">{{ $branding->company_name }}</strong><br>
-                                        {{ $branding->address }}<br>
-                                        {{ $branding->city }} {{ $branding->state }} {{ $branding->zip }}<br>
-                                        Tel: {{ $branding->phone }}<br>
+                                        @if($branding->address){{ $branding->address }}<br>@endif
+                                        @if($branding->city || $branding->state || $branding->zip){{ $branding->city }}{{ $branding->city && $branding->state ? ', ' : '' }}{{ $branding->state }} {{ $branding->zip }}<br>@endif
+                                        @if($branding->phone)Tel: {{ $branding->phone }}<br>@endif
                                         @if($branding->fax)Fax: {{ $branding->fax }}<br>@endif
-                                        {{ $branding->website }}
+                                        @if($branding->website){{ $branding->website }}@endif
                                     </div>
                                 </div>
                                 <div class="quote-info">
