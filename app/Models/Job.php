@@ -49,4 +49,9 @@ class Job extends Model
     {
         return $this->hasMany(JobNote::class)->orderBy('created_at', 'desc');
     }
+
+    public function jobItems()
+    {
+        return $this->hasMany(JobItem::class)->orderBy('sort_order');
+    }
 }

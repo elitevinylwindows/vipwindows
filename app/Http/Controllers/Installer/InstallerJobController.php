@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Job;
+use App\Models\JobItem;
 use App\Models\JobNote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -87,9 +88,15 @@ class InstallerJobController extends Controller
             })->toArray();
         } catch (\Exception $e) {}
 
+        $items = [];
+        try {
+            $items = $job->jobItems()->get()->toArray();
+        } catch (\Exception $e) {}
+
         return response()->json([
             'job' => $job,
             'notes' => $notes,
+            'items' => $items,
         ]);
     }
 
@@ -125,5 +132,48 @@ class InstallerJobController extends Controller
         ]);
 
         return back()->with('success', 'Note added.');
+    }
+
+    public function addItem(Request $request, $id)
+    {
+        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+
+        $validated = $request->validate([
+            'description' => 'required|string|max:255',
+            'item_type'   => 'nullable|in:window,door,service,other',
+            'qty'         => 'required|numeric|min:0.01',
+            'notes'       => 'nullable|string|max:1000',
+        ]);
+
+        $sortOrder = ($job->jobItems()->max('sort_order') ?? 0) + 1;
+
+        $item = JobItem::create([
+            'job_id'      => $job->id,
+            'description' => $validated['description'],
+            'item_type'   => $validated['item_type'] ?? 'other',
+            'qty'         => $validated['qty'],
+            'notes'       => $validated['notes'] ?? null,
+            'sort_order'  => $sortOrder,
+        ]);
+
+        return response()->json(['success' => true, 'item' => $item]);
+    }
+
+    public function removeItem($id, $itemId)
+    {
+        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+        $item = JobItem::where('job_id', $job->id)->findOrFail($itemId);
+        $item->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function toggleItem(Request $request, $id, $itemId)
+    {
+        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+        $item = JobItem::where('job_id', $job->id)->findOrFail($itemId);
+        $item->update(['completed' => !$item->completed]);
+
+        return response()->json(['success' => true, 'completed' => $item->completed]);
     }
 }

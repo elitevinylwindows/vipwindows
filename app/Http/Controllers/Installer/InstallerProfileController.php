@@ -18,7 +18,37 @@ class InstallerProfileController extends Controller
     public function update(Request $request)
     {
         $user = Auth::user();
+        $section = $request->input('_section', 'personal');
 
+        if ($section === 'pricing') {
+            $validated = $request->validate([
+                'price_markup_pct'  => 'required|numeric|min:0|max:500',
+                'price_markup_flat' => 'required|numeric|min:0',
+            ]);
+            $user->update($validated);
+            return redirect()->route('installer.profile')->with('success', 'Pricing markup updated.');
+        }
+
+        if ($section === 'security') {
+            $validated = $request->validate([
+                'password' => 'required|string|min:8|confirmed',
+            ]);
+            $user->update(['password' => Hash::make($validated['password'])]);
+            return redirect()->route('installer.profile')->with('success', 'Password updated.');
+        }
+
+        if ($section === 'company') {
+            $validated = $request->validate([
+                'company_name'    => 'nullable|string|max:255',
+                'company_phone'   => 'nullable|string|max:50',
+                'company_email'   => 'nullable|email|max:255',
+                'company_website' => 'nullable|string|max:255',
+            ]);
+            $user->update($validated);
+            return redirect()->route('installer.profile')->with('success', 'Company info updated.');
+        }
+
+        // Default: personal section
         $validated = $request->validate([
             'name'            => 'required|string|max:255',
             'email'           => 'required|email|max:255|unique:vip_users,email,' . $user->id,
@@ -27,19 +57,7 @@ class InstallerProfileController extends Controller
             'city'            => 'nullable|string|max:100',
             'state'           => 'nullable|string|max:50',
             'zip'             => 'nullable|string|max:20',
-            'password'        => 'nullable|string|min:8|confirmed',
-            'company_name'    => 'nullable|string|max:255',
-            'company_phone'   => 'nullable|string|max:50',
-            'company_email'   => 'nullable|email|max:255',
-            'company_website' => 'nullable|string|max:255',
         ]);
-
-        // Remove password if not provided
-        if (empty($validated['password'])) {
-            unset($validated['password']);
-        } else {
-            $validated['password'] = Hash::make($validated['password']);
-        }
 
         $user->update($validated);
 

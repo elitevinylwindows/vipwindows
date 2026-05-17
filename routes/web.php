@@ -340,6 +340,9 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/jobs/{id}', [InstallerJobController::class, 'show'])->name('jobs.show');
     Route::post('/jobs/{id}/status', [InstallerJobController::class, 'updateStatus'])->name('jobs.updateStatus');
     Route::post('/jobs/{id}/note', [InstallerJobController::class, 'addNote'])->name('jobs.addNote');
+    Route::post('/jobs/{id}/item', [InstallerJobController::class, 'addItem'])->name('jobs.addItem');
+    Route::delete('/jobs/{id}/item/{itemId}', [InstallerJobController::class, 'removeItem'])->name('jobs.removeItem');
+    Route::post('/jobs/{id}/item/{itemId}/toggle', [InstallerJobController::class, 'toggleItem'])->name('jobs.toggleItem');
 
     // Invoices
     Route::get('/invoices', [InstallerInvoiceController::class, 'index'])->name('invoices.index');
@@ -348,6 +351,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::post('/invoices/{id}/item', [InstallerInvoiceController::class, 'addItem'])->name('invoices.addItem');
     Route::delete('/invoices/{id}/item/{itemId}', [InstallerInvoiceController::class, 'removeItem'])->name('invoices.removeItem');
     Route::post('/invoices/{id}/send', [InstallerInvoiceController::class, 'sendToCustomer'])->name('invoices.send');
+    Route::post('/invoices/from-quote/{quoteId}', [InstallerInvoiceController::class, 'createFromQuote'])->name('invoices.fromQuote');
 
     // Customers
     Route::get('/customers', [InstallerCustomerController::class, 'index'])->name('customers.index');

@@ -69,9 +69,84 @@
 }
 </style>
 
-<div class="mb-4"></div>
+<style>
+.sales-container { display: flex; height: calc(100vh - 56px); overflow: hidden; }
+.sales-hub {
+    width: 220px; min-width: 220px;
+    background: #fff;
+    border-right: 1px solid rgba(0,0,0,.08);
+    display: flex; flex-direction: column;
+    overflow-y: auto; flex-shrink: 0;
+}
+.hub-brand { padding: 1rem 1rem .5rem; font-size: .85rem; font-weight: 700; color: var(--vip-accent); display: flex; align-items: center; gap: .5rem; }
+.hub-brand i { font-size: 1.1rem; }
+.hub-section { padding: .25rem 0; }
+.hub-section-title { font-size: .6rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; color: rgba(0,0,0,.35); padding: .75rem 1rem .25rem; }
+.hub-link {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .5rem 1rem; font-size: .82rem; color: #333;
+    text-decoration: none; border-left: 3px solid transparent; transition: all .12s;
+}
+.hub-link:hover { background: rgba(201,168,76,.05); color: #111; }
+.hub-link.active { background: rgba(201,168,76,.08); color: var(--vip-accent); border-left-color: var(--vip-accent); font-weight: 600; }
+.hub-link .hub-icon { width: 20px; text-align: center; margin-right: .5rem; font-size: .9rem; }
+.hub-link .hub-count { background: rgba(0,0,0,.06); color: #555; font-size: .7rem; font-weight: 600; padding: 1px 8px; border-radius: 10px; min-width: 24px; text-align: center; }
+.hub-link.active .hub-count { background: rgba(201,168,76,.2); color: #8b6914; }
+.hub-status-item { display: flex; align-items: center; justify-content: space-between; padding: .35rem 1rem .35rem 1.25rem; font-size: .78rem; color: #555; text-decoration: none; transition: background .12s; cursor: pointer; }
+.hub-status-item:hover { background: rgba(0,0,0,.02); }
+.hub-status-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: .5rem; display: inline-block; }
+.sales-main { flex: 1; overflow-y: auto; background: #f5f4f0; }
+@media (max-width: 991.98px) {
+    .sales-container { flex-direction: column; height: auto; }
+    .sales-hub { width: 100%; min-width: 100%; max-height: none; flex-direction: row; overflow-x: auto; }
+    .sales-hub .hub-section { display: flex; align-items: center; gap: .25rem; padding: .25rem .5rem; }
+    .sales-hub .hub-section-title { display: none; }
+}
+</style>
 
-<div class="container-fluid">
+<div class="sales-container">
+    {{-- Sales Hub Left Rail --}}
+    <div class="sales-hub">
+        <div class="hub-brand"><i class="bi bi-bar-chart-line"></i> SALES HUB</div>
+
+        <div class="hub-section">
+            <a href="{{ route('installer.dashboard') }}" class="hub-link">
+                <span><span class="hub-icon"><i class="bi bi-speedometer2"></i></span> Dashboard</span>
+            </a>
+        </div>
+
+        <div class="hub-section">
+            <div class="hub-section-title">Quick Actions</div>
+            <a href="{{ route('installer.quotes.create') }}" class="hub-link active">
+                <span><span class="hub-icon"><i class="bi bi-plus-circle-fill text-danger"></i></span> New Quote</span>
+            </a>
+        </div>
+
+        <div class="hub-section">
+            <div class="hub-section-title">Pipeline</div>
+            <a href="{{ route('installer.quotes.index') }}" class="hub-link">
+                <span><span class="hub-icon"><i class="bi bi-file-earmark-text"></i></span> Quotes</span>
+            </a>
+        </div>
+
+        <div class="hub-section">
+            <div class="hub-section-title">Quote Status</div>
+            <a href="{{ route('installer.quotes.index', ['status' => 'draft']) }}" class="hub-status-item">
+                <span><span class="hub-status-dot" style="background:#6c757d;"></span> Draft</span>
+            </a>
+            <a href="{{ route('installer.quotes.index', ['status' => 'sent']) }}" class="hub-status-item">
+                <span><span class="hub-status-dot" style="background:#28a745;"></span> Sent</span>
+            </a>
+            <a href="{{ route('installer.quotes.index', ['status' => 'approved']) }}" class="hub-status-item">
+                <span><span class="hub-status-dot" style="background:#007bff;"></span> Approved</span>
+            </a>
+        </div>
+    </div>
+
+    {{-- Main Content --}}
+    <div class="sales-main">
+
+<div class="container-fluid pt-3">
 
    {{-- ROW 1: Start Quote Card (Full Width, Compact Horizontal Layout) --}}
     <div class="row mb-4">
@@ -99,49 +174,29 @@
                         </div>
                         @endif
 
-                        {{-- Row 1: Cust # | Customer Name | Order Type | Expected Delivery --}}
+                        {{-- Row 1: Customer Name | Expected Delivery --}}
                         <div class="row g-2 mb-2">
-                            <div class="col-md-2">
-                                <label class="form-label small mb-0">{{ __('Customer #') }}</label>
-                                <div style="position:relative;">
-                                    <input type="text" name="customer_number" id="customer_number" class="form-control form-control-sm"
-                                           value="{{ $quote->customer_number ?? old('customer_number') }}" required style="padding-right:28px;">
-                                    <button type="button" id="newCustomerBtn" title="{{ __('New Customer') }}"
-                                            style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:#6c757d; border:none; color:#fff; width:20px; height:20px; border-radius:50%; font-size:11px; line-height:1; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-                                        <i class="fas fa-plus" style="font-size:9px;"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
+                            <input type="hidden" name="customer_number" id="customer_number" value="{{ $quote->customer_number ?? old('customer_number', '') }}">
+                            <input type="hidden" name="order_type" id="order_type" value="pickup">
+                            <input type="hidden" name="is_special_order" value="0">
+                            <div class="col-md-6">
                                 <label class="form-label small mb-0">{{ __('Customer Name') }}</label>
                                 <div style="position:relative;">
                                     <input type="text" name="customer_name" id="customer_name" class="form-control form-control-sm"
-                                           value="{{ $quote->customer_name ?? old('customer_name') }}" readonly style="padding-right:28px;">
+                                           value="{{ $quote->customer_name ?? old('customer_name') }}" style="padding-right:28px;">
                                     <button type="button" id="newCustomerBtn2" title="{{ __('New Customer') }}"
                                             style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:#6c757d; border:none; color:#fff; width:20px; height:20px; border-radius:50%; font-size:11px; line-height:1; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center;">
                                         <i class="fas fa-plus" style="font-size:9px;"></i>
                                     </button>
                                 </div>
                             </div>
-                            <div class="col-md-2">
-                                <label class="form-label small mb-0">{{ __('Order Type') }}</label>
-                                <select name="order_type" id="order_type" class="form-select form-select-sm s2-searchable">
-                                    <option value="pickup" {{ ($quote->order_type ?? '') == 'pickup' ? 'selected' : '' }}>{{ __('Office Pick-up') }}</option>
-                                    <option value="delivery" {{ ($quote->order_type ?? '') == 'delivery' ? 'selected' : '' }}>{{ __('Delivery') }}</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                                 <label class="form-label small mb-0">{{ __('Expected Delivery') }}</label>
                                 <input type="text" name="expected_delivery" id="expected_delivery" class="form-control form-control-sm"
                                        autocomplete="off"
                                        value="{{ $quote->expected_delivery ?? \Carbon\Carbon::now()->addDays(14)->format('Y-m-d') }}">
                             </div>
-                            <div class="col-md-2 d-flex align-items-end gap-2" style="padding-bottom:3px;">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="is_special_order" id="is_special_order_cb" value="1"
-                                           {{ ($quote->is_special_order ?? 0) ? 'checked' : '' }}>
-                                    <label class="form-check-label small" for="is_special_order_cb" style="font-size:11px; white-space:nowrap;">{{ __('Special Order') }}</label>
-                                </div>
+                            <div class="col-md-3 d-flex align-items-end gap-2" style="padding-bottom:3px;">
                                 <button type="button" class="btn btn-sm" id="editCustomerFromHeader"
                                         style="font-size:10px; padding:2px 8px; display:none; white-space:nowrap; background:#b30202; color:#fff; border:none;"
                                         title="{{ __('Edit Customer Details') }}">
@@ -854,7 +909,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                                 <div>
                                     <h5 class="mb-0">{{ $cust->customer_name ?? $quote->customer_name }}</h5>
-                                    <small class="text-muted">{{ __('Customer #') }} {{ $quote->customer_number }}</small>
+                                    <small class="text-muted">{{ $quote->quote_number }}</small>
                                 </div>
                                 <span class="badge bg-primary">{{ $cust->customer_type ?? __('Dealer') }}</span>
                             </div>
@@ -3440,6 +3495,8 @@ document.addEventListener('DOMContentLoaded', function () {
 })();
 </script>
 
+    </div>{{-- /.sales-main --}}
+</div>{{-- /.sales-container --}}
 @endsection
 
 {{-- styles moved inline — layout has no styles stack --}}

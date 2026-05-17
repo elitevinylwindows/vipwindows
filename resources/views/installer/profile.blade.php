@@ -63,6 +63,7 @@
             <a href="#" class="profile-tab active" data-section="personal"><i class="bi bi-person"></i> My Profile</a>
             <a href="#" class="profile-tab" data-section="company"><i class="bi bi-building"></i> Company Info</a>
             <a href="#" class="profile-tab" data-section="branding"><i class="bi bi-palette"></i> Branding</a>
+            <a href="#" class="profile-tab" data-section="pricing"><i class="bi bi-currency-dollar"></i> Pricing</a>
             <a href="#" class="profile-tab" data-section="security"><i class="bi bi-shield-lock"></i> Security</a>
         </nav>
     </div>
@@ -179,6 +180,47 @@
                 <h6>Branding Preview</h6>
                 <p class="text-muted small">Your logo appears in the sidebar and on customer-facing documents (quotes, invoices). Recommended size: 300×100px or similar landscape ratio.</p>
             </div>
+        </div>
+
+        {{-- Pricing Section --}}
+        <div class="profile-section" id="section-pricing">
+            <div class="section-title"><i class="bi bi-currency-dollar me-2"></i>Pricing Markup</div>
+            <form method="POST" action="{{ route('installer.profile.update') }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="_section" value="pricing">
+                <div class="form-card">
+                    <h6>Your Markup</h6>
+                    <p class="text-muted small mb-3">Set your markup on top of the admin base price. You can use a percentage, a flat amount, or both. The final price your customers see will be: <strong>Admin Price + (Admin Price &times; Markup %) + Flat Add-on</strong>.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Markup Percentage (%)</label>
+                            <div class="input-group">
+                                <input type="number" name="price_markup_pct" class="form-control @error('price_markup_pct') is-invalid @enderror"
+                                       value="{{ old('price_markup_pct', $user->price_markup_pct ?? 0) }}" step="0.01" min="0" max="500">
+                                <span class="input-group-text">%</span>
+                                @error('price_markup_pct') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <small class="text-muted">e.g. 20 means +20% on admin price</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Flat Add-on ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="price_markup_flat" class="form-control @error('price_markup_flat') is-invalid @enderror"
+                                       value="{{ old('price_markup_flat', $user->price_markup_flat ?? 0) }}" step="0.01" min="0">
+                                @error('price_markup_flat') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <small class="text-muted">Fixed dollar amount added per window/item</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-card">
+                    <h6>Example</h6>
+                    <p class="text-muted small mb-0" id="pricingExample">If admin price is $100, with <strong>{{ $user->price_markup_pct ?? 0 }}%</strong> markup and <strong>${{ number_format($user->price_markup_flat ?? 0, 2) }}</strong> flat add-on, your price = <strong>${{ number_format(100 * (1 + ($user->price_markup_pct ?? 0) / 100) + ($user->price_markup_flat ?? 0), 2) }}</strong></p>
+                </div>
+                <button type="submit" class="btn btn-vip"><i class="bi bi-check-circle me-1"></i> Save Pricing</button>
+            </form>
         </div>
 
         {{-- Security Section --}}

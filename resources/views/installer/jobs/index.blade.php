@@ -80,6 +80,12 @@
 
     .note-card { background: #fff; border-radius: .375rem; padding: .6rem .75rem; margin-bottom: .5rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 
+    .job-items-tbl { width: 100%; border-collapse: collapse; background: #fff; border-radius: .5rem; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .job-items-tbl th { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.4); padding: .5rem .75rem; border-bottom: 1px solid rgba(0,0,0,.08); background: #fafafa; }
+    .job-items-tbl td { padding: .5rem .75rem; font-size: .82rem; border-bottom: 1px solid rgba(0,0,0,.04); }
+    .job-items-tbl .item-done td { text-decoration: line-through; opacity: .5; }
+    .item-check { cursor: pointer; }
+
     @media (max-width: 991.98px) {
         .iq-container { flex-direction: column; height: auto; }
         .iq-rail { width: 100%; min-width: 100%; max-height: 45vh; }
@@ -272,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 const j = data.job;
                 const notes = data.notes || [];
+                const items = data.items || [];
                 detailTitle.textContent = j.job_number || ('JOB-' + j.id);
 
                 // Toolbar actions
@@ -311,6 +318,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     ${j.description ? `<div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);"><div class="card-body py-2 px-3"><div class="small text-muted text-uppercase mb-1" style="letter-spacing:.5px;">Description</div><p class="mb-0">${j.description}</p></div></div>` : ''}
 
+                    <h6 class="mb-2 mt-3" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5);"><i class="bi bi-list-check me-1"></i>Installation Items</h6>
+                    ${items.length ? `<table class="job-items-tbl mb-2">
+                        <thead><tr><th style="width:30px;"></th><th>Item</th><th>Type</th><th class="text-center">Qty</th><th style="width:40px;"></th></tr></thead>
+                        <tbody>${items.map(i => `<tr class="${i.completed ? 'item-done' : ''}">
+                            <td class="text-center"><input type="checkbox" class="item-check" ${i.completed ? 'checked' : ''} onchange="toggleJobItem(${j.id}, ${i.id})"></td>
+                            <td>${i.description}${i.notes ? '<br><small class="text-muted">' + i.notes + '</small>' : ''}</td>
+                            <td><span class="badge bg-light text-dark" style="font-size:.65rem;">${i.item_type || 'other'}</span></td>
+                            <td class="text-center">${parseFloat(i.qty)}</td>
+                            <td class="text-center"><button class="btn btn-sm text-danger p-0" onclick="removeJobItem(${j.id}, ${i.id})" title="Remove"><i class="bi bi-x-lg" style="font-size:.7rem;"></i></button></td>
+                        </tr>`).join('')}</tbody>
+                    </table>` : '<p class="text-muted small">No items added yet.</p>'}
+
+                    <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                        <div class="card-body py-2 px-3">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-4"><input type="text" id="addJobItemDesc" class="form-control form-control-sm" placeholder="Description (e.g. Double Hung 36x48)"></div>
+                                <div class="col-md-2">
+                                    <select id="addJobItemType" class="form-select form-select-sm">
+                                        <option value="window">Window</option>
+                                        <option value="door">Door</option>
+                                        <option value="service">Service</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2"><input type="number" id="addJobItemQty" class="form-control form-control-sm" placeholder="Qty" value="1" min="1" step="1"></div>
+                                <div class="col-md-3"><input type="text" id="addJobItemNotes" class="form-control form-control-sm" placeholder="Notes (optional)"></div>
+                                <div class="col-md-1"><button class="btn btn-sm btn-vip w-100" onclick="addJobItem(${j.id})"><i class="bi bi-plus"></i></button></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <h6 class="mb-2 mt-4" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5);"><i class="bi bi-chat-left-text me-1"></i>Notes</h6>
                     ${notesHtml}
 
@@ -327,6 +365,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 detailBody.innerHTML = '<div class="alert alert-danger m-4">Failed to load job details.</div>';
             });
     }
+
+    // Job items management
+    window.addJobItem = function(jobId) {
+        const desc = document.getElementById('addJobItemDesc')?.value?.trim();
+        const itemType = document.getElementById('addJobItemType')?.value;
+        const qty = parseFloat(document.getElementById('addJobItemQty')?.value || 1);
+        const notes = document.getElementById('addJobItemNotes')?.value?.trim();
+
+        if (!desc) { alert('Please enter an item description.'); return; }
+
+        fetch(`/installer/jobs/${jobId}/item`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ description: desc, item_type: itemType, qty: qty, notes: notes || null })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) loadDetail(jobId);
+            else alert(data.error || 'Failed to add item.');
+        })
+        .catch(() => alert('Failed to add item.'));
+    };
+
+    window.removeJobItem = function(jobId, itemId) {
+        if (!confirm('Remove this item?')) return;
+        fetch(`/installer/jobs/${jobId}/item/${itemId}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => { if (data.success) loadDetail(jobId); })
+        .catch(() => alert('Failed to remove item.'));
+    };
+
+    window.toggleJobItem = function(jobId, itemId) {
+        fetch(`/installer/jobs/${jobId}/item/${itemId}/toggle`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => { if (data.success) loadDetail(jobId); })
+        .catch(() => alert('Failed to toggle item.'));
+    };
 
     // Auto-select first
     if (cards.length > 0) cards[0].click();

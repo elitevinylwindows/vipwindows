@@ -467,9 +467,25 @@ class InstallerQuoteController extends Controller
             ->where('height', $request->height)
             ->value('price');
 
-        $price = getMarkup($request->series_id, $price ?? 0);
+        $basePrice = getMarkup($request->series_id, $price ?? 0);
 
-        return response()->json(['price' => $price, 'discount' => 0]);
+        // Apply installer markup (percentage + flat)
+        $user = Auth::user();
+        $markupPct = floatval($user->price_markup_pct ?? 0);
+        $markupFlat = floatval($user->price_markup_flat ?? 0);
+        $installerPrice = $basePrice;
+        if ($markupPct > 0) {
+            $installerPrice += round($basePrice * ($markupPct / 100), 2);
+        }
+        $installerPrice += $markupFlat;
+
+        return response()->json([
+            'price' => $installerPrice,
+            'base_price' => $basePrice,
+            'markup_pct' => $markupPct,
+            'markup_flat' => $markupFlat,
+            'discount' => 0,
+        ]);
     }
 
     /**

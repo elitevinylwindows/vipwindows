@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Installer;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Quote;
+use App\Models\QuoteItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -63,6 +65,78 @@ class InstallerInvoiceController extends Controller
         }
 
         return redirect()->route('installer.invoices.index')->with('success', 'Invoice created successfully.');
+    }
+
+    public function createFromQuote($quoteId)
+    {
+        $quote = Quote::where('entered_by', Auth::user()->name)->findOrFail($quoteId);
+
+        // Generate invoice number
+        $prefix = 'II-' . strtoupper(substr(Auth::user()->name, 0, 2)) . '-';
+        $last = Invoice::where('invoice_number', 'like', $prefix . '%')->orderByDesc('invoice_number')->first();
+        $next = $last ? (intval(substr($last->invoice_number, strlen($prefix))) + 1) : 1;
+        $invoiceNumber = $prefix . str_pad($next, 4, '0', STR_PAD_LEFT);
+
+        $invoice = Invoice::create([
+            'invoice_number'   => $invoiceNumber,
+            'quote_id'         => $quote->id,
+            'customer_name'    => $quote->billing_name ?: $quote->customer_name,
+            'customer_email'   => $quote->billing_email,
+            'customer_phone'   => $quote->billing_phone,
+            'customer_address' => trim(($quote->billing_address ?? '') . ', ' . ($quote->billing_city ?? '') . ' ' . ($quote->billing_state ?? '') . ' ' . ($quote->billing_zip ?? ''), ', '),
+            'status'           => 'draft',
+            'tax_rate'         => 0,
+            'subtotal'         => 0,
+            'tax_amount'       => 0,
+            'total'            => 0,
+            'amount_paid'      => 0,
+            'balance_due'      => 0,
+            'due_date'         => now()->addDays(30)->format('Y-m-d'),
+            'created_by'       => Auth::id(),
+        ]);
+
+        // Copy quote items as invoice line items
+        $quoteItems = QuoteItem::where('quote_id', $quote->id)->get();
+        $subtotal = 0;
+        $sortOrder = 0;
+
+        foreach ($quoteItems as $qi) {
+            $qty = floatval($qi->qty ?? 1);
+            $unitPrice = floatval($qi->total_price ?? $qi->price ?? 0);
+            $lineTotal = round($qty * $unitPrice, 2);
+
+            $desc = trim(($qi->series_name ?? '') . ' ' . ($qi->type_name ?? ''));
+            if ($qi->width || $qi->height) {
+                $desc .= ' ' . ($qi->width ?? '') . 'x' . ($qi->height ?? '');
+            }
+            if (empty(trim($desc))) {
+                $desc = 'Window Item #' . ($sortOrder + 1);
+            }
+
+            InvoiceItem::create([
+                'invoice_id'  => $invoice->id,
+                'description' => $desc,
+                'qty'         => $qty,
+                'unit_price'  => $unitPrice,
+                'total'       => $lineTotal,
+                'sort_order'  => ++$sortOrder,
+            ]);
+
+            $subtotal += $lineTotal;
+        }
+
+        // Update totals
+        $taxAmount = round($subtotal * ($invoice->tax_rate / 100), 2);
+        $total = $subtotal + $taxAmount;
+        $invoice->update([
+            'subtotal'    => $subtotal,
+            'tax_amount'  => $taxAmount,
+            'total'       => $total,
+            'balance_due' => $total,
+        ]);
+
+        return redirect()->route('installer.invoices.index')
+            ->with('success', "Invoice {$invoiceNumber} created from quote {$quote->quote_number}.");
     }
 
     public function show($id)
@@ -127,20 +201,38 @@ class InstallerInvoiceController extends Controller
         }
 
         $items = $invoice->items()->get();
-        $installerName = Auth::user()->name;
+        $user = Auth::user();
+        $installerName = $user->company_name ?: $user->name;
+        $logoUrl = $user->company_logo ? url('uploads/installer-logos/' . $user->company_logo) : null;
 
-        Mail::send([], [], function ($message) use ($invoice, $items, $installerName) {
-            $html = "<h2>Invoice {$invoice->invoice_number}</h2>"
-                . "<p>From: {$installerName}</p>"
-                . "<table border='1' cellpadding='6' cellspacing='0'><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>";
+        Mail::send([], [], function ($message) use ($invoice, $items, $installerName, $logoUrl, $user) {
+            $html = '<div style="font-family:Arial,sans-serif; max-width:600px; margin:0 auto;">';
+            if ($logoUrl) {
+                $html .= '<div style="text-align:center; margin-bottom:20px;"><img src="' . $logoUrl . '" alt="' . e($installerName) . '" style="max-height:80px; max-width:250px;"></div>';
+            }
+            $html .= "<h2 style='color:#333; border-bottom:2px solid #c9a84c; padding-bottom:8px;'>Invoice {$invoice->invoice_number}</h2>"
+                . "<p><strong>From:</strong> {$installerName}";
+            if ($user->company_phone) $html .= " | {$user->company_phone}";
+            if ($user->company_email) $html .= " | {$user->company_email}";
+            $html .= "</p>"
+                . "<p><strong>To:</strong> {$invoice->customer_name}</p>"
+                . "<table border='0' cellpadding='8' cellspacing='0' style='width:100%; border-collapse:collapse; margin:16px 0;'>"
+                . "<tr style='background:#f5f4f0;'><th style='text-align:left; border-bottom:1px solid #ddd;'>Description</th><th style='text-align:right; border-bottom:1px solid #ddd;'>Qty</th><th style='text-align:right; border-bottom:1px solid #ddd;'>Rate</th><th style='text-align:right; border-bottom:1px solid #ddd;'>Amount</th></tr>";
             foreach ($items as $item) {
-                $html .= "<tr><td>{$item->description}</td><td>{$item->qty}</td><td>\${$item->unit_price}</td><td>\${$item->total}</td></tr>";
+                $html .= "<tr><td style='border-bottom:1px solid #eee;'>{$item->description}</td><td style='text-align:right; border-bottom:1px solid #eee;'>{$item->qty}</td><td style='text-align:right; border-bottom:1px solid #eee;'>\$" . number_format($item->unit_price, 2) . "</td><td style='text-align:right; border-bottom:1px solid #eee;'>\$" . number_format($item->total, 2) . "</td></tr>";
             }
             $html .= "</table>"
-                . "<p>Subtotal: \${$invoice->subtotal}<br>Tax: \${$invoice->tax_amount}<br><strong>Total: \${$invoice->total}</strong></p>";
+                . "<div style='text-align:right; margin-top:8px;'>"
+                . "<p>Subtotal: \$" . number_format($invoice->subtotal, 2) . "<br>"
+                . "Tax: \$" . number_format($invoice->tax_amount, 2) . "<br>"
+                . "<strong style='font-size:1.1em; color:#c9a84c;'>Total: \$" . number_format($invoice->total, 2) . "</strong></p></div>";
             if ($invoice->due_date) {
-                $html .= "<p>Due Date: {$invoice->due_date}</p>";
+                $html .= "<p><strong>Due Date:</strong> {$invoice->due_date}</p>";
             }
+            if ($invoice->notes) {
+                $html .= "<p style='color:#666; font-size:0.9em;'><strong>Notes:</strong> {$invoice->notes}</p>";
+            }
+            $html .= '</div>';
 
             $message->to($invoice->customer_email, $invoice->customer_name)
                 ->subject("Invoice {$invoice->invoice_number} from {$installerName}")

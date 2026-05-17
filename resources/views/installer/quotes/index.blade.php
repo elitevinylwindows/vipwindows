@@ -327,7 +327,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 document.getElementById('dpTitle').textContent = q.quote_number;
                 document.getElementById('dpActions').innerHTML = `
-                    <a href="/installer/quotes/${q.id}/edit" class="btn btn-sm btn-outline-primary" style="font-size:.7rem; padding:2px 8px;"><i class="bi bi-pencil"></i></a>
+                    <form method="POST" action="/installer/invoices/from-quote/${q.id}" class="d-inline" onsubmit="return confirm('Create an invoice from this quote?')">
+                        <input type="hidden" name="_token" value="${document.querySelector('meta[name=csrf-token]').content}">
+                        <button type="submit" class="btn btn-sm btn-outline-success" style="font-size:.7rem; padding:2px 8px;" title="Create Invoice"><i class="bi bi-receipt me-1"></i>Invoice</button>
+                    </form>
+                    <a href="/installer/quotes/${q.id}/edit" class="btn btn-sm btn-outline-primary ms-1" style="font-size:.7rem; padding:2px 8px;"><i class="bi bi-pencil"></i></a>
                     <button class="btn btn-sm btn-outline-danger ms-1" style="font-size:.7rem; padding:2px 8px;" onclick="deleteQuote(${q.id}, '${q.quote_number}')"><i class="bi bi-trash"></i></button>
                 `;
 
