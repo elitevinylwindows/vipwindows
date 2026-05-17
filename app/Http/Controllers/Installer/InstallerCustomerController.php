@@ -35,19 +35,47 @@ class InstallerCustomerController extends Controller
     {
         $customer = VipUser::where('role', 'customer')->findOrFail($id);
 
-        // Get quote count for this customer
-        $quoteCount = 0;
+        // Get quotes for this customer
+        $quotes = [];
+        $jobs = [];
+        $invoices = [];
         try {
-            $quoteCount = \App\Models\Quote::where('billing_name', $customer->name)
-                ->orWhere('customer_number', $customer->email)
-                ->count();
+            $quotes = \App\Models\Quote::where('billing_name', $customer->name)
+                ->orWhere('billing_email', $customer->email)
+                ->latest()
+                ->take(20)
+                ->get(['id', 'quote_number', 'billing_name', 'status', 'created_at', 'valid_until'])
+                ->toArray();
+        } catch (\Exception $e) {}
+
+        try {
+            $jobs = \App\Models\Job::where('customer_name', $customer->name)
+                ->orWhere('customer_email', $customer->email)
+                ->latest()
+                ->take(20)
+                ->get(['id', 'job_number', 'customer_name', 'status', 'scheduled_date', 'description', 'created_at'])
+                ->toArray();
+        } catch (\Exception $e) {}
+
+        try {
+            $invoices = \App\Models\Invoice::where('customer_name', $customer->name)
+                ->orWhere('customer_email', $customer->email)
+                ->latest()
+                ->take(20)
+                ->get(['id', 'invoice_number', 'customer_name', 'status', 'total', 'balance_due', 'due_date', 'created_at'])
+                ->toArray();
         } catch (\Exception $e) {}
 
         return response()->json([
             'customer' => $customer,
             'stats' => [
-                'quotes' => $quoteCount,
+                'quotes' => count($quotes),
+                'jobs' => count($jobs),
+                'invoices' => count($invoices),
             ],
+            'quotes' => $quotes,
+            'jobs' => $jobs,
+            'invoices' => $invoices,
         ]);
     }
 
