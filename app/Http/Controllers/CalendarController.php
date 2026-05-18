@@ -100,19 +100,22 @@ class CalendarController extends Controller
     public function storeEvent(Request $request)
     {
         $validated = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'event_date'  => 'required|date',
-            'event_time'  => 'nullable|string|max:20',
-            'end_time'    => 'nullable|string|max:20',
-            'end_date'    => 'nullable|date|after_or_equal:event_date',
-            'color'       => 'nullable|string|max:10',
-            'service_id'  => 'nullable|exists:vip_services,id',
-            'address'     => 'nullable|string|max:500',
+            'title'          => 'required|string|max:255',
+            'description'    => 'nullable|string',
+            'event_date'     => 'required|date',
+            'event_time'     => 'nullable|string|max:20',
+            'end_time'       => 'nullable|string|max:20',
+            'end_date'       => 'nullable|date|after_or_equal:event_date',
+            'color'          => 'nullable|string|max:10',
+            'service_id'     => 'nullable|exists:vip_services,id',
+            'address'        => 'nullable|string|max:500',
+            'customer_name'  => 'nullable|string|max:255',
+            'customer_email' => 'nullable|email|max:255',
+            'customer_phone' => 'nullable|string|max:50',
         ]);
 
-        $customerEmail = $request->input('customer_email');
-        $customerName  = $request->input('customer_name', 'Customer');
+        $customerEmail = $validated['customer_email'] ?? null;
+        $customerName  = $validated['customer_name'] ?? 'Customer';
 
         $validated['created_by'] = Auth::id();
         $validated['color'] = $validated['color'] ?? '#c9a84c';
