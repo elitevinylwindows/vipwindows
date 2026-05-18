@@ -101,6 +101,8 @@ class ServiceController extends Controller
         $validated['is_active'] = $request->has('is_active') ? true : false;
         $validated['cost_price'] = $validated['cost_price'] ?? 0;
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['installer_pay'] = $validated['installer_pay'] ?? $service->installer_pay ?? 0;
+        $validated['installer_pay_type'] = $validated['installer_pay_type'] ?? $service->installer_pay_type ?? 'per_unit';
 
         $service->update($validated);
 
