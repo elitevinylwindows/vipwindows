@@ -166,6 +166,15 @@
             <a href="{{ route('installer.attendance.index') }}" class="{{ request()->routeIs('installer.attendance.*') ? 'active' : '' }}">
                 <i class="bi bi-clock-history"></i> Attendance
             </a>
+            <a href="{{ route('installer.messages.index') }}" class="{{ request()->routeIs('installer.messages.*') ? 'active' : '' }}">
+                <i class="bi bi-chat-dots"></i> Messages
+                @php $msgUnread = \App\Models\Message::whereHas('conversation', fn($q) => $q->where('installer_id', auth('vip')->id()))->where('sender_id', '!=', auth('vip')->id())->whereNull('read_at')->count(); @endphp
+                @if($msgUnread > 0)
+                    <span id="msgUnreadBadge" class="badge bg-danger ms-1" style="font-size:.6rem;">{{ $msgUnread }}</span>
+                @else
+                    <span id="msgUnreadBadge" class="badge bg-danger ms-1" style="font-size:.6rem; display:none;">0</span>
+                @endif
+            </a>
 
             <div class="nav-label mt-3">{{ __('installer.customers') }}</div>
             <a href="{{ route('installer.customers.index') }}" class="{{ request()->routeIs('installer.customers.*') ? 'active' : '' }}">

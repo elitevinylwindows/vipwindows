@@ -47,6 +47,8 @@ use App\Http\Controllers\Installer\InstallerAvailabilityController;
 use App\Http\Controllers\Installer\InstallerProfileController;
 use App\Http\Controllers\Installer\InstallerAttendanceController;
 use App\Http\Controllers\Installer\InstallerServiceController;
+use App\Http\Controllers\Installer\InstallerMessageController;
+use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\CrewController;
 use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\ServiceController;
@@ -175,6 +177,13 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/consultations', [ConsultationController::class, 'store'])->name('consultations.store');
     Route::put('/consultations/{id}', [ConsultationController::class, 'update'])->name('consultations.update');
     Route::delete('/consultations/{id}', [ConsultationController::class, 'destroy'])->name('consultations.destroy');
+
+    // Messages (admin ↔ installer)
+    Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/unread-count', [MessageController::class, 'unreadCount'])->name('messages.unreadCount');
+    Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages/{id}/send', [MessageController::class, 'send'])->name('messages.send');
+    Route::post('/messages/start', [MessageController::class, 'startConversation'])->name('messages.start');
 
     // Quotes (full configurator)
     Route::get('/quotes', [VipQuoteController::class, 'index'])->name('quotes.index');
@@ -425,6 +434,12 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/attendance', [InstallerAttendanceController::class, 'index'])->name('attendance.index');
     Route::post('/attendance/clock-in', [InstallerAttendanceController::class, 'clockIn'])->name('attendance.clockIn');
     Route::post('/attendance/clock-out', [InstallerAttendanceController::class, 'clockOut'])->name('attendance.clockOut');
+
+    // Messages (installer ↔ admin)
+    Route::get('/messages', [InstallerMessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/unread-count', [InstallerMessageController::class, 'unreadCount'])->name('messages.unreadCount');
+    Route::get('/messages/{id}', [InstallerMessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages/{id}/send', [InstallerMessageController::class, 'send'])->name('messages.send');
 
     // Profile
     Route::get('/profile', [InstallerProfileController::class, 'index'])->name('profile');

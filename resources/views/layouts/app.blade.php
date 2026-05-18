@@ -177,6 +177,15 @@
             <a href="{{ route('admin.consultations.index') }}" class="{{ request()->routeIs('admin.consultations.*') ? 'active' : '' }}">
                 <i class="bi bi-camera-video"></i> Consultations
             </a>
+            <a href="{{ route('admin.messages.index') }}" class="{{ request()->routeIs('admin.messages.*') ? 'active' : '' }}">
+                <i class="bi bi-chat-dots"></i> Messages
+                @php $msgUnread = \App\Models\Message::whereHas('conversation', fn($q) => $q->where('admin_id', auth('vip')->id()))->where('sender_id', '!=', auth('vip')->id())->whereNull('read_at')->count(); @endphp
+                @if($msgUnread > 0)
+                    <span id="msgUnreadBadge" class="badge bg-danger ms-1" style="font-size:.6rem;">{{ $msgUnread }}</span>
+                @else
+                    <span id="msgUnreadBadge" class="badge bg-danger ms-1" style="font-size:.6rem; display:none;">0</span>
+                @endif
+            </a>
 
             <div class="nav-label mt-3">Configuration</div>
             <a href="{{ route('admin.master.hub') }}" class="{{ request()->routeIs('admin.master.*') ? 'active' : '' }}">
