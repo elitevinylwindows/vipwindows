@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminAvailabilityController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\CustomerController;
@@ -103,6 +104,12 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/calendar/slots', [CalendarController::class, 'storeSlot'])->name('calendar.storeSlot');
     Route::put('/calendar/slots/{id}', [CalendarController::class, 'updateSlot'])->name('calendar.updateSlot');
     Route::delete('/calendar/slots/{id}', [CalendarController::class, 'deleteSlot'])->name('calendar.deleteSlot');
+
+    // Admin availability management
+    Route::get('/calendar/availability', [AdminAvailabilityController::class, 'index'])->name('calendar.availability');
+    Route::post('/calendar/availability/weekly', [AdminAvailabilityController::class, 'saveWeekly'])->name('calendar.availability.saveWeekly');
+    Route::post('/calendar/availability/override', [AdminAvailabilityController::class, 'addOverride'])->name('calendar.availability.addOverride');
+    Route::delete('/calendar/availability/override/{id}', [AdminAvailabilityController::class, 'removeOverride'])->name('calendar.availability.removeOverride');
 
     // Gallery management
     Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
