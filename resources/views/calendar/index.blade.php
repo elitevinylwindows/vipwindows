@@ -230,7 +230,7 @@
                         $allItems = collect();
                         foreach($dayJobList as $j) { $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => Str::limit($j->customer_name ?: $j->job_number, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . ($j->customer_name ?? ''), 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status]); }
                         foreach($dayOrderList as $o) { $allItems->push(['type' => 'order', 'id' => $o->id, 'label' => Str::limit($o->customer_name, 10), 'full_label' => $o->customer_name, 'time' => null, 'color' => ($serviceColors[$o->service_type] ?? '#007bff'), 'address' => '', 'status' => $o->status]); }
-                        foreach($dayEventList as $ev) { $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $ev->color, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'end_date' => $ev->end_date?->format('Y-m-d')]); }
+                        foreach($dayEventList as $ev) { $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $ev->color, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone]); }
                     @endphp
                     <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}">
                         <span class="cell-date">{{ $current->day }}</span>
@@ -273,13 +273,17 @@
                         <input type="text" name="title" class="form-control form-control-sm" required placeholder="e.g. Site Visit, Team Meeting, Holiday...">
                     </div>
                     <div class="row g-2 mb-3">
-                        <div class="col-6">
+                        <div class="col-4">
                             <label class="form-label">Client Name</label>
                             <input type="text" name="customer_name" class="form-control form-control-sm" placeholder="Customer name">
                         </div>
-                        <div class="col-6">
-                            <label class="form-label">Client Email <small class="text-muted">(gets notified)</small></label>
+                        <div class="col-4">
+                            <label class="form-label">Client Email <small class="text-muted">(notified)</small></label>
                             <input type="email" name="customer_email" class="form-control form-control-sm" placeholder="client@email.com">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Client Phone</label>
+                            <input type="text" name="customer_phone" class="form-control form-control-sm" placeholder="(555) 123-4567">
                         </div>
                     </div>
                     <div class="row g-2 mb-3">
@@ -491,6 +495,20 @@
                             <input type="time" name="end_time" id="editEvEndTime" class="form-control form-control-sm">
                         </div>
                     </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label">Client Name</label>
+                            <input type="text" name="customer_name" id="editEvCustName" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Client Email</label>
+                            <input type="email" name="customer_email" id="editEvCustEmail" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Client Phone</label>
+                            <input type="text" name="customer_phone" id="editEvCustPhone" class="form-control form-control-sm">
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Address</label>
                         <input type="text" name="address" id="editEvAddress" class="form-control form-control-sm">
@@ -651,19 +669,33 @@ function openCalItem(item) {
     if (item.type === 'event') {
         title.innerHTML = `<i class="bi bi-calendar-event me-1" style="color:${item.color}"></i> ${item.full_label}`;
         let details = '';
+        // Contact info
+        if (item.customer_name) details += `<p class="mb-1 small"><i class="bi bi-person me-1"></i><strong>${item.customer_name}</strong></p>`;
+        if (item.customer_phone) details += `<p class="mb-1 small"><i class="bi bi-telephone me-1"></i><a href="tel:${item.customer_phone}">${item.customer_phone}</a></p>`;
+        if (item.customer_email) details += `<p class="mb-1 small"><i class="bi bi-envelope me-1"></i><a href="mailto:${item.customer_email}">${item.customer_email}</a></p>`;
+        if (item.customer_name || item.customer_phone || item.customer_email) details += '<hr class="my-2">';
+        // Schedule details
         if (item.time) details += `<p class="mb-1 small"><i class="bi bi-clock me-1"></i><strong>Time:</strong> ${item.time}${item.end_time ? ' – ' + item.end_time : ''}</p>`;
         if (item.address) details += `<p class="mb-1 small"><i class="bi bi-geo-alt me-1"></i><strong>Address:</strong> ${item.address}</p>`;
         if (item.description) details += `<p class="mb-1 small"><i class="bi bi-card-text me-1"></i>${item.description}</p>`;
         if (item.end_date) details += `<p class="mb-1 small"><i class="bi bi-calendar-range me-1"></i><strong>Until:</strong> ${item.end_date}</p>`;
         if (!details) details = '<p class="text-muted small mb-0">No additional details.</p>';
         body.innerHTML = details;
-        footer.innerHTML = `
-            <button class="btn btn-sm btn-outline-primary" onclick="openEditEvent(${item.id})"><i class="bi bi-pencil me-1"></i>Edit</button>
-            <form method="POST" action="/admin/calendar/event/${item.id}" class="d-inline" onsubmit="return confirm('Delete this event?')">
+        let footerHtml = '';
+        if (item.customer_email) {
+            footerHtml += `<button class="btn btn-sm btn-outline-info" onclick="sendReminder(${item.id})"><i class="bi bi-bell me-1"></i>Send Reminder</button> `;
+            footerHtml += `<a href="mailto:${item.customer_email}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-envelope me-1"></i>Email</a> `;
+        }
+        if (item.customer_phone) {
+            footerHtml += `<a href="tel:${item.customer_phone}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-telephone me-1"></i>Call</a> `;
+        }
+        footerHtml += `<button class="btn btn-sm btn-outline-primary" onclick="openEditEvent(${item.id})"><i class="bi bi-pencil me-1"></i>Edit</button> `;
+        footerHtml += `<form method="POST" action="/admin/calendar/event/${item.id}" class="d-inline" onsubmit="return confirm('Delete this event?')">
                 <input type="hidden" name="_token" value="${csrfToken}">
                 <input type="hidden" name="_method" value="DELETE">
                 <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Delete</button>
             </form>`;
+        footer.innerHTML = footerHtml;
     } else if (item.type === 'job') {
         title.innerHTML = `<i class="bi bi-wrench me-1" style="color:${item.color}"></i> ${item.full_label}`;
         let details = '';
@@ -700,6 +732,20 @@ function openDaySummary(items, dateKey) {
     new bootstrap.Modal(modal).show();
 }
 
+function sendReminder(eventId) {
+    if (!confirm('Send a reminder email to the client?')) return;
+    fetch(`/admin/calendar/event/${eventId}/reminder`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) alert(data.message);
+        else alert(data.error || 'Failed to send reminder.');
+    })
+    .catch(() => alert('Failed to send reminder.'));
+}
+
 function openEditEvent(eventId) {
     // Close view modal
     bootstrap.Modal.getInstance(document.getElementById('viewItemModal'))?.hide();
@@ -716,8 +762,10 @@ function openEditEvent(eventId) {
         document.getElementById('editEvTime').value = ev.event_time || '';
         document.getElementById('editEvEndTime').value = ev.end_time || '';
         document.getElementById('editEvAddress').value = ev.address || '';
+        document.getElementById('editEvCustName').value = ev.customer_name || '';
+        document.getElementById('editEvCustEmail').value = ev.customer_email || '';
+        document.getElementById('editEvCustPhone').value = ev.customer_phone || '';
         document.getElementById('editEvService').value = ev.service_id || '';
-        document.getElementById('editEvColor').value = ev.color || '#c9a84c';
         document.getElementById('editEvDesc').value = ev.description || '';
         document.getElementById('editEventForm').action = `/admin/calendar/event/${eventId}`;
 
