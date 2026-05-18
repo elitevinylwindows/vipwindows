@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminAvailability;
-use App\Models\CalendarSlot;
 use App\Models\CalendarEvent;
+use App\Models\CalendarSlot;
 use App\Models\InstallationOrder;
 use App\Models\Job;
 use App\Models\Service;
@@ -14,13 +14,17 @@ use Illuminate\Support\Facades\Auth;
 class CalendarController extends Controller
 {
     /**
-     * Admin calendar view — manage availability slots.
+     * Admin calendar view — redesigned to match installer calendar style.
      */
     public function index(Request $request)
     {
         $month = $request->input('month', now()->format('Y-m'));
         $startOfMonth = \Carbon\Carbon::parse($month . '-01')->startOfMonth();
         $endOfMonth   = $startOfMonth->copy()->endOfMonth();
+
+        // For the grid: start from Sunday of the first week, end Saturday of last week
+        $gridStart = $startOfMonth->copy()->startOfWeek(\Carbon\Carbon::SUNDAY);
+        $gridEnd   = $endOfMonth->copy()->endOfWeek(\Carbon\Carbon::SATURDAY);
 
         $slots = CalendarSlot::whereBetween('slot_date', [$startOfMonth, $endOfMonth])
             ->orderBy('slot_date')
@@ -36,7 +40,7 @@ class CalendarController extends Controller
                 ? $o->scheduled_date->format('Y-m-d')
                 : \Carbon\Carbon::parse($o->scheduled_date)->format('Y-m-d'));
 
-        // Build service color map for calendar
+        // Build service color maps
         try {
             $serviceColors = Service::pluck('color', 'name')->toArray();
             $serviceColorById = Service::pluck('color', 'id')->toArray();
@@ -46,15 +50,79 @@ class CalendarController extends Controller
         }
 
         // Scheduled Jobs for the calendar
-        $scheduledJobs = Job::with('service')
+        $allJobs = Job::with('service')
             ->whereNotNull('scheduled_date')
             ->whereBetween('scheduled_date', [$startOfMonth, $endOfMonth])
-            ->whereIn('status', ['scheduled', 'in_progress', 'pending'])
             ->orderBy('scheduled_date')
-            ->get()
-            ->groupBy(fn($j) => $j->scheduled_date->format('Y-m-d'));
+            ->get();
 
-        return view('calendar.index', compact('slots', 'scheduledOrders', 'scheduledJobs', 'month', 'startOfMonth', 'endOfMonth', 'serviceColors', 'serviceColorById'));
+        $scheduledJobs = $allJobs->groupBy(fn($j) => $j->scheduled_date->format('Y-m-d'));
+
+        // Calendar events (standalone, not from jobs)
+        $calendarEvents = CalendarEvent::with('service')
+            ->whereBetween('event_date', [$startOfMonth, $endOfMonth])
+            ->orderBy('event_date')
+            ->get()
+            ->groupBy(fn($e) => $e->event_date->format('Y-m-d'));
+
+        // Stats
+        $totalJobs = $allJobs->count();
+        $pendingJobs = $allJobs->where('status', 'pending')->count();
+        $scheduledCount = $allJobs->where('status', 'scheduled')->count();
+        $inProgressCount = $allJobs->where('status', 'in_progress')->count();
+        $completedCount = Job::where('status', 'completed')
+            ->whereBetween('scheduled_date', [$startOfMonth, $endOfMonth])
+            ->count();
+        $totalOrders = $scheduledOrders->flatten()->count();
+        $totalEvents = CalendarEvent::whereBetween('event_date', [$startOfMonth, $endOfMonth])->count();
+
+        // Availability for the modal
+        $availability = AdminAvailability::orderBy('day_of_week')->get()->keyBy('day_of_week');
+
+        // Services for the add event form
+        $services = Service::where('is_active', true)->orderBy('name')->get();
+
+        return view('calendar.index', compact(
+            'slots', 'scheduledOrders', 'scheduledJobs', 'calendarEvents',
+            'month', 'startOfMonth', 'endOfMonth', 'gridStart', 'gridEnd',
+            'serviceColors', 'serviceColorById',
+            'totalJobs', 'pendingJobs', 'scheduledCount', 'inProgressCount', 'completedCount',
+            'totalOrders', 'totalEvents',
+            'availability', 'services'
+        ));
+    }
+
+    /**
+     * Store a calendar event (standalone).
+     */
+    public function storeEvent(Request $request)
+    {
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'event_date'  => 'required|date',
+            'event_time'  => 'nullable|string|max:20',
+            'end_date'    => 'nullable|date|after_or_equal:event_date',
+            'color'       => 'nullable|string|max:10',
+            'service_id'  => 'nullable|exists:vip_services,id',
+        ]);
+
+        $validated['created_by'] = Auth::id();
+        $validated['color'] = $validated['color'] ?? '#c9a84c';
+
+        CalendarEvent::create($validated);
+
+        return redirect()->route('admin.calendar.index', ['month' => \Carbon\Carbon::parse($validated['event_date'])->format('Y-m')])
+            ->with('success', 'Event added to calendar.');
+    }
+
+    /**
+     * Delete a calendar event.
+     */
+    public function deleteEvent($id)
+    {
+        CalendarEvent::findOrFail($id)->delete();
+        return back()->with('success', 'Event removed.');
     }
 
     /**
@@ -80,9 +148,6 @@ class CalendarController extends Controller
             ->with('success', 'Slot created.');
     }
 
-    /**
-     * Update an existing slot.
-     */
     public function updateSlot(Request $request, $id)
     {
         $slot = CalendarSlot::findOrFail($id);
@@ -96,9 +161,6 @@ class CalendarController extends Controller
             ->with('success', 'Slot updated.');
     }
 
-    /**
-     * Delete a slot (only if no bookings).
-     */
     public function deleteSlot($id)
     {
         $slot = CalendarSlot::findOrFail($id);
@@ -113,9 +175,6 @@ class CalendarController extends Controller
             ->with('success', 'Slot removed.');
     }
 
-    /**
-     * Public booking page — customer picks an available slot for their order.
-     */
     public function showBooking($orderId)
     {
         $order = InstallationOrder::findOrFail($orderId);
@@ -134,9 +193,6 @@ class CalendarController extends Controller
         return view('calendar.booking', compact('order', 'slots'));
     }
 
-    /**
-     * Confirm a booking — customer selects a slot.
-     */
     public function confirmBooking(Request $request, $orderId)
     {
         $order = InstallationOrder::findOrFail($orderId);
@@ -155,7 +211,6 @@ class CalendarController extends Controller
             return back()->with('error', 'This slot is no longer available. Please choose another.');
         }
 
-        // Book the slot
         $slot->increment('current_bookings');
 
         $order->update([

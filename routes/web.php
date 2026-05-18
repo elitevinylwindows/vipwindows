@@ -104,6 +104,8 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/calendar/slots', [CalendarController::class, 'storeSlot'])->name('calendar.storeSlot');
     Route::put('/calendar/slots/{id}', [CalendarController::class, 'updateSlot'])->name('calendar.updateSlot');
     Route::delete('/calendar/slots/{id}', [CalendarController::class, 'deleteSlot'])->name('calendar.deleteSlot');
+    Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.storeEvent');
+    Route::delete('/calendar/events/{id}', [CalendarController::class, 'deleteEvent'])->name('calendar.deleteEvent');
 
     // Admin availability management
     Route::get('/calendar/availability', [AdminAvailabilityController::class, 'index'])->name('calendar.availability');
