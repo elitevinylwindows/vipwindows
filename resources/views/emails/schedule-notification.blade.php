@@ -13,8 +13,7 @@
                     {{-- Header with logo --}}
                     <tr>
                         <td style="background:linear-gradient(135deg, #0a0a0a, #1a1a1a); padding:30px 40px; text-align:center; border-radius:12px 12px 0 0;">
-                            <span style="font-size:28px; font-weight:700; color:#c9a84c; letter-spacing:2px;">VIP</span>
-                            <span style="font-size:28px; font-weight:300; color:#ffffff; letter-spacing:1px;"> WINDOWS</span>
+                            <img src="https://vipwindowsinc.com/images/logo.png" alt="VIP Windows" style="height:60px; max-width:200px;" />
                             <p style="color:#c9a84c; margin:10px 0 0; font-size:13px; letter-spacing:2px; text-transform:uppercase;">
                                 {{ $type === 'job' ? 'Installation Scheduled' : 'Appointment Confirmation' }}
                             </p>
