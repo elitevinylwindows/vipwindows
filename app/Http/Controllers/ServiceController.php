@@ -52,7 +52,6 @@ class ServiceController extends Controller
     {
         $validated = $request->validate([
             'name'        => 'required|string|max:150',
-            'code'        => 'required|string|max:30|unique:vip_services,code',
             'description' => 'nullable|string|max:500',
             'base_price'  => 'required|numeric|min:0',
             'cost_price'  => 'nullable|numeric|min:0',
@@ -65,6 +64,15 @@ class ServiceController extends Controller
             'installer_pay'      => 'nullable|numeric|min:0',
             'installer_pay_type' => 'nullable|in:per_job,per_hour,per_unit,percentage',
         ]);
+
+        // Auto-generate code from name
+        $validated['code'] = strtoupper(\Illuminate\Support\Str::slug($validated['name'], '_'));
+        // Ensure uniqueness
+        $base = $validated['code'];
+        $i = 1;
+        while (Service::where('code', $validated['code'])->exists()) {
+            $validated['code'] = $base . '_' . $i++;
+        }
 
         $validated['is_active'] = $request->has('is_active') ? true : ($request->input('is_active') ?? true);
         $validated['cost_price'] = $validated['cost_price'] ?? 0;
@@ -84,7 +92,6 @@ class ServiceController extends Controller
 
         $validated = $request->validate([
             'name'        => 'required|string|max:150',
-            'code'        => 'required|string|max:30|unique:vip_services,code,' . $service->id,
             'description' => 'nullable|string|max:500',
             'base_price'  => 'required|numeric|min:0',
             'cost_price'  => 'nullable|numeric|min:0',
