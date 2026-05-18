@@ -181,8 +181,7 @@
                 <div class="modal-header"><h5 class="modal-title">Add Service</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-8"><label class="form-label">Service Name *</label><input type="text" name="name" class="form-control" required></div>
-                        <div class="col-4"><label class="form-label">Code *</label><input type="text" name="code" class="form-control" required placeholder="e.g. WIN_INSTALL"></div>
+                        <div class="col-12"><label class="form-label">Service Name *</label><input type="text" name="name" class="form-control" required></div>
                         <div class="col-12"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="2"></textarea></div>
                         <div class="col-4"><label class="form-label">Base Price *</label><input type="number" name="base_price" class="form-control" step="0.01" min="0" required></div>
                         <div class="col-4"><label class="form-label">Cost Price</label><input type="number" name="cost_price" class="form-control" step="0.01" min="0" value="0"></div>
@@ -234,8 +233,7 @@
                 <div class="modal-header"><h5 class="modal-title">Edit Service</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-8"><label class="form-label">Service Name *</label><input type="text" name="name" id="editSvcName" class="form-control" required></div>
-                        <div class="col-4"><label class="form-label">Code *</label><input type="text" name="code" id="editSvcCode" class="form-control" required></div>
+                        <div class="col-12"><label class="form-label">Service Name *</label><input type="text" name="name" id="editSvcName" class="form-control" required></div>
                         <div class="col-12"><label class="form-label">Description</label><textarea name="description" id="editSvcDesc" class="form-control" rows="2"></textarea></div>
                         <div class="col-4"><label class="form-label">Base Price *</label><input type="number" name="base_price" id="editSvcBasePrice" class="form-control" step="0.01" min="0" required></div>
                         <div class="col-4"><label class="form-label">Cost Price</label><input type="number" name="cost_price" id="editSvcCostPrice" class="form-control" step="0.01" min="0"></div>
@@ -411,7 +409,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const svc = data.service;
                 document.getElementById('editServiceForm').action = `/admin/services/${svc.id}`;
                 document.getElementById('editSvcName').value = svc.name;
-                document.getElementById('editSvcCode').value = svc.code;
                 document.getElementById('editSvcDesc').value = svc.description || '';
                 document.getElementById('editSvcBasePrice').value = svc.base_price;
                 document.getElementById('editSvcCostPrice').value = svc.cost_price;
