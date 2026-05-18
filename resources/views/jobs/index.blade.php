@@ -339,117 +339,144 @@
     </div>
 </div>
 
-{{-- Create Job modal --}}
+{{-- Create Job modal (compact) --}}
 <div class="modal fade" id="createJobModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST" action="{{ route('admin.jobs.store') }}">
                 @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-plus-circle me-1"></i> New Job</h5>
+                <div class="modal-header py-2">
+                    <h6 class="modal-title mb-0"><i class="bi bi-plus-circle me-1"></i> New Job</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Create from Quote</label>
-                            <select name="from_quote" class="form-select" id="jobFromQuote">
+                <div class="modal-body py-2">
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label mb-0 small text-muted">From Quote</label>
+                            <select name="from_quote" class="form-select form-select-sm" id="jobFromQuote">
                                 <option value="">— None —</option>
                                 @foreach($quotes as $q)
-                                    <option value="{{ $q->id }}" data-name="{{ $q->billing_name }}">
-                                        {{ $q->quote_number }} — {{ $q->billing_name ?: 'No Name' }}
-                                    </option>
+                                    <option value="{{ $q->id }}" data-name="{{ $q->billing_name }}">{{ $q->quote_number }} — {{ $q->billing_name ?: 'No Name' }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Create from Invoice</label>
-                            <select name="from_invoice" class="form-select" id="jobFromInvoice">
+                        <div class="col-6">
+                            <label class="form-label mb-0 small text-muted">From Invoice</label>
+                            <select name="from_invoice" class="form-select form-select-sm" id="jobFromInvoice">
                                 <option value="">— None —</option>
                                 @foreach($invoices as $inv)
-                                    <option value="{{ $inv->id }}" data-name="{{ $inv->customer_name }}" data-email="{{ $inv->customer_email }}" data-phone="{{ $inv->customer_phone }}" data-address="{{ $inv->customer_address }}">
-                                        {{ $inv->invoice_number }} — {{ $inv->customer_name }}
-                                    </option>
+                                    <option value="{{ $inv->id }}" data-name="{{ $inv->customer_name }}" data-email="{{ $inv->customer_email }}" data-phone="{{ $inv->customer_phone }}" data-address="{{ $inv->customer_address }}">{{ $inv->invoice_number }} — {{ $inv->customer_name }}</option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Customer Name <span class="text-danger">*</span></label>
-                            <input type="text" name="customer_name" class="form-control" id="jobCustName" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="customer_email" class="form-control" id="jobCustEmail">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone</label>
-                        <input type="text" name="customer_phone" class="form-control" id="jobCustPhone">
-                    </div>
                     <hr class="my-2">
-                    <h6 class="text-muted small mb-2">Install Address</h6>
-                    <div class="mb-3">
-                        <input type="text" name="install_address" class="form-control" placeholder="Street Address" id="jobInstallAddr">
-                    </div>
-                    <div class="row">
-                        <div class="col-md-5 mb-3">
-                            <input type="text" name="install_city" class="form-control" placeholder="City" id="jobInstallCity">
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <label class="form-label mb-0 small text-muted">Customer Name *</label>
+                            <input type="text" name="customer_name" class="form-control form-control-sm" id="jobCustName" required>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <input type="text" name="install_state" class="form-control" placeholder="State" value="CA" id="jobInstallState">
+                        <div class="col-4">
+                            <label class="form-label mb-0 small text-muted">Email</label>
+                            <input type="email" name="customer_email" class="form-control form-control-sm" id="jobCustEmail">
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <input type="text" name="install_zip" class="form-control" placeholder="ZIP" id="jobInstallZip">
+                        <div class="col-4">
+                            <label class="form-label mb-0 small text-muted">Phone</label>
+                            <input type="text" name="customer_phone" class="form-control form-control-sm" id="jobCustPhone">
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="2" placeholder="Job description..."></textarea>
+
+                    {{-- Assign To: Crew / Installer toggle --}}
+                    <div class="mt-2">
+                        <label class="form-label mb-1 small text-muted">Assign To</label>
+                        <div class="btn-group btn-group-sm w-100 mb-2" role="group">
+                            <input type="radio" class="btn-check" name="assignment_type" value="crew" id="createAssignCrew" checked>
+                            <label class="btn btn-outline-dark" for="createAssignCrew"><i class="bi bi-people-fill me-1"></i>Crew</label>
+                            <input type="radio" class="btn-check" name="assignment_type" value="installer" id="createAssignInstaller">
+                            <label class="btn btn-outline-dark" for="createAssignInstaller"><i class="bi bi-person-badge me-1"></i>Installer</label>
+                        </div>
+                        <div id="adminCreateCrewSelect">
+                            <select name="crew_id" class="form-select form-select-sm">
+                                <option value="">— Select Crew —</option>
+                                @foreach($crews as $crew)
+                                    <option value="{{ $crew->id }}">{{ $crew->name }} ({{ $crew->members->count() }} members)</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div id="adminCreateInstallerSelect" style="display:none;">
+                            <select name="assigned_to" class="form-select form-select-sm">
+                                <option value="">— Select Installer —</option>
+                                @foreach($technicians as $tech)
+                                    <option value="{{ $tech->id }}">{{ $tech->name }} ({{ ucfirst($tech->role) }})</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Priority</label>
-                            <select name="priority" class="form-select">
+
+                    <hr class="my-2">
+                    <div class="row g-2">
+                        <div class="col-8">
+                            <label class="form-label mb-0 small text-muted">Address</label>
+                            <input type="text" name="install_address" class="form-control form-control-sm" placeholder="Street" id="jobInstallAddr">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label mb-0 small text-muted">Priority</label>
+                            <select name="priority" class="form-select form-select-sm">
                                 <option value="low">Low</option>
                                 <option value="normal" selected>Normal</option>
                                 <option value="high">High</option>
                                 <option value="urgent">Urgent</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Assigned To</label>
-                            <select name="assigned_to" class="form-select">
-                                <option value="">— Unassigned —</option>
-                                @foreach($technicians as $tech)
-                                    <option value="{{ $tech->id }}">{{ $tech->name }} ({{ ucfirst($tech->role) }})</option>
-                                @endforeach
-                            </select>
+                        <div class="col-5">
+                            <input type="text" name="install_city" class="form-control form-control-sm" placeholder="City" id="jobInstallCity">
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Estimated Duration</label>
-                            <input type="text" name="estimated_duration" class="form-control" placeholder="e.g. 4 hours">
+                        <div class="col-4">
+                            <input type="text" name="install_state" class="form-control form-control-sm" placeholder="State" value="CA" id="jobInstallState">
+                        </div>
+                        <div class="col-3">
+                            <input type="text" name="install_zip" class="form-control form-control-sm" placeholder="ZIP" id="jobInstallZip">
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Scheduled Date</label>
-                            <input type="date" name="scheduled_date" class="form-control">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Scheduled Time</label>
-                            <input type="text" name="scheduled_time" class="form-control" placeholder="e.g. 9:00 AM">
+
+                    <hr class="my-2">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label mb-0 small text-muted">Description</label>
+                            <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Job description..."></textarea>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Notes</label>
-                        <textarea name="notes" class="form-control" rows="2"></textarea>
+
+                    <hr class="my-2">
+                    <div class="row g-2">
+                        <div class="col-3">
+                            <label class="form-label mb-0 small text-muted">Start Date</label>
+                            <input type="date" name="scheduled_date" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label mb-0 small text-muted">End Date</label>
+                            <input type="date" name="end_date" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label mb-0 small text-muted">Time</label>
+                            <input type="text" name="scheduled_time" class="form-control form-control-sm" placeholder="e.g. 9:00 AM">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label mb-0 small text-muted">Est. Duration</label>
+                            <input type="text" name="estimated_duration" class="form-control form-control-sm" placeholder="e.g. 2 days">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mt-1">
+                        <div class="col-12">
+                            <label class="form-label mb-0 small text-muted">Notes</label>
+                            <textarea name="notes" class="form-control form-control-sm" rows="1"></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-vip"><i class="bi bi-plus-circle me-1"></i> Create Job</button>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-vip"><i class="bi bi-plus-circle me-1"></i> Create Job</button>
                 </div>
             </form>
         </div>
@@ -460,6 +487,14 @@
 <script>
 const csrfToken = '{{ csrf_token() }}';
 let currentViewJobId = null;
+
+// Crew/Installer toggle for create modal
+document.querySelectorAll('#createJobModal input[name="assignment_type"]').forEach(r => {
+    r.addEventListener('change', function() {
+        document.getElementById('adminCreateCrewSelect').style.display = this.value === 'crew' ? '' : 'none';
+        document.getElementById('adminCreateInstallerSelect').style.display = this.value === 'installer' ? '' : 'none';
+    });
+});
 
 // Auto-fill from quote selection
 document.getElementById('jobFromQuote')?.addEventListener('change', function() {

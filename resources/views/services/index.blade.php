@@ -132,7 +132,6 @@
                             <span style="width:10px;height:10px;border-radius:50%;background:{{ $service->color ?? '#0d6efd' }};flex-shrink:0;"></span>
                             <div>
                                 <div class="svc-name">{{ $service->name }}</div>
-                                <div class="svc-code">{{ $service->code }}</div>
                             </div>
                         </div>
                         <span class="svc-badge {{ $service->is_active ? 'svc-badge-active' : 'svc-badge-inactive' }}">

@@ -34,7 +34,11 @@ class CalendarController extends Controller
                 : \Carbon\Carbon::parse($o->scheduled_date)->format('Y-m-d'));
 
         // Build service color map for calendar
-        $serviceColors = Service::pluck('color', 'name')->toArray();
+        try {
+            $serviceColors = Service::pluck('color', 'name')->toArray();
+        } catch (\Exception $e) {
+            $serviceColors = [];
+        }
 
         return view('calendar.index', compact('slots', 'scheduledOrders', 'month', 'startOfMonth', 'endOfMonth', 'serviceColors'));
     }

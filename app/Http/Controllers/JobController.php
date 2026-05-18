@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Crew;
 use App\Models\Invoice;
 use App\Models\Job;
 use App\Models\JobNote;
+use App\Models\Service;
 use App\Models\VipQuote as Quote;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
@@ -36,12 +38,14 @@ class JobController extends Controller
 
         // For dropdowns in create modal
         $technicians = VipUser::whereIn('role', ['technician', 'installer'])->orderBy('name')->get();
+        $crews = Crew::where('status', 'active')->with('members')->orderBy('name')->get();
         $quotes = Quote::where('status', 'sent')->orderByDesc('created_at')->get();
         $invoices = Invoice::orderByDesc('created_at')->get();
+        $services = Service::where('is_active', true)->orderBy('name')->get();
 
         return view('jobs.index', compact(
             'jobs', 'status', 'todayJobs', 'weekJobs', 'inProgress',
-            'completedMonth', 'technicians', 'quotes', 'invoices'
+            'completedMonth', 'technicians', 'crews', 'quotes', 'invoices', 'services'
         ));
     }
 
@@ -57,8 +61,11 @@ class JobController extends Controller
             'install_zip' => 'nullable|string|max:20',
             'description' => 'nullable|string',
             'priority' => 'nullable|in:low,normal,high,urgent',
+            'assignment_type' => 'nullable|in:crew,installer',
+            'crew_id' => 'nullable|exists:crews,id',
             'assigned_to' => 'nullable|exists:vip_users,id',
             'scheduled_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:scheduled_date',
             'scheduled_time' => 'nullable|string|max:20',
             'estimated_duration' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
@@ -76,6 +83,10 @@ class JobController extends Controller
             $status = 'scheduled';
         }
 
+        $assignmentType = $validated['assignment_type'] ?? 'crew';
+        $assignedTo = $assignmentType === 'installer' ? ($validated['assigned_to'] ?? null) : null;
+        $crewId = $assignmentType === 'crew' ? ($validated['crew_id'] ?? null) : null;
+
         $job = Job::create([
             'job_number' => $jobNumber,
             'quote_id' => $validated['from_quote'] ?? null,
@@ -90,8 +101,11 @@ class JobController extends Controller
             'description' => $validated['description'] ?? null,
             'status' => $status,
             'priority' => $validated['priority'] ?? 'normal',
-            'assigned_to' => $validated['assigned_to'] ?? null,
+            'assignment_type' => $assignmentType,
+            'assigned_to' => $assignedTo,
+            'crew_id' => $crewId,
             'scheduled_date' => $validated['scheduled_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
             'scheduled_time' => $validated['scheduled_time'] ?? null,
             'estimated_duration' => $validated['estimated_duration'] ?? null,
             'notes' => $validated['notes'] ?? null,
