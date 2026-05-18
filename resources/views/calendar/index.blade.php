@@ -236,7 +236,7 @@
                         foreach($dayEventList as $ev) {
                             // Always use live service color when a service is assigned; fallback to stored color or gold
                             $evColor = ($ev->service && $ev->service->color) ? $ev->service->color : ($ev->color ?: '#c9a84c');
-                            $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'crew_id' => $ev->crew_id, 'crew_name' => $ev->crew?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone]);
+                            $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'crew_id' => $ev->crew_id, 'crew_name' => $ev->crew?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone, 'installation_types' => $ev->installation_types]);
                         }
                     @endphp
                     <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}">
@@ -318,10 +318,10 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label">Service</label>
-                            <select name="service_id" class="form-select form-select-sm">
+                            <select name="service_id" id="createEvService" class="form-select form-select-sm" onchange="toggleInstallTypes('create')">
                                 <option value="">— None —</option>
                                 @foreach($services as $svc)
-                                    <option value="{{ $svc->id }}">{{ $svc->name }}</option>
+                                    <option value="{{ $svc->id }}" data-name="{{ strtolower($svc->name) }}">{{ $svc->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -333,6 +333,17 @@
                                     <option value="{{ $crew->id }}">{{ $crew->name }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="createInstallTypesWrap" style="display:none;">
+                        <label class="form-label">Installation Types</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach($services as $svc)
+                                <div class="form-check form-check-inline" style="font-size:.85rem;">
+                                    <input class="form-check-input" type="checkbox" name="installation_types[]" value="{{ $svc->name }}" id="createIT_{{ $svc->id }}">
+                                    <label class="form-check-label" for="createIT_{{ $svc->id }}">{{ $svc->name }}</label>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                     <div class="mb-0">
@@ -528,10 +539,10 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label">Service</label>
-                            <select name="service_id" id="editEvService" class="form-select form-select-sm">
+                            <select name="service_id" id="editEvService" class="form-select form-select-sm" onchange="toggleInstallTypes('edit')">
                                 <option value="">— None —</option>
                                 @foreach($services as $svc)
-                                    <option value="{{ $svc->id }}">{{ $svc->name }}</option>
+                                    <option value="{{ $svc->id }}" data-name="{{ strtolower($svc->name) }}">{{ $svc->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -543,6 +554,17 @@
                                     <option value="{{ $crew->id }}">{{ $crew->name }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="editInstallTypesWrap" style="display:none;">
+                        <label class="form-label">Installation Types</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach($services as $svc)
+                                <div class="form-check form-check-inline" style="font-size:.85rem;">
+                                    <input class="form-check-input" type="checkbox" name="installation_types[]" value="{{ $svc->name }}" id="editIT_{{ $svc->id }}">
+                                    <label class="form-check-label" for="editIT_{{ $svc->id }}">{{ $svc->name }}</label>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                     <div class="mb-0">
@@ -563,6 +585,16 @@
 @push('scripts')
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+
+// Show/hide installation types checkboxes based on service selection
+function toggleInstallTypes(prefix) {
+    const select = document.getElementById(prefix === 'create' ? 'createEvService' : 'editEvService');
+    const wrap = document.getElementById(prefix === 'create' ? 'createInstallTypesWrap' : 'editInstallTypesWrap');
+    const selectedOpt = select.options[select.selectedIndex];
+    const svcName = (selectedOpt?.dataset?.name || '').toLowerCase();
+    // Show checkboxes when service name contains "install"
+    wrap.style.display = svcName.includes('install') ? 'block' : 'none';
+}
 
 // ── Availability ──
 function toggleDayFields(day) {
@@ -697,6 +729,10 @@ function openCalItem(item) {
         if (item.time) details += `<p class="mb-1 small"><i class="bi bi-clock me-1"></i><strong>Time:</strong> ${item.time}${item.end_time ? ' – ' + item.end_time : ''}</p>`;
         if (item.address) details += `<p class="mb-1 small"><i class="bi bi-geo-alt me-1"></i><strong>Address:</strong> ${item.address}</p>`;
         if (item.crew_name) details += `<p class="mb-1 small"><i class="bi bi-people me-1"></i><strong>Crew:</strong> ${item.crew_name}</p>`;
+        if (item.installation_types && item.installation_types.length) {
+            const typeBadges = item.installation_types.map(t => `<span class="badge bg-secondary me-1" style="font-size:.7rem;">${t}</span>`).join('');
+            details += `<p class="mb-1 small"><i class="bi bi-list-check me-1"></i><strong>Types:</strong> ${typeBadges}</p>`;
+        }
         if (item.description) details += `<p class="mb-1 small"><i class="bi bi-card-text me-1"></i>${item.description}</p>`;
         if (item.end_date) details += `<p class="mb-1 small"><i class="bi bi-calendar-range me-1"></i><strong>Until:</strong> ${item.end_date}</p>`;
         if (!details) details = '<p class="text-muted small mb-0">No additional details.</p>';
@@ -808,6 +844,13 @@ function openEditEvent(eventId) {
         document.getElementById('editEvCrew').value = ev.crew_id || '';
         document.getElementById('editEvDesc').value = ev.description || '';
         document.getElementById('editEventForm').action = `/admin/calendar/event/${eventId}`;
+
+        // Populate installation types checkboxes
+        const types = ev.installation_types || [];
+        document.querySelectorAll('#editInstallTypesWrap input[type="checkbox"]').forEach(cb => {
+            cb.checked = types.includes(cb.value);
+        });
+        toggleInstallTypes('edit');
 
         setTimeout(() => new bootstrap.Modal(document.getElementById('editEventModal')).show(), 300);
     })

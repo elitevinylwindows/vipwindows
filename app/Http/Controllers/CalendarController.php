@@ -9,6 +9,7 @@ use App\Models\Crew;
 use App\Models\InstallationOrder;
 use App\Models\Job;
 use App\Models\Service;
+use App\Models\TechMeasure;
 use App\Mail\ScheduleNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -114,12 +115,15 @@ class CalendarController extends Controller
             'customer_name'  => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
             'customer_phone' => 'nullable|string|max:50',
+            'installation_types' => 'nullable|array',
+            'installation_types.*' => 'string|max:100',
         ]);
 
         $customerEmail = $validated['customer_email'] ?? null;
         $customerName  = $validated['customer_name'] ?? 'Customer';
 
         $validated['created_by'] = Auth::id();
+        $validated['installation_types'] = $validated['installation_types'] ?? null;
 
         // Auto-set color from selected service (fallback to gold)
         if (!empty($validated['service_id'])) {
@@ -129,7 +133,10 @@ class CalendarController extends Controller
             $validated['color'] = '#c9a84c';
         }
 
-        CalendarEvent::create($validated);
+        $event = CalendarEvent::create($validated);
+
+        // Auto-create a TechMeasure if the service is a tech measure type
+        $this->autoCreateTechMeasure($event);
 
         // Send email notification to client if email provided
         if ($customerEmail && filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
@@ -184,7 +191,11 @@ class CalendarController extends Controller
             'customer_name'  => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
             'customer_phone' => 'nullable|string|max:50',
+            'installation_types' => 'nullable|array',
+            'installation_types.*' => 'string|max:100',
         ]);
+
+        $validated['installation_types'] = $validated['installation_types'] ?? null;
 
         // Auto-set color from selected service (fallback to gold)
         if (!empty($validated['service_id'])) {
@@ -195,6 +206,9 @@ class CalendarController extends Controller
         }
 
         $event->update($validated);
+
+        // Sync TechMeasure if service is tech measure type
+        $this->autoCreateTechMeasure($event);
 
         return redirect()->route('admin.calendar.index', ['month' => \Carbon\Carbon::parse($validated['event_date'])->format('Y-m')])
             ->with('success', 'Event updated.');
@@ -334,5 +348,64 @@ class CalendarController extends Controller
         ]);
 
         return view('calendar.confirmed', compact('order', 'slot'));
+    }
+
+    /**
+     * Auto-create a TechMeasure from a calendar event if the service
+     * name contains "measure" or "tech" (case-insensitive).
+     * If one already exists for the event, update its crew/assignee.
+     */
+    protected function autoCreateTechMeasure(CalendarEvent $event): void
+    {
+        // Check if the service is a tech measure type
+        $service = $event->service;
+        $isTechMeasure = false;
+
+        if ($service) {
+            $name = strtolower($service->name ?? '');
+            $isTechMeasure = str_contains($name, 'measure') || str_contains($name, 'tech measure');
+        }
+
+        // Also check the event title as a fallback
+        if (!$isTechMeasure) {
+            $title = strtolower($event->title ?? '');
+            $isTechMeasure = str_contains($title, 'measure') || str_contains($title, 'tech measure');
+        }
+
+        if (!$isTechMeasure) {
+            return;
+        }
+
+        $existing = TechMeasure::where('calendar_event_id', $event->id)->first();
+
+        if ($existing) {
+            // Update crew/assignee if changed
+            $existing->update([
+                'crew_id' => $event->crew_id,
+                'assigned_to' => $event->crew_id
+                    ? Crew::find($event->crew_id)?->members()->first()?->id
+                    : $existing->assigned_to,
+                'customer_name' => $event->customer_name ?: $existing->customer_name,
+                'customer_email' => $event->customer_email ?: $existing->customer_email,
+                'customer_phone' => $event->customer_phone ?: $existing->customer_phone,
+                'address' => $event->address ?: $existing->address,
+            ]);
+            return;
+        }
+
+        // Create new TechMeasure
+        TechMeasure::create([
+            'calendar_event_id' => $event->id,
+            'customer_name' => $event->customer_name,
+            'customer_email' => $event->customer_email,
+            'customer_phone' => $event->customer_phone,
+            'address' => $event->address,
+            'status' => 'pending',
+            'assigned_to' => $event->crew_id
+                ? Crew::find($event->crew_id)?->members()->first()?->id
+                : null,
+            'crew_id' => $event->crew_id,
+            'created_by' => Auth::guard('vip')->id(),
+        ]);
     }
 }

@@ -446,6 +446,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     // Messages (installer ↔ admin)
     Route::get('/messages', [InstallerMessageController::class, 'index'])->name('messages.index');
     Route::get('/messages/unread-count', [InstallerMessageController::class, 'unreadCount'])->name('messages.unreadCount');
+    Route::post('/messages/start', [InstallerMessageController::class, 'startConversation'])->name('messages.start');
     Route::get('/messages/{id}', [InstallerMessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{id}/send', [InstallerMessageController::class, 'send'])->name('messages.send');
 

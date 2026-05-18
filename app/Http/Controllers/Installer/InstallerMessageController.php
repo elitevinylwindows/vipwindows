@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Installer;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\VipUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,7 +30,13 @@ class InstallerMessageController extends Controller
             $totalUnread += $conv->unread_count;
         }
 
-        return view('installer.messages.index', compact('conversations', 'totalUnread'));
+        // Admins available for new conversation
+        $admins = VipUser::where('role', 'admin')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('installer.messages.index', compact('conversations', 'totalUnread', 'admins'));
     }
 
     /**
@@ -94,6 +101,47 @@ class InstallerMessageController extends Controller
                 'created_at' => $message->created_at->format('M d, g:i A'),
                 'time_ago' => $message->created_at->diffForHumans(),
             ],
+        ]);
+    }
+
+    /**
+     * Start a new conversation with an admin.
+     */
+    public function startConversation(Request $request)
+    {
+        $installer = Auth::guard('vip')->user();
+
+        $validated = $request->validate([
+            'admin_id' => 'required|exists:vip_users,id',
+            'body' => 'required|string|max:5000',
+        ]);
+
+        // Check if conversation already exists
+        $conversation = Conversation::where('installer_id', $installer->id)
+            ->where('admin_id', $validated['admin_id'])
+            ->first();
+
+        if (!$conversation) {
+            $admin = VipUser::findOrFail($validated['admin_id']);
+            $conversation = Conversation::create([
+                'admin_id' => $validated['admin_id'],
+                'installer_id' => $installer->id,
+                'subject' => 'Chat with ' . $admin->name,
+                'last_message_at' => now(),
+            ]);
+        }
+
+        Message::create([
+            'conversation_id' => $conversation->id,
+            'sender_id' => $installer->id,
+            'body' => $validated['body'],
+        ]);
+
+        $conversation->update(['last_message_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'conversation_id' => $conversation->id,
         ]);
     }
 

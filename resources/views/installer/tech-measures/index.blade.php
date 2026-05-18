@@ -167,6 +167,55 @@
         </div>
     </div>
 </div>
+
+{{-- Edit Tech Measure Modal --}}
+<div class="modal fade" id="editTmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background:var(--vip-primary); color:#fff; border:1px solid rgba(255,255,255,.1);">
+            <div class="modal-header border-0 py-2">
+                <h6 class="modal-title mb-0"><i class="bi bi-pencil me-1"></i>Edit Tech Measure</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <div class="row g-2">
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Customer *</label>
+                        <input type="text" id="editTmCustName" class="form-control form-control-sm bg-dark text-white border-secondary" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Email</label>
+                        <input type="email" id="editTmCustEmail" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Phone</label>
+                        <input type="text" id="editTmCustPhone" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-12 mt-1"><hr class="border-secondary my-1"></div>
+                    <div class="col-6">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Address</label>
+                        <input type="text" id="editTmAddress" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">City</label>
+                        <input type="text" id="editTmCity" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-1">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">State</label>
+                        <input type="text" id="editTmState" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-2">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Zip</label>
+                        <input type="text" id="editTmZip" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 py-2">
+                <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="saveEditTm()"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -238,49 +287,44 @@ function renderMeasureDetail(data) {
 
     title.textContent = m.customer_name || 'Tech Measure';
 
-    // Toolbar actions
+    // Toolbar actions — mirror Jobs pattern
     let actions = '';
-    if (m.status === 'in_progress') {
+
+    // Clock in / Clock out (like Jobs)
+    if (m.is_clocked_in) {
         actions += `<span class="badge bg-primary me-2" id="elapsedBadge" style="font-size:.75rem;"><i class="bi bi-clock me-1"></i><span id="elapsedTime">--:--</span></span>`;
-        actions += `<button class="btn btn-sm btn-success" onclick="completeMeasure(${m.id})"><i class="bi bi-check-lg me-1"></i>Complete Measure</button> `;
-    } else if (m.status === 'completed') {
-        const start = m.started_at ? new Date(m.started_at) : null;
-        const end = m.completed_at ? new Date(m.completed_at) : null;
-        if (start && end) {
-            const diffMin = Math.round((end - start) / 60000);
-            const hrs = Math.floor(diffMin / 60), mins = diffMin % 60;
-            actions += `<span class="badge bg-success me-2" style="font-size:.75rem;"><i class="bi bi-check-circle me-1"></i>Done in ${hrs}h ${mins}m</span>`;
+        actions += `<button class="btn btn-sm btn-warning" onclick="clockOut(${m.id})"><i class="bi bi-stop-circle me-1"></i>Clock Out</button> `;
+    } else if (m.status !== 'completed' && m.status !== 'converted') {
+        actions += `<button class="btn btn-sm btn-info text-white" onclick="clockIn(${m.id})"><i class="bi bi-play-circle me-1"></i>Clock In</button> `;
+    }
+
+    // Status transitions (like Jobs)
+    if (m.status === 'pending') {
+        actions += `<button class="btn btn-sm btn-primary" onclick="startMeasure(${m.id})"><i class="bi bi-play-fill me-1"></i>Start</button> `;
+    } else if (m.status === 'in_progress') {
+        actions += `<button class="btn btn-sm btn-success" onclick="completeMeasure(${m.id})"><i class="bi bi-check-lg me-1"></i>Complete</button> `;
+    }
+
+    // Edit & Delete (like Jobs)
+    if (m.status !== 'converted') {
+        actions += `<button class="btn btn-sm btn-outline-primary" onclick="openEditTm()" title="Edit"><i class="bi bi-pencil"></i></button> `;
+        actions += `<button class="btn btn-sm btn-outline-danger" onclick="deleteMeasure(${m.id})" title="Delete"><i class="bi bi-trash"></i></button>`;
+    }
+
+    // Completion badge
+    if (m.status === 'completed') {
+        const totalMins = m.total_time_minutes || 0;
+        const hrs = Math.floor(totalMins / 60), mins = totalMins % 60;
+        if (totalMins > 0) {
+            actions = `<span class="badge bg-success me-2" style="font-size:.75rem;"><i class="bi bi-check-circle me-1"></i>Total: ${hrs}h ${mins}m</span>` + actions;
         }
     }
+
     toolbar.innerHTML = actions;
 
-    // Start elapsed timer if in progress
-    if (m.status === 'in_progress' && m.started_at) {
-        startElapsedTimer(new Date(m.started_at));
-    }
-
-    // If pending, show the big "Start Tech Measure" hero instead of details
-    if (m.status === 'pending') {
-        body.innerHTML = `
-            <div class="tm-info-grid">
-                <div class="tm-info-card"><div class="label">Customer</div><div class="value">${m.customer_name || '—'}</div></div>
-                <div class="tm-info-card"><div class="label">Phone</div><div class="value">${m.customer_phone ? `<a href="tel:${m.customer_phone}">${m.customer_phone}</a>` : '—'}</div></div>
-                <div class="tm-info-card"><div class="label">Address</div><div class="value">${m.address || '—'}</div></div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem 2rem; background:#fff; border-radius:.75rem; box-shadow:0 2px 12px rgba(0,0,0,.06); margin-top:1rem;">
-                <div style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,#17a2b8,#0d6efd); display:flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
-                    <i class="bi bi-rulers" style="font-size:2rem; color:#fff;"></i>
-                </div>
-                <h4 style="font-weight:700; margin-bottom:.5rem;">Ready to Start</h4>
-                <p style="color:#888; margin-bottom:1.5rem; text-align:center; max-width:400px;">Tap the button below when you arrive on site. This will clock you in and open the measurement form.</p>
-                <button class="btn btn-lg btn-primary px-5 py-2" onclick="startMeasure(${m.id})" style="font-size:1.1rem; font-weight:600; border-radius:.5rem;">
-                    <i class="bi bi-play-circle me-2"></i>Start Tech Measure
-                </button>
-                ${m.customer_phone ? `<a href="tel:${m.customer_phone}" class="btn btn-sm btn-outline-secondary mt-3"><i class="bi bi-telephone me-1"></i>Call Customer</a>` : ''}
-                ${m.address ? `<a href="https://maps.google.com/?q=${encodeURIComponent(m.address)}" target="_blank" class="btn btn-sm btn-outline-secondary mt-2"><i class="bi bi-geo-alt me-1"></i>Get Directions</a>` : ''}
-            </div>
-        `;
-        return;
+    // Start elapsed timer if clocked in
+    if (m.is_clocked_in && m.active_since) {
+        startElapsedTimer(new Date(m.active_since));
     }
 
     // Series options for add form

@@ -136,6 +136,9 @@
     <div class="msg-rail">
         <div class="msg-rail-header">
             <h6><i class="bi bi-chat-dots me-1"></i> Messages</h6>
+            <button class="btn btn-sm btn-vip" data-bs-toggle="modal" data-bs-target="#newMessageModal">
+                <i class="bi bi-plus-lg me-1"></i>New
+            </button>
         </div>
         <div class="msg-search">
             <input type="text" id="msgSearch" placeholder="Search...">
@@ -185,6 +188,39 @@
             <button class="btn-send" onclick="sendMessage()" id="btnSend">
                 <i class="bi bi-send"></i>
             </button>
+        </div>
+    </div>
+</div>
+
+{{-- New Message Modal --}}
+<div class="modal fade" id="newMessageModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header py-2 border-secondary">
+                <h6 class="modal-title mb-0"><i class="bi bi-pencil-square me-1"></i> New Message</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small">To (Admin)</label>
+                    <select id="newMsgAdmin" class="form-select form-select-sm bg-dark text-white border-secondary">
+                        <option value="">Select admin...</option>
+                        @foreach($admins as $adm)
+                            <option value="{{ $adm->id }}">{{ $adm->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label small">Message</label>
+                    <textarea id="newMsgBody" class="form-control form-control-sm bg-dark text-white border-secondary" rows="3" placeholder="Type your message..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer py-2 border-secondary">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-vip" onclick="startNewConversation()">
+                    <i class="bi bi-send me-1"></i> Send
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -311,6 +347,34 @@ function sendMessage() {
         input.disabled = false;
         input.focus();
     });
+}
+
+function startNewConversation() {
+    const adminId = document.getElementById('newMsgAdmin').value;
+    const body = document.getElementById('newMsgBody').value.trim();
+
+    if (!adminId) { alert('Please select an admin.'); return; }
+    if (!body) { alert('Please type a message.'); return; }
+
+    fetch('/installer/messages/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrf,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ admin_id: adminId, body })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('newMessageModal')).hide();
+            window.location.reload();
+        } else {
+            alert('Failed to start conversation.');
+        }
+    })
+    .catch(() => alert('Failed to start conversation.'));
 }
 
 // Enter to send
