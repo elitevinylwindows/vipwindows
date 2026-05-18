@@ -13,7 +13,7 @@
                     {{-- Header with logo --}}
                     <tr>
                         <td style="background:linear-gradient(135deg, #0a0a0a, #1a1a1a); padding:30px 40px; text-align:center; border-radius:12px 12px 0 0;">
-                            <img src="{{ url('/images/logo.png') }}" alt="VIP Windows" style="height:60px; max-width:200px;" />
+                            <img src="https://vipwindows.net/images/logo.png" alt="VIP Windows" style="height:60px; max-width:200px;" />
                             <p style="color:#c9a84c; margin:10px 0 0; font-size:13px; letter-spacing:2px; text-transform:uppercase;">
                                 {{ $type === 'job' ? 'Installation Scheduled' : 'Appointment Confirmation' }}
                             </p>
@@ -60,7 +60,6 @@
                                             </tr>
                                         </table>
 
-                                        @if($startTime)
                                         {{-- Time --}}
                                         <table width="100%" cellpadding="0" cellspacing="0">
                                             <tr>
@@ -70,12 +69,15 @@
                                                 <td style="padding:6px 0;">
                                                     <span style="font-size:12px; color:#999; text-transform:uppercase; letter-spacing:1px;">Time</span><br>
                                                     <span style="font-size:15px; font-weight:600; color:#111;">
-                                                        {{ $startTime }}@if($endTime) &mdash; {{ $endTime }}@endif
+                                                        @if($startTime)
+                                                            {{ $startTime }}@if($endTime) &mdash; {{ $endTime }}@endif
+                                                        @else
+                                                            To be confirmed
+                                                        @endif
                                                     </span>
                                                 </td>
                                             </tr>
                                         </table>
-                                        @endif
 
                                         @if($address)
                                         {{-- Location --}}
