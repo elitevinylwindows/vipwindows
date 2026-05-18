@@ -161,21 +161,53 @@ class CalendarController extends Controller
         $event = CalendarEvent::findOrFail($id);
 
         $validated = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'event_date'  => 'required|date',
-            'event_time'  => 'nullable|string|max:20',
-            'end_time'    => 'nullable|string|max:20',
-            'end_date'    => 'nullable|date|after_or_equal:event_date',
-            'color'       => 'nullable|string|max:10',
-            'service_id'  => 'nullable|exists:vip_services,id',
-            'address'     => 'nullable|string|max:500',
+            'title'          => 'required|string|max:255',
+            'description'    => 'nullable|string',
+            'event_date'     => 'required|date',
+            'event_time'     => 'nullable|string|max:20',
+            'end_time'       => 'nullable|string|max:20',
+            'end_date'       => 'nullable|date|after_or_equal:event_date',
+            'color'          => 'nullable|string|max:10',
+            'service_id'     => 'nullable|exists:vip_services,id',
+            'address'        => 'nullable|string|max:500',
+            'customer_name'  => 'nullable|string|max:255',
+            'customer_email' => 'nullable|email|max:255',
+            'customer_phone' => 'nullable|string|max:50',
         ]);
 
         $event->update($validated);
 
         return redirect()->route('admin.calendar.index', ['month' => \Carbon\Carbon::parse($validated['event_date'])->format('Y-m')])
             ->with('success', 'Event updated.');
+    }
+
+    /**
+     * Send a reminder email for an event.
+     */
+    public function sendReminder($id)
+    {
+        $event = CalendarEvent::findOrFail($id);
+
+        if (!$event->customer_email) {
+            return response()->json(['error' => 'No client email on this event.'], 422);
+        }
+
+        try {
+            Mail::to($event->customer_email)->send(new ScheduleNotification([
+                'title'         => $event->title,
+                'event_date'    => $event->event_date->format('Y-m-d'),
+                'start_time'    => $event->event_time,
+                'end_time'      => $event->end_time,
+                'address'       => $event->address,
+                'description'   => $event->description,
+                'customer_name' => $event->customer_name ?? 'Customer',
+                'type'          => 'event',
+            ]));
+
+            return response()->json(['success' => true, 'message' => 'Reminder sent to ' . $event->customer_email]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to send: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
