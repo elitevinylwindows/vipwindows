@@ -447,7 +447,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 currentJobId = j.id;
                 currentJobData = j;
+                const isClockedIn = data.is_clocked_in;
+                const activeSince = data.active_since;
+                const timeLogs = data.time_logs || [];
+                const totalTimeMins = data.total_time_minutes || 0;
+                const imageUrl = data.image_url;
+
                 let actions = '';
+                // Clock in/out buttons
+                if (isClockedIn) {
+                    actions += `<button class="btn btn-sm btn-warning" onclick="clockOut(${j.id})"><i class="bi bi-stop-circle me-1"></i>Clock Out</button> `;
+                } else if (j.status !== 'completed' && j.status !== 'cancelled') {
+                    actions += `<button class="btn btn-sm btn-info text-white" onclick="clockIn(${j.id})"><i class="bi bi-play-circle me-1"></i>Clock In</button> `;
+                }
                 if (j.status === 'pending' || j.status === 'scheduled') {
                     actions += `<form method="POST" action="/installer/jobs/${j.id}/status" class="d-inline"><input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="status" value="in_progress"><button class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i>Start</button></form> `;
                 } else if (j.status === 'in_progress') {
@@ -493,13 +505,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     itemsHtml = '<p class="text-muted small">No items added yet.</p>';
                 }
 
+                // Time log display
+                const totalHrs = Math.floor(totalTimeMins / 60);
+                const totalMins = totalTimeMins % 60;
+                let clockStatusHtml = '';
+                if (isClockedIn) {
+                    clockStatusHtml = `<div class="iq-info-card" style="background:linear-gradient(135deg,#0d6efd,#0a58ca);color:#fff;"><div class="label" style="color:rgba(255,255,255,.6);"><i class="bi bi-clock-fill me-1"></i>Clocked In</div><div class="value" style="color:#fff;">Since ${activeSince}</div></div>`;
+                } else {
+                    clockStatusHtml = `<div class="iq-info-card"><div class="label"><i class="bi bi-clock me-1"></i>Time Logged</div><div class="value">${totalHrs}h ${totalMins}m</div></div>`;
+                }
+
                 detailBody.innerHTML = `
                     <div class="iq-info-grid">
                         <div class="iq-info-card"><div class="label">Customer</div><div class="value">${j.customer_name || '—'}</div></div>
                         <div class="iq-info-card"><div class="label">Phone</div><div class="value">${j.customer_phone || '—'}</div></div>
                         <div class="iq-info-card"><div class="label">Status</div><div class="value"><span class="badge badge-${j.status}">${j.status ? j.status.replace('_',' ').replace(/^./,c=>c.toUpperCase()) : '—'}</span></div></div>
                         <div class="iq-info-card"><div class="label">Schedule</div><div class="value">${dateDisplay}</div></div>
-                        <div class="iq-info-card"><div class="label">Priority</div><div class="value">${j.priority ? j.priority.charAt(0).toUpperCase() + j.priority.slice(1) : 'Normal'}</div></div>
+                        ${clockStatusHtml}
                         <div class="iq-info-card" style="background:linear-gradient(135deg,#198754,#157347);color:#fff;"><div class="label" style="color:rgba(255,255,255,.6);">My Pay</div><div class="value" style="color:#fff;font-size:1.1rem;">$${totalPay.toFixed(2)}</div></div>
                     </div>
 
@@ -538,6 +560,36 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                     </div>
+
+                    <h6 class="mb-2 mt-3" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:rgba(0,0,0,.5);"><i class="bi bi-image me-1"></i>Job Photo</h6>
+                    <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                        <div class="card-body py-2 px-3">
+                            ${imageUrl ? `<img src="${imageUrl}" class="img-fluid rounded mb-2" style="max-height:200px; object-fit:cover;">` : '<p class="text-muted small mb-2">No photo uploaded yet.</p>'}
+                            <form id="imageUploadForm" onsubmit="uploadJobImage(event, ${j.id})" enctype="multipart/form-data">
+                                <div class="input-group input-group-sm">
+                                    <input type="file" name="image" accept="image/*" class="form-control" required>
+                                    <button class="btn btn-vip" type="submit"><i class="bi bi-upload me-1"></i>Upload</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    ${timeLogs.length ? `
+                    <h6 class="mb-2 mt-3" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:rgba(0,0,0,.5);"><i class="bi bi-clock-history me-1"></i>Time Log</h6>
+                    <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                        <div class="card-body py-2 px-3">
+                            <table class="table table-sm table-borderless mb-0" style="font-size:.78rem;">
+                                <thead><tr><th>In</th><th>Out</th><th class="text-end">Duration</th></tr></thead>
+                                <tbody>${timeLogs.map(l => {
+                                    const mins = l.total_minutes || 0;
+                                    const dur = l.is_active ? '<span class="badge bg-primary">Active</span>' : (Math.floor(mins/60) + 'h ' + (mins%60) + 'm');
+                                    return '<tr><td>' + (l.clock_in || '—') + '</td><td>' + (l.clock_out || '—') + '</td><td class="text-end">' + dur + '</td></tr>';
+                                }).join('')}
+                                <tr style="border-top:1px solid rgba(0,0,0,.1);"><td colspan="2" class="text-end fw-bold">Total</td><td class="text-end fw-bold">${totalHrs}h ${totalMins}m</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>` : ''}
 
                     <h6 class="mb-2 mt-3" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:rgba(0,0,0,.5);"><i class="bi bi-chat-left-text me-1"></i>Notes</h6>
                     ${notesHtml}
@@ -685,6 +737,54 @@ document.addEventListener('DOMContentLoaded', function() {
             } else alert('Failed to delete job.');
         })
         .catch(() => alert('Failed to delete job.'));
+    };
+
+    // Clock in/out
+    window.clockIn = function(jobId) {
+        fetch(`/installer/jobs/${jobId}/clock-in`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) { loadDetail(jobId); }
+            else alert(data.error || 'Failed to clock in.');
+        })
+        .catch(() => alert('Failed to clock in.'));
+    };
+
+    window.clockOut = function(jobId) {
+        fetch(`/installer/jobs/${jobId}/clock-out`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                loadDetail(jobId);
+            } else alert(data.error || 'Failed to clock out.');
+        })
+        .catch(() => alert('Failed to clock out.'));
+    };
+
+    // Image upload
+    window.uploadJobImage = function(e, jobId) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+
+        fetch(`/installer/jobs/${jobId}/upload-image`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) loadDetail(jobId);
+            else alert('Failed to upload image.');
+        })
+        .catch(() => alert('Failed to upload image.'));
     };
 
     // Auto-select first

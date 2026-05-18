@@ -179,11 +179,34 @@ class InstallerJobController extends Controller
             $totalPay = $job->jobItems()->sum('total_pay');
         } catch (\Exception $e) {}
 
+        // Time tracking info
+        $activeLog = null;
+        $timeLogs = [];
+        $totalTime = 0;
+        try {
+            $activeLog = $job->activeTimeLog(Auth::id());
+            $timeLogs = $job->timeLogs()->with('user')->get()->map(function ($log) {
+                return [
+                    'id' => $log->id,
+                    'clock_in' => $log->clock_in?->format('M d, g:ia'),
+                    'clock_out' => $log->clock_out?->format('M d, g:ia'),
+                    'total_minutes' => $log->total_minutes,
+                    'is_active' => $log->isActive(),
+                ];
+            })->toArray();
+            $totalTime = $job->timeLogs()->whereNotNull('clock_out')->sum('total_minutes');
+        } catch (\Exception $e) {}
+
         return response()->json([
             'job' => $job,
             'notes' => $notes,
             'items' => $items,
             'total_pay' => $totalPay,
+            'is_clocked_in' => (bool) $activeLog,
+            'active_since' => $activeLog?->clock_in?->format('g:ia'),
+            'time_logs' => $timeLogs,
+            'total_time_minutes' => $totalTime,
+            'image_url' => $job->image ? asset('storage/' . $job->image) : null,
         ]);
     }
 

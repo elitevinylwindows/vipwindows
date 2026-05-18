@@ -8,8 +8,10 @@ use App\Models\CalendarSlot;
 use App\Models\InstallationOrder;
 use App\Models\Job;
 use App\Models\Service;
+use App\Mail\ScheduleNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class CalendarController extends Controller
 {
@@ -109,13 +111,68 @@ class CalendarController extends Controller
             'address'     => 'nullable|string|max:500',
         ]);
 
+        $customerEmail = $request->input('customer_email');
+        $customerName  = $request->input('customer_name', 'Customer');
+
         $validated['created_by'] = Auth::id();
         $validated['color'] = $validated['color'] ?? '#c9a84c';
 
         CalendarEvent::create($validated);
 
+        // Send email notification to client if email provided
+        if ($customerEmail && filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+            try {
+                Mail::to($customerEmail)->send(new ScheduleNotification([
+                    'title'         => $validated['title'],
+                    'event_date'    => $validated['event_date'],
+                    'start_time'    => $validated['event_time'] ?? null,
+                    'end_time'      => $validated['end_time'] ?? null,
+                    'address'       => $validated['address'] ?? null,
+                    'description'   => $validated['description'] ?? null,
+                    'customer_name' => $customerName,
+                    'type'          => 'event',
+                ]));
+            } catch (\Exception $e) {
+                // Log but don't block — email failure shouldn't prevent event creation
+                \Log::warning('Schedule email failed: ' . $e->getMessage());
+            }
+        }
+
         return redirect()->route('admin.calendar.index', ['month' => \Carbon\Carbon::parse($validated['event_date'])->format('Y-m')])
-            ->with('success', 'Event added to calendar.');
+            ->with('success', 'Event added to calendar.' . ($customerEmail ? ' Email notification sent.' : ''));
+    }
+
+    /**
+     * Show a calendar event (JSON for edit modal).
+     */
+    public function showEvent($id)
+    {
+        return response()->json(CalendarEvent::findOrFail($id));
+    }
+
+    /**
+     * Update a calendar event.
+     */
+    public function updateEvent(Request $request, $id)
+    {
+        $event = CalendarEvent::findOrFail($id);
+
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'event_date'  => 'required|date',
+            'event_time'  => 'nullable|string|max:20',
+            'end_time'    => 'nullable|string|max:20',
+            'end_date'    => 'nullable|date|after_or_equal:event_date',
+            'color'       => 'nullable|string|max:10',
+            'service_id'  => 'nullable|exists:vip_services,id',
+            'address'     => 'nullable|string|max:500',
+        ]);
+
+        $event->update($validated);
+
+        return redirect()->route('admin.calendar.index', ['month' => \Carbon\Carbon::parse($validated['event_date'])->format('Y-m')])
+            ->with('success', 'Event updated.');
     }
 
     /**

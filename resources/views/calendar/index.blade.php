@@ -228,15 +228,16 @@
                         $maxShow = 3;
 
                         $allItems = collect();
-                        foreach($dayJobList as $j) { $allItems->push(['type' => 'job', 'label' => Str::limit($j->customer_name ?: $j->job_number, 10), 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8')]); }
-                        foreach($dayOrderList as $o) { $allItems->push(['type' => 'order', 'label' => Str::limit($o->customer_name, 10), 'color' => ($serviceColors[$o->service_type] ?? '#007bff')]); }
-                        foreach($dayEventList as $ev) { $allItems->push(['type' => 'event', 'label' => Str::limit($ev->title, 10), 'color' => $ev->color]); }
+                        foreach($dayJobList as $j) { $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => Str::limit($j->customer_name ?: $j->job_number, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . ($j->customer_name ?? ''), 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status]); }
+                        foreach($dayOrderList as $o) { $allItems->push(['type' => 'order', 'id' => $o->id, 'label' => Str::limit($o->customer_name, 10), 'full_label' => $o->customer_name, 'time' => null, 'color' => ($serviceColors[$o->service_type] ?? '#007bff'), 'address' => '', 'status' => $o->status]); }
+                        foreach($dayEventList as $ev) { $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $ev->color, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'end_date' => $ev->end_date?->format('Y-m-d')]); }
                     @endphp
                     <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}">
                         <span class="cell-date">{{ $current->day }}</span>
                         <div class="cell-items">
-                            @foreach($allItems->take($maxShow) as $item)
-                                <span class="cell-chip" style="background:{{ $item['color'] }}20; color:{{ $item['color'] }};">
+                            @foreach($allItems->take($maxShow) as $idx => $item)
+                                <span class="cell-chip" style="background:{{ $item['color'] }}20; color:{{ $item['color'] }}; cursor:pointer;"
+                                      onclick='openCalItem(@json($item))'>
                                     @if($item['type'] === 'job')<i class="bi bi-wrench" style="font-size:.5rem;"></i>
                                     @elseif($item['type'] === 'order')<i class="bi bi-tools" style="font-size:.5rem;"></i>
                                     @else<i class="bi bi-calendar-event" style="font-size:.5rem;"></i>
@@ -245,7 +246,7 @@
                                 </span>
                             @endforeach
                             @if($allItems->count() > $maxShow)
-                                <span class="cell-more">+{{ $allItems->count() - $maxShow }} more</span>
+                                <span class="cell-more" style="cursor:pointer;" onclick='openDaySummary(@json($allItems), "{{ $dateKey }}")'>+{{ $allItems->count() - $maxShow }} more</span>
                             @endif
                         </div>
                     </div>
@@ -272,18 +273,36 @@
                         <input type="text" name="title" class="form-control form-control-sm" required placeholder="e.g. Site Visit, Team Meeting, Holiday...">
                     </div>
                     <div class="row g-2 mb-3">
-                        <div class="col-4">
+                        <div class="col-6">
+                            <label class="form-label">Client Name</label>
+                            <input type="text" name="customer_name" class="form-control form-control-sm" placeholder="Customer name">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Client Email <small class="text-muted">(gets notified)</small></label>
+                            <input type="email" name="customer_email" class="form-control form-control-sm" placeholder="client@email.com">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-3">
                             <label class="form-label">Date *</label>
                             <input type="date" name="event_date" class="form-control form-control-sm" required value="{{ today()->format('Y-m-d') }}">
                         </div>
-                        <div class="col-4">
+                        <div class="col-3">
                             <label class="form-label">End Date</label>
                             <input type="date" name="end_date" class="form-control form-control-sm">
                         </div>
-                        <div class="col-4">
-                            <label class="form-label">Time</label>
-                            <input type="text" name="event_time" class="form-control form-control-sm" placeholder="e.g. 9:00 AM">
+                        <div class="col-3">
+                            <label class="form-label">Start Time</label>
+                            <input type="time" name="event_time" class="form-control form-control-sm">
                         </div>
+                        <div class="col-3">
+                            <label class="form-label">End Time</label>
+                            <input type="time" name="end_time" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <input type="text" name="address" class="form-control form-control-sm" placeholder="e.g. 123 Main St, Dallas TX">
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-8">
@@ -411,6 +430,99 @@
         </div>
     </div>
 </div>
+{{-- ── View/Edit Calendar Item Modal ──────────────────── --}}
+<div class="modal fade" id="viewItemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0" id="viewItemTitle"></h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewItemBody"></div>
+            <div class="modal-footer py-2" id="viewItemFooter"></div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Day Summary Modal (shows all items for a day) ──────────────────── --}}
+<div class="modal fade" id="daySummaryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0" id="daySummaryTitle"></h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="daySummaryBody"></div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Edit Event Modal ──────────────────── --}}
+<div class="modal fade" id="editEventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form id="editEventForm" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title mb-0"><i class="bi bi-pencil me-1"></i> Edit Event</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Title *</label>
+                        <input type="text" name="title" id="editEvTitle" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-3">
+                            <label class="form-label">Date *</label>
+                            <input type="date" name="event_date" id="editEvDate" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="end_date" id="editEvEndDate" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">Start Time</label>
+                            <input type="time" name="event_time" id="editEvTime" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">End Time</label>
+                            <input type="time" name="end_time" id="editEvEndTime" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <input type="text" name="address" id="editEvAddress" class="form-control form-control-sm">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label">Service</label>
+                            <select name="service_id" id="editEvService" class="form-select form-select-sm">
+                                <option value="">— None —</option>
+                                @foreach($services as $svc)
+                                    <option value="{{ $svc->id }}">{{ $svc->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Color</label>
+                            <input type="color" name="color" id="editEvColor" class="form-control form-control-sm form-control-color" value="#c9a84c">
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" id="editEvDesc" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-vip"><i class="bi bi-check-lg me-1"></i> Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -528,5 +640,90 @@ function renderOverrides() {
 
 // Load overrides when tab is shown
 document.querySelector('a[href="#overridesTab"]')?.addEventListener('shown.bs.tab', loadOverrides);
+
+// ── Calendar Item Popups ──
+function openCalItem(item) {
+    const modal = document.getElementById('viewItemModal');
+    const title = document.getElementById('viewItemTitle');
+    const body = document.getElementById('viewItemBody');
+    const footer = document.getElementById('viewItemFooter');
+
+    if (item.type === 'event') {
+        title.innerHTML = `<i class="bi bi-calendar-event me-1" style="color:${item.color}"></i> ${item.full_label}`;
+        let details = '';
+        if (item.time) details += `<p class="mb-1 small"><i class="bi bi-clock me-1"></i><strong>Time:</strong> ${item.time}${item.end_time ? ' – ' + item.end_time : ''}</p>`;
+        if (item.address) details += `<p class="mb-1 small"><i class="bi bi-geo-alt me-1"></i><strong>Address:</strong> ${item.address}</p>`;
+        if (item.description) details += `<p class="mb-1 small"><i class="bi bi-card-text me-1"></i>${item.description}</p>`;
+        if (item.end_date) details += `<p class="mb-1 small"><i class="bi bi-calendar-range me-1"></i><strong>Until:</strong> ${item.end_date}</p>`;
+        if (!details) details = '<p class="text-muted small mb-0">No additional details.</p>';
+        body.innerHTML = details;
+        footer.innerHTML = `
+            <button class="btn btn-sm btn-outline-primary" onclick="openEditEvent(${item.id})"><i class="bi bi-pencil me-1"></i>Edit</button>
+            <form method="POST" action="/admin/calendar/event/${item.id}" class="d-inline" onsubmit="return confirm('Delete this event?')">
+                <input type="hidden" name="_token" value="${csrfToken}">
+                <input type="hidden" name="_method" value="DELETE">
+                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Delete</button>
+            </form>`;
+    } else if (item.type === 'job') {
+        title.innerHTML = `<i class="bi bi-wrench me-1" style="color:${item.color}"></i> ${item.full_label}`;
+        let details = '';
+        if (item.time) details += `<p class="mb-1 small"><i class="bi bi-clock me-1"></i><strong>Time:</strong> ${item.time}</p>`;
+        if (item.address) details += `<p class="mb-1 small"><i class="bi bi-geo-alt me-1"></i><strong>Address:</strong> ${item.address}</p>`;
+        if (item.status) details += `<p class="mb-1 small"><i class="bi bi-flag me-1"></i><strong>Status:</strong> ${item.status.replace('_',' ')}</p>`;
+        if (!details) details = '<p class="text-muted small mb-0">No additional details.</p>';
+        body.innerHTML = details;
+        footer.innerHTML = `<a href="/admin/jobs?highlight=${item.id}" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i>View Job</a>`;
+    } else {
+        title.innerHTML = `<i class="bi bi-tools me-1" style="color:${item.color}"></i> ${item.full_label}`;
+        body.innerHTML = '<p class="text-muted small mb-0">Installation order.</p>';
+        footer.innerHTML = '';
+    }
+
+    new bootstrap.Modal(modal).show();
+}
+
+function openDaySummary(items, dateKey) {
+    const modal = document.getElementById('daySummaryModal');
+    document.getElementById('daySummaryTitle').textContent = dateKey;
+    let html = '';
+    items.forEach(item => {
+        const icon = item.type === 'job' ? 'wrench' : (item.type === 'order' ? 'tools' : 'calendar-event');
+        html += `<div class="d-flex align-items-center p-2 mb-1 rounded" style="background:${item.color}10; cursor:pointer;" onclick="bootstrap.Modal.getInstance(document.getElementById('daySummaryModal')).hide(); setTimeout(() => openCalItem(${JSON.stringify(item).replace(/"/g,'&quot;')}), 300);">
+            <i class="bi bi-${icon} me-2" style="color:${item.color};"></i>
+            <div>
+                <div class="small fw-semibold">${item.full_label}</div>
+                <div style="font-size:.7rem; color:#888;">${item.type}${item.time ? ' · ' + item.time : ''}</div>
+            </div>
+        </div>`;
+    });
+    document.getElementById('daySummaryBody').innerHTML = html;
+    new bootstrap.Modal(modal).show();
+}
+
+function openEditEvent(eventId) {
+    // Close view modal
+    bootstrap.Modal.getInstance(document.getElementById('viewItemModal'))?.hide();
+
+    // Fetch event data and populate edit form
+    fetch(`/admin/calendar/event/${eventId}`, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(ev => {
+        document.getElementById('editEvTitle').value = ev.title || '';
+        document.getElementById('editEvDate').value = ev.event_date ? ev.event_date.substring(0,10) : '';
+        document.getElementById('editEvEndDate').value = ev.end_date ? ev.end_date.substring(0,10) : '';
+        document.getElementById('editEvTime').value = ev.event_time || '';
+        document.getElementById('editEvEndTime').value = ev.end_time || '';
+        document.getElementById('editEvAddress').value = ev.address || '';
+        document.getElementById('editEvService').value = ev.service_id || '';
+        document.getElementById('editEvColor').value = ev.color || '#c9a84c';
+        document.getElementById('editEvDesc').value = ev.description || '';
+        document.getElementById('editEventForm').action = `/admin/calendar/event/${eventId}`;
+
+        setTimeout(() => new bootstrap.Modal(document.getElementById('editEventModal')).show(), 300);
+    })
+    .catch(() => alert('Failed to load event details.'));
+}
 </script>
 @endpush
