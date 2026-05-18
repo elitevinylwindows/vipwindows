@@ -59,13 +59,19 @@ class ServiceController extends Controller
             'unit'        => 'required|in:per_job,per_hour,per_unit',
             'min_price'   => 'nullable|numeric|min:0',
             'max_price'   => 'nullable|numeric|min:0',
-            'is_active'   => 'nullable|boolean',
-            'sort_order'  => 'nullable|integer',
+            'is_active'          => 'nullable|boolean',
+            'color'              => 'nullable|string|max:7',
+            'sort_order'         => 'nullable|integer',
+            'installer_pay'      => 'nullable|numeric|min:0',
+            'installer_pay_type' => 'nullable|in:per_job,per_hour,per_unit,percentage',
         ]);
 
         $validated['is_active'] = $request->has('is_active') ? true : ($request->input('is_active') ?? true);
         $validated['cost_price'] = $validated['cost_price'] ?? 0;
+        $validated['color'] = $validated['color'] ?? '#0d6efd';
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['installer_pay'] = $validated['installer_pay'] ?? 0;
+        $validated['installer_pay_type'] = $validated['installer_pay_type'] ?? 'per_unit';
 
         Service::create($validated);
 
@@ -85,8 +91,11 @@ class ServiceController extends Controller
             'unit'        => 'required|in:per_job,per_hour,per_unit',
             'min_price'   => 'nullable|numeric|min:0',
             'max_price'   => 'nullable|numeric|min:0',
-            'is_active'   => 'nullable',
-            'sort_order'  => 'nullable|integer',
+            'is_active'          => 'nullable',
+            'color'              => 'nullable|string|max:7',
+            'sort_order'         => 'nullable|integer',
+            'installer_pay'      => 'nullable|numeric|min:0',
+            'installer_pay_type' => 'nullable|in:per_job,per_hour,per_unit,percentage',
         ]);
 
         $validated['is_active'] = $request->has('is_active') ? true : false;

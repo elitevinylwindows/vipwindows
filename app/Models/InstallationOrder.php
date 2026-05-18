@@ -12,12 +12,15 @@ class InstallationOrder extends Model
         'quote_id', 'portal_user_id', 'customer_name', 'customer_email', 'customer_phone',
         'install_address', 'install_address2', 'install_city', 'install_state', 'install_zip',
         'notes', 'status', 'scheduled_date', 'scheduled_slot', 'technician_id', 'created_by', 'completed_at',
-        'source', 'service_type', 'description',
+        'source', 'service_type', 'description', 'crew_id',
+        'duration_type', 'end_date', 'estimated_hours',
     ];
 
     protected $casts = [
         'scheduled_date' => 'date',
+        'end_date' => 'date',
         'completed_at' => 'datetime',
+        'estimated_hours' => 'float',
     ];
 
     public function quoteItems()
@@ -28,6 +31,11 @@ class InstallationOrder extends Model
     public function technician()
     {
         return $this->belongsTo(VipUser::class, 'technician_id');
+    }
+
+    public function crew()
+    {
+        return $this->belongsTo(Crew::class, 'crew_id');
     }
 
     public function calendarSlot()

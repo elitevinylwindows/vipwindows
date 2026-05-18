@@ -295,7 +295,8 @@
             <div class="cal-upcoming-header">Scheduled This Month ({{ $allMonthOrders->count() }})</div>
             <div class="cal-sidebar-body">
                 @forelse($allMonthOrders->sortBy('scheduled_date') as $ord)
-                    <div class="cal-order-card">
+                    @php $sideColor = $serviceColors[$ord->service_type] ?? '#0d6efd'; @endphp
+                    <div class="cal-order-card" style="border-left-color:{{ $sideColor }};">
                         <div class="oc-top">
                             <span class="oc-name">{{ Str::limit($ord->customer_name, 20) }}</span>
                             <span class="oc-badge">{{ $ord->scheduled_slot ?? 'TBD' }}</span>
@@ -381,7 +382,10 @@
                                                 </div>
                                             @endforeach
                                             @foreach($dayOrders as $ord)
-                                                <div class="cal-order-chip">
+                                                @php
+                                                    $chipColor = $serviceColors[$ord->service_type] ?? '#0d6efd';
+                                                @endphp
+                                                <div class="cal-order-chip" style="background:{{ $chipColor }}20; color:{{ $chipColor }};" title="{{ $ord->service_type ?? 'Installation' }}">
                                                     <i class="bi bi-tools"></i> {{ Str::limit($ord->customer_name, 8) }}
                                                 </div>
                                             @endforeach

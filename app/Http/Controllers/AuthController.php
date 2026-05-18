@@ -93,6 +93,38 @@ class AuthController extends Controller
     }
 
     /**
+     * Admin-specific login page.
+     */
+    public function showAdminLogin()
+    {
+        if (Auth::check() && Auth::user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+        return view('auth.admin-login');
+    }
+
+    public function adminLogin(Request $request)
+    {
+        $credentials = $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+
+            if (!Auth::user()->isAdmin()) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'This account does not have admin access.'])->onlyInput('email');
+            }
+
+            return redirect()->route('admin.dashboard');
+        }
+
+        return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
+    }
+
+    /**
      * Redirect user based on role after login.
      */
     protected function redirectByRole($user): string

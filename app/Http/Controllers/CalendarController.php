@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CalendarSlot;
 use App\Models\InstallationOrder;
+use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -32,7 +33,10 @@ class CalendarController extends Controller
                 ? $o->scheduled_date->format('Y-m-d')
                 : \Carbon\Carbon::parse($o->scheduled_date)->format('Y-m-d'));
 
-        return view('calendar.index', compact('slots', 'scheduledOrders', 'month', 'startOfMonth', 'endOfMonth'));
+        // Build service color map for calendar
+        $serviceColors = Service::pluck('color', 'name')->toArray();
+
+        return view('calendar.index', compact('slots', 'scheduledOrders', 'month', 'startOfMonth', 'endOfMonth', 'serviceColors'));
     }
 
     /**

@@ -113,6 +113,84 @@
         </div>
     </div>
 
+    {{-- Earnings Overview --}}
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h6 class="text-muted fw-semibold mb-0"><i class="bi bi-wallet2 me-1"></i> My Earnings</h6>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 h-100" style="background: linear-gradient(135deg, #198754 0%, #157347 100%); color: #fff;">
+                <div class="card-body">
+                    <div class="small opacity-75 mb-1">Completed Job Pay</div>
+                    <h3 class="fw-bold mb-0">${{ number_format($completedJobPay, 2) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 h-100" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: #fff;">
+                <div class="card-body">
+                    <div class="small opacity-75 mb-1">Upcoming Job Pay</div>
+                    <h3 class="fw-bold mb-0">${{ number_format($pendingJobPay, 2) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 h-100" style="background: linear-gradient(135deg, #6f42c1 0%, #59359a 100%); color: #fff;">
+                <div class="card-body">
+                    <div class="small opacity-75 mb-1">Total All Jobs</div>
+                    <h3 class="fw-bold mb-0">${{ number_format($totalJobPay, 2) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Earnings Breakdown by Job --}}
+    @if($recentPaidJobs->isNotEmpty())
+    <div class="card mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="fw-semibold mb-0"><i class="bi bi-cash-stack me-2"></i> Completed Job Pay Breakdown</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Job #</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Pay Breakdown</th>
+                            <th class="text-end">Total Pay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($recentPaidJobs as $pj)
+                            @php $jobTotal = $pj->jobItems->sum('total_pay'); @endphp
+                            <tr>
+                                <td class="fw-semibold">{{ $pj->job_number }}</td>
+                                <td>{{ $pj->customer_name ?: '—' }}</td>
+                                <td>{{ $pj->jobItems->count() }}</td>
+                                <td>
+                                    @foreach($pj->jobItems as $ji)
+                                        <div class="small">
+                                            <span class="fw-semibold">{{ $ji->description }}</span>
+                                            <span class="text-muted">× {{ intval($ji->qty) }}</span>
+                                            @if($ji->unit_pay > 0)
+                                                <span class="text-muted">@ ${{ number_format($ji->unit_pay, 2) }}</span>
+                                            @endif
+                                            <span class="text-success fw-semibold">= ${{ number_format($ji->total_pay, 2) }}</span>
+                                        </div>
+                                    @endforeach
+                                </td>
+                                <td class="text-end fw-bold text-success">${{ number_format($jobTotal, 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Recent activity --}}
     <div class="row g-4">
         {{-- Recent Quotes --}}
@@ -181,15 +259,18 @@
                                         <th>{{ __('installer.job_number') }}</th>
                                         <th>{{ __('installer.customer_name') }}</th>
                                         <th>{{ __('installer.status') }}</th>
+                                        <th>Pay</th>
                                         <th>{{ __('installer.created') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($recentJobs as $job)
+                                        @php $jobPay = $job->jobItems->sum('total_pay'); @endphp
                                         <tr>
                                             <td class="fw-semibold">{{ $job->job_number }}</td>
                                             <td>{{ $job->customer_name ?: '—' }}</td>
                                             <td><span class="badge badge-{{ $job->status }}">{{ ucfirst(str_replace('_', ' ', $job->status)) }}</span></td>
+                                            <td class="fw-semibold {{ $jobPay > 0 ? 'text-success' : 'text-muted' }}">{{ $jobPay > 0 ? '$' . number_format($jobPay, 2) : '—' }}</td>
                                             <td class="text-muted small">{{ $job->scheduled_date?->format('M d') ?: $job->created_at?->format('M d') }}</td>
                                         </tr>
                                     @endforeach

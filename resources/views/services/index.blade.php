@@ -128,9 +128,12 @@
             @forelse($services as $service)
                 <div class="svc-card" data-id="{{ $service->id }}">
                     <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="svc-name">{{ $service->name }}</div>
-                            <div class="svc-code">{{ $service->code }}</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="width:10px;height:10px;border-radius:50%;background:{{ $service->color ?? '#0d6efd' }};flex-shrink:0;"></span>
+                            <div>
+                                <div class="svc-name">{{ $service->name }}</div>
+                                <div class="svc-code">{{ $service->code }}</div>
+                            </div>
                         </div>
                         <span class="svc-badge {{ $service->is_active ? 'svc-badge-active' : 'svc-badge-inactive' }}">
                             {{ $service->is_active ? 'Active' : 'Inactive' }}
@@ -191,10 +194,24 @@
                                 <option value="per_unit">Per Unit</option>
                             </select>
                         </div>
+                        <div class="col-12"><hr class="my-1"><label class="form-label fw-bold text-muted" style="font-size:.75rem;">INSTALLER PAY</label></div>
+                        <div class="col-6"><label class="form-label">Installer Pay Rate</label><input type="number" name="installer_pay" class="form-control" step="0.01" min="0" placeholder="e.g. 60.00"></div>
+                        <div class="col-6"><label class="form-label">Pay Type</label>
+                            <select name="installer_pay_type" class="form-select">
+                                <option value="per_unit">Per Unit</option>
+                                <option value="per_job">Per Job</option>
+                                <option value="per_hour">Per Hour</option>
+                                <option value="percentage">% of Base Price</option>
+                            </select>
+                        </div>
                         <div class="col-4"><label class="form-label">Min Price</label><input type="number" name="min_price" class="form-control" step="0.01" min="0"></div>
                         <div class="col-4"><label class="form-label">Max Price</label><input type="number" name="max_price" class="form-control" step="0.01" min="0"></div>
                         <div class="col-4"><label class="form-label">Sort Order</label><input type="number" name="sort_order" class="form-control" value="0"></div>
-                        <div class="col-12">
+                        <div class="col-4">
+                            <label class="form-label">Calendar Color</label>
+                            <input type="color" name="color" class="form-control form-control-color" value="#0d6efd" title="Color shown on calendar">
+                        </div>
+                        <div class="col-8 d-flex align-items-end">
                             <div class="form-check">
                                 <input type="checkbox" name="is_active" value="1" class="form-check-input" id="addSvcActive" checked>
                                 <label class="form-check-label" for="addSvcActive">Active</label>
@@ -230,10 +247,24 @@
                                 <option value="per_unit">Per Unit</option>
                             </select>
                         </div>
+                        <div class="col-12"><hr class="my-1"><label class="form-label fw-bold text-muted" style="font-size:.75rem;">INSTALLER PAY</label></div>
+                        <div class="col-6"><label class="form-label">Installer Pay Rate</label><input type="number" name="installer_pay" id="editSvcInstallerPay" class="form-control" step="0.01" min="0"></div>
+                        <div class="col-6"><label class="form-label">Pay Type</label>
+                            <select name="installer_pay_type" id="editSvcInstallerPayType" class="form-select">
+                                <option value="per_unit">Per Unit</option>
+                                <option value="per_job">Per Job</option>
+                                <option value="per_hour">Per Hour</option>
+                                <option value="percentage">% of Base Price</option>
+                            </select>
+                        </div>
                         <div class="col-4"><label class="form-label">Min Price</label><input type="number" name="min_price" id="editSvcMinPrice" class="form-control" step="0.01" min="0"></div>
                         <div class="col-4"><label class="form-label">Max Price</label><input type="number" name="max_price" id="editSvcMaxPrice" class="form-control" step="0.01" min="0"></div>
                         <div class="col-4"><label class="form-label">Sort Order</label><input type="number" name="sort_order" id="editSvcSortOrder" class="form-control"></div>
-                        <div class="col-12">
+                        <div class="col-4">
+                            <label class="form-label">Calendar Color</label>
+                            <input type="color" name="color" id="editSvcColor" class="form-control form-control-color" value="#0d6efd" title="Color shown on calendar">
+                        </div>
+                        <div class="col-8 d-flex align-items-end">
                             <div class="form-check">
                                 <input type="checkbox" name="is_active" value="1" class="form-check-input" id="editSvcActive">
                                 <label class="form-check-label" for="editSvcActive">Active</label>
@@ -302,6 +333,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const unitLabel = svc.unit.replace(/_/g, ' ');
                 const margin = svc.base_price > 0 ? (((svc.base_price - svc.cost_price) / svc.base_price) * 100).toFixed(1) : '0.0';
+                const instPay = parseFloat(svc.installer_pay || 0);
+                const instPayType = (svc.installer_pay_type || 'per_unit').replace(/_/g, ' ');
+                const instPayDisplay = svc.installer_pay_type === 'percentage' ? instPay.toFixed(1) + '%' : '$' + instPay.toFixed(2);
+                const profitPerUnit = svc.installer_pay_type === 'percentage'
+                    ? svc.base_price - (svc.base_price * instPay / 100)
+                    : svc.base_price - instPay;
 
                 toolbarActions.innerHTML = `
                     <button class="btn btn-sm btn-outline-secondary me-2" onclick="editService(${svc.id})"><i class="bi bi-pencil"></i> Edit</button>
@@ -329,8 +366,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 detailBody.innerHTML = `
                     <div class="svc-info-grid">
                         <div class="svc-info-card">
-                            <div class="label">Base Price</div>
-                            <div class="value" style="color:var(--vip-accent);">$${parseFloat(svc.base_price).toFixed(2)}</div>
+                            <div class="label">Base Price (Customer Charge)</div>
+                            <div class="value" style="color:var(--vip-accent);">$${parseFloat(svc.base_price).toFixed(2)} <small style="font-weight:400;color:rgba(0,0,0,.4)">${unitLabel}</small></div>
+                        </div>
+                        <div class="svc-info-card">
+                            <div class="label">Installer Pay</div>
+                            <div class="value" style="color:#dc3545;">${instPayDisplay} <small style="font-weight:400;color:rgba(0,0,0,.4)">${instPayType}</small></div>
+                        </div>
+                        <div class="svc-info-card">
+                            <div class="label">Profit per ${unitLabel}</div>
+                            <div class="value" style="color:#198754;">$${profitPerUnit.toFixed(2)}</div>
                         </div>
                         <div class="svc-info-card">
                             <div class="label">Cost Price</div>
@@ -341,8 +386,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="value">${margin}%</div>
                         </div>
                         <div class="svc-info-card">
-                            <div class="label">Billing Unit</div>
-                            <div class="value">${unitLabel}</div>
+                            <div class="label">Calendar Color</div>
+                            <div class="value d-flex align-items-center gap-2"><span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:${svc.color || '#0d6efd'};"></span> ${svc.color || '#0d6efd'}</div>
                         </div>
                         ${svc.min_price ? `<div class="svc-info-card"><div class="label">Min Price</div><div class="value">$${parseFloat(svc.min_price).toFixed(2)}</div></div>` : ''}
                         ${svc.max_price ? `<div class="svc-info-card"><div class="label">Max Price</div><div class="value">$${parseFloat(svc.max_price).toFixed(2)}</div></div>` : ''}
@@ -375,6 +420,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('editSvcMinPrice').value = svc.min_price || '';
                 document.getElementById('editSvcMaxPrice').value = svc.max_price || '';
                 document.getElementById('editSvcSortOrder').value = svc.sort_order || 0;
+                document.getElementById('editSvcColor').value = svc.color || '#0d6efd';
+                document.getElementById('editSvcInstallerPay').value = svc.installer_pay || '';
+                document.getElementById('editSvcInstallerPayType').value = svc.installer_pay_type || 'per_unit';
                 document.getElementById('editSvcActive').checked = svc.is_active;
                 new bootstrap.Modal(document.getElementById('editServiceModal')).show();
             });

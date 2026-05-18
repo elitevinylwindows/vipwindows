@@ -129,14 +129,14 @@
             <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
-            <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                <i class="bi bi-clipboard-check"></i> Orders
-            </a>
             <a href="{{ route('admin.calendar.index') }}" class="{{ request()->routeIs('admin.calendar.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar3"></i> Calendar
             </a>
             <a href="{{ route('admin.jobs.index') }}" class="{{ request()->routeIs('admin.jobs.*') ? 'active' : '' }}">
                 <i class="bi bi-tools"></i> Jobs
+            </a>
+            <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+                <i class="bi bi-clipboard-check"></i> Orders
             </a>
             <a href="{{ route('admin.quotes.index') }}" class="{{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
                 <i class="bi bi-calculator"></i> Quotes
@@ -144,14 +144,19 @@
             <a href="{{ route('admin.invoices.index') }}" class="{{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
                 <i class="bi bi-receipt"></i> Invoices
             </a>
-            <a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> Customers
+            <a href="{{ route('admin.services.index') }}" class="{{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
+                <i class="bi bi-wrench"></i> Services
             </a>
+
+            <div class="nav-label mt-3">Management</div>
             <a href="{{ route('admin.installers.index') }}" class="{{ request()->routeIs('admin.installers.*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge"></i> Installers
             </a>
-            <a href="{{ route('admin.services.index') }}" class="{{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
-                <i class="bi bi-wrench"></i> Services
+            <a href="{{ route('admin.crews.index') }}" class="{{ request()->routeIs('admin.crews.*') ? 'active' : '' }}">
+                <i class="bi bi-people-fill"></i> Crews
+            </a>
+            <a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> Customers
             </a>
 
             <div class="nav-label mt-3">Content</div>

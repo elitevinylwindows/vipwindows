@@ -9,6 +9,7 @@ use App\Models\InstallerBooking;
 use App\Models\Job;
 use App\Models\JobItem;
 use App\Models\JobNote;
+use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -83,7 +84,9 @@ class InstallerJobController extends Controller
         $weekJobs = Job::where('assigned_to', Auth::id())->whereBetween('scheduled_date', [today(), today()->addDays(7)])->count();
         $inProgress = Job::where('assigned_to', Auth::id())->where('status', 'in_progress')->count();
 
-        return view('installer.jobs.index', compact('jobs', 'status', 'todayJobs', 'weekJobs', 'inProgress'));
+        $services = Service::where('is_active', true)->orderBy('name')->get();
+
+        return view('installer.jobs.index', compact('jobs', 'status', 'todayJobs', 'weekJobs', 'inProgress', 'services'));
     }
 
     public function store(Request $request)
@@ -142,14 +145,30 @@ class InstallerJobController extends Controller
         } catch (\Exception $e) {}
 
         $items = [];
+        $totalPay = 0;
         try {
-            $items = $job->jobItems()->get()->toArray();
+            $items = $job->jobItems()->with('service')->get()->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'description' => $item->description,
+                    'item_type' => $item->item_type,
+                    'qty' => $item->qty,
+                    'unit_pay' => $item->unit_pay,
+                    'total_pay' => $item->total_pay,
+                    'completed' => $item->completed,
+                    'notes' => $item->notes,
+                    'sort_order' => $item->sort_order,
+                    'service_name' => $item->service?->name,
+                ];
+            })->toArray();
+            $totalPay = $job->jobItems()->sum('total_pay');
         } catch (\Exception $e) {}
 
         return response()->json([
             'job' => $job,
             'notes' => $notes,
             'items' => $items,
+            'total_pay' => $totalPay,
         ]);
     }
 
@@ -195,21 +214,53 @@ class InstallerJobController extends Controller
             'description' => 'required|string|max:255',
             'item_type'   => 'nullable|in:window,door,service,other',
             'qty'         => 'required|numeric|min:0.01',
+            'service_id'  => 'nullable|exists:vip_services,id',
             'notes'       => 'nullable|string|max:1000',
         ]);
 
         $sortOrder = ($job->jobItems()->max('sort_order') ?? 0) + 1;
 
+        // Calculate installer pay from service if linked
+        $unitPay = 0;
+        $totalPay = 0;
+        if (!empty($validated['service_id'])) {
+            $service = Service::find($validated['service_id']);
+            if ($service) {
+                if ($service->installer_pay_type === 'percentage') {
+                    $unitPay = $service->base_price * ($service->installer_pay / 100);
+                } elseif ($service->installer_pay_type === 'per_job') {
+                    $unitPay = $service->installer_pay;
+                    $totalPay = $service->installer_pay; // flat per job, not multiplied by qty
+                } else {
+                    $unitPay = $service->installer_pay; // per_unit or per_hour
+                }
+
+                if ($service->installer_pay_type !== 'per_job') {
+                    $totalPay = $unitPay * $validated['qty'];
+                }
+            }
+        }
+
         $item = JobItem::create([
             'job_id'      => $job->id,
+            'service_id'  => $validated['service_id'] ?? null,
             'description' => $validated['description'],
             'item_type'   => $validated['item_type'] ?? 'other',
             'qty'         => $validated['qty'],
+            'unit_pay'    => $unitPay,
+            'total_pay'   => $totalPay,
             'notes'       => $validated['notes'] ?? null,
             'sort_order'  => $sortOrder,
         ]);
 
-        return response()->json(['success' => true, 'item' => $item]);
+        $item->load('service');
+
+        return response()->json([
+            'success' => true,
+            'item' => array_merge($item->toArray(), [
+                'service_name' => $item->service?->name,
+            ]),
+        ]);
     }
 
     public function removeItem($id, $itemId)

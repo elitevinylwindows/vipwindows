@@ -44,6 +44,7 @@ use App\Http\Controllers\Installer\InstallerCustomerController;
 use App\Http\Controllers\Installer\InstallerAvailabilityController;
 use App\Http\Controllers\Installer\InstallerProfileController;
 use App\Http\Controllers\Installer\InstallerServiceController;
+use App\Http\Controllers\CrewController;
 use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceRateController;
@@ -82,6 +83,10 @@ Route::middleware(['auth:vip', 'customer'])->prefix('my')->name('customer.')->gr
     Route::get('/book/slots', [CustomerController::class, 'getSlots'])->name('book.slots');
     Route::post('/book', [CustomerController::class, 'confirmBooking'])->name('book.confirm');
 });
+
+// ─── Admin login (no auth required) ──────────────────────────
+Route::get('/admin/login', [AuthController::class, 'showAdminLogin'])->name('admin.login');
+Route::post('/admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.submit');
 
 // ─── Admin / staff area ───────────────────────────────────────
 Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -126,6 +131,13 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::get('/installers/{id}', [InstallerManagementController::class, 'show'])->name('installers.show');
     Route::put('/installers/{id}', [InstallerManagementController::class, 'update'])->name('installers.update');
     Route::delete('/installers/{id}', [InstallerManagementController::class, 'destroy'])->name('installers.destroy');
+
+    // Crew management
+    Route::get('/crews', [CrewController::class, 'index'])->name('crews.index');
+    Route::post('/crews', [CrewController::class, 'store'])->name('crews.store');
+    Route::get('/crews/{id}', [CrewController::class, 'show'])->name('crews.show');
+    Route::put('/crews/{id}', [CrewController::class, 'update'])->name('crews.update');
+    Route::delete('/crews/{id}', [CrewController::class, 'destroy'])->name('crews.destroy');
 
     // Services management
     Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
