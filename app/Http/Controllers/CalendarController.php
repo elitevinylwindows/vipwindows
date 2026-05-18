@@ -118,7 +118,14 @@ class CalendarController extends Controller
         $customerName  = $validated['customer_name'] ?? 'Customer';
 
         $validated['created_by'] = Auth::id();
-        $validated['color'] = $validated['color'] ?? '#c9a84c';
+
+        // Auto-set color from selected service (fallback to gold)
+        if (!empty($validated['service_id'])) {
+            $svcColor = Service::where('id', $validated['service_id'])->value('color');
+            $validated['color'] = $svcColor ?: '#c9a84c';
+        } else {
+            $validated['color'] = '#c9a84c';
+        }
 
         CalendarEvent::create($validated);
 

@@ -509,20 +509,14 @@
                         <label class="form-label">Address</label>
                         <input type="text" name="address" id="editEvAddress" class="form-control form-control-sm">
                     </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-8">
-                            <label class="form-label">Service</label>
-                            <select name="service_id" id="editEvService" class="form-select form-select-sm">
-                                <option value="">— None —</option>
-                                @foreach($services as $svc)
-                                    <option value="{{ $svc->id }}">{{ $svc->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label">Color</label>
-                            <input type="color" name="color" id="editEvColor" class="form-control form-control-sm form-control-color" value="#c9a84c">
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">Service</label>
+                        <select name="service_id" id="editEvService" class="form-select form-select-sm">
+                            <option value="">— None —</option>
+                            @foreach($services as $svc)
+                                <option value="{{ $svc->id }}">{{ $svc->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Description</label>
