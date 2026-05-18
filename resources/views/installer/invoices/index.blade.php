@@ -153,48 +153,110 @@
 <div class="modal fade" id="createInvoiceModal" tabindex="-1" aria-labelledby="createInvoiceModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="background:var(--vip-primary); color:#fff; border:1px solid rgba(255,255,255,.1);">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title" id="createInvoiceModalLabel"><i class="bi bi-receipt me-2"></i>{{ __('installer.new_invoice') }}</h5>
+            <div class="modal-header border-0 pb-2">
+                <h6 class="modal-title mb-0" id="createInvoiceModalLabel"><i class="bi bi-receipt me-2"></i>{{ __('installer.new_invoice') }}</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="createInvoiceForm" method="POST" action="{{ route('installer.invoices.store') }}">
                 @csrf
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small text-white-50">{{ __('installer.customer_name') }} <span class="text-danger">*</span></label>
-                            <input type="text" name="customer_name" class="form-control bg-dark text-white border-secondary" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-white-50">{{ __('installer.customer_email') }}</label>
-                            <input type="email" name="customer_email" class="form-control bg-dark text-white border-secondary">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-white-50">{{ __('installer.customer_phone') }}</label>
-                            <input type="text" name="customer_phone" class="form-control bg-dark text-white border-secondary">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-white-50">{{ __('installer.due_date') }}</label>
-                            <input type="date" name="due_date" class="form-control bg-dark text-white border-secondary">
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label small text-white-50">{{ __('installer.address') }}</label>
-                            <input type="text" name="customer_address" class="form-control bg-dark text-white border-secondary" placeholder="Customer address">
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label small text-white-50">{{ __('installer.billing_address') }}</label>
-                            <input type="text" name="billing_address" class="form-control bg-dark text-white border-secondary" placeholder="Billing address (if different)">
+                <div class="modal-body pt-0">
+                    {{-- Row 1: Customer + Email + Phone --}}
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-4">
+                            <label class="form-label small text-white-50 mb-0">Customer <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_name" class="form-control form-control-sm bg-dark text-white border-secondary" required placeholder="Name">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small text-white-50">{{ __('installer.tax_rate') }}</label>
-                            <input type="number" name="tax_rate" class="form-control bg-dark text-white border-secondary" value="0" step="0.01" min="0" max="100">
+                            <label class="form-label small text-white-50 mb-0">Email</label>
+                            <input type="email" name="customer_email" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="email@example.com">
                         </div>
-                        <div class="col-md-8">
-                            <label class="form-label small text-white-50">{{ __('installer.notes') }}</label>
-                            <input type="text" name="notes" class="form-control bg-dark text-white border-secondary" placeholder="Optional notes">
+                        <div class="col-md-4">
+                            <label class="form-label small text-white-50 mb-0">Phone</label>
+                            <input type="text" name="customer_phone" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="(555) 000-0000">
                         </div>
                     </div>
-                    <p class="small text-white-50 mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>You can add line items after creating the invoice.</p>
+                    {{-- Row 2: Address + Due Date --}}
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-8">
+                            <label class="form-label small text-white-50 mb-0">Address</label>
+                            <input type="text" name="customer_address" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Customer address">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-white-50 mb-0">Due Date</label>
+                            <input type="date" name="due_date" class="form-control form-control-sm bg-dark text-white border-secondary">
+                        </div>
+                    </div>
+                    {{-- Row 3: Tax + Notes --}}
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label small text-white-50 mb-0">Tax %</label>
+                            <input type="number" name="tax_rate" id="newInvTaxRate" class="form-control form-control-sm bg-dark text-white border-secondary" value="0" step="0.01" min="0" max="100" oninput="calcInvTotals()">
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label small text-white-50 mb-0">Notes</label>
+                            <input type="text" name="notes" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Optional notes">
+                        </div>
+                    </div>
+
+                    {{-- Line Items Section --}}
+                    <div style="border-top:1px solid rgba(255,255,255,.1); padding-top:.75rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0" style="font-size:.75rem; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,.5);"><i class="bi bi-list-ul me-1"></i>Line Items</h6>
+                            <button type="button" class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:.75rem;" onclick="addInvRow()"><i class="bi bi-plus me-1"></i>Add Item</button>
+                        </div>
+
+                        {{-- Table header --}}
+                        <div class="row g-1 mb-1" style="font-size:.65rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.4);">
+                            <div class="col-5 ps-2">Description</div>
+                            <div class="col-2 text-center">Qty</div>
+                            <div class="col-2 text-center">Rate</div>
+                            <div class="col-2 text-end">Amount</div>
+                            <div class="col-1"></div>
+                        </div>
+
+                        {{-- Line item rows container --}}
+                        <div id="invItemRows">
+                            {{-- First empty row --}}
+                            <div class="row g-1 mb-1 inv-row align-items-center">
+                                <div class="col-5">
+                                    <input type="text" name="items[0][description]" class="form-control form-control-sm bg-dark text-white border-secondary inv-desc" placeholder="e.g. Window Install">
+                                </div>
+                                <div class="col-2">
+                                    <input type="number" name="items[0][qty]" class="form-control form-control-sm bg-dark text-white border-secondary text-center inv-qty" value="1" min="0.01" step="0.01" oninput="calcInvRow(this)">
+                                </div>
+                                <div class="col-2">
+                                    <input type="number" name="items[0][unit_price]" class="form-control form-control-sm bg-dark text-white border-secondary text-center inv-price" value="0" min="0" step="0.01" oninput="calcInvRow(this)">
+                                </div>
+                                <div class="col-2">
+                                    <span class="inv-amount text-end d-block" style="font-size:.85rem; color:var(--vip-accent); font-weight:600;">$0.00</span>
+                                </div>
+                                <div class="col-1 text-center">
+                                    <button type="button" class="btn btn-sm text-danger p-0" onclick="removeInvRow(this)" title="Remove" style="font-size:.8rem;"><i class="bi bi-x-lg"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Totals --}}
+                        <div class="mt-2 pt-2" style="border-top:1px solid rgba(255,255,255,.08);">
+                            <div class="row">
+                                <div class="col-7"></div>
+                                <div class="col-5">
+                                    <div class="d-flex justify-content-between mb-1" style="font-size:.8rem;">
+                                        <span class="text-white-50">Subtotal</span>
+                                        <span id="invSubtotal" style="color:#fff;">$0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1" style="font-size:.8rem;">
+                                        <span class="text-white-50">Tax</span>
+                                        <span id="invTaxAmt" style="color:#fff;">$0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between" style="font-size:.95rem; font-weight:700;">
+                                        <span style="color:var(--vip-accent);">Total</span>
+                                        <span id="invTotal" style="color:var(--vip-accent);">$0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">{{ __('installer.cancel') }}</button>
@@ -208,6 +270,74 @@
 
 @push('scripts')
 <script>
+// ── Create Invoice: Line Item Management ──
+let invRowIdx = 1;
+
+function addInvRow() {
+    const container = document.getElementById('invItemRows');
+    const row = document.createElement('div');
+    row.className = 'row g-1 mb-1 inv-row align-items-center';
+    row.innerHTML = `
+        <div class="col-5">
+            <input type="text" name="items[${invRowIdx}][description]" class="form-control form-control-sm bg-dark text-white border-secondary inv-desc" placeholder="e.g. Door Install">
+        </div>
+        <div class="col-2">
+            <input type="number" name="items[${invRowIdx}][qty]" class="form-control form-control-sm bg-dark text-white border-secondary text-center inv-qty" value="1" min="0.01" step="0.01" oninput="calcInvRow(this)">
+        </div>
+        <div class="col-2">
+            <input type="number" name="items[${invRowIdx}][unit_price]" class="form-control form-control-sm bg-dark text-white border-secondary text-center inv-price" value="0" min="0" step="0.01" oninput="calcInvRow(this)">
+        </div>
+        <div class="col-2">
+            <span class="inv-amount text-end d-block" style="font-size:.85rem; color:var(--vip-accent); font-weight:600;">$0.00</span>
+        </div>
+        <div class="col-1 text-center">
+            <button type="button" class="btn btn-sm text-danger p-0" onclick="removeInvRow(this)" title="Remove" style="font-size:.8rem;"><i class="bi bi-x-lg"></i></button>
+        </div>
+    `;
+    container.appendChild(row);
+    invRowIdx++;
+    row.querySelector('.inv-desc').focus();
+}
+
+function removeInvRow(btn) {
+    const row = btn.closest('.inv-row');
+    const container = document.getElementById('invItemRows');
+    if (container.querySelectorAll('.inv-row').length > 1) {
+        row.remove();
+    } else {
+        // Clear the last row instead of removing it
+        row.querySelector('.inv-desc').value = '';
+        row.querySelector('.inv-qty').value = '1';
+        row.querySelector('.inv-price').value = '0';
+        row.querySelector('.inv-amount').textContent = '$0.00';
+    }
+    calcInvTotals();
+}
+
+function calcInvRow(input) {
+    const row = input.closest('.inv-row');
+    const qty = parseFloat(row.querySelector('.inv-qty').value) || 0;
+    const price = parseFloat(row.querySelector('.inv-price').value) || 0;
+    const amount = qty * price;
+    row.querySelector('.inv-amount').textContent = '$' + amount.toFixed(2);
+    calcInvTotals();
+}
+
+function calcInvTotals() {
+    let subtotal = 0;
+    document.querySelectorAll('#invItemRows .inv-row').forEach(row => {
+        const qty = parseFloat(row.querySelector('.inv-qty')?.value) || 0;
+        const price = parseFloat(row.querySelector('.inv-price')?.value) || 0;
+        subtotal += qty * price;
+    });
+    const taxRate = parseFloat(document.getElementById('newInvTaxRate')?.value) || 0;
+    const taxAmt = subtotal * (taxRate / 100);
+    const total = subtotal + taxAmt;
+    document.getElementById('invSubtotal').textContent = '$' + subtotal.toFixed(2);
+    document.getElementById('invTaxAmt').textContent = '$' + taxAmt.toFixed(2);
+    document.getElementById('invTotal').textContent = '$' + total.toFixed(2);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.iq-card');
     const detailBody = document.getElementById('iqDetailBody');

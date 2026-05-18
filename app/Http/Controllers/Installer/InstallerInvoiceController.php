@@ -40,6 +40,11 @@ class InstallerInvoiceController extends Controller
             'due_date'         => 'nullable|date',
             'tax_rate'         => 'nullable|numeric|min:0|max:100',
             'notes'            => 'nullable|string|max:5000',
+            // Line items (optional, submitted as arrays)
+            'items'              => 'nullable|array',
+            'items.*.description' => 'required|string|max:255',
+            'items.*.qty'         => 'required|numeric|min:0.01',
+            'items.*.unit_price'  => 'required|numeric|min:0',
         ]);
 
         // Auto-generate invoice number: II-XX-0001
@@ -47,6 +52,9 @@ class InstallerInvoiceController extends Controller
         $last = Invoice::where('invoice_number', 'like', $prefix . '%')->orderByDesc('invoice_number')->first();
         $next = $last ? (intval(substr($last->invoice_number, strlen($prefix))) + 1) : 1;
         $invoiceNumber = $prefix . str_pad($next, 4, '0', STR_PAD_LEFT);
+
+        $lineItems = $validated['items'] ?? [];
+        unset($validated['items']);
 
         $invoice = Invoice::create(array_merge($validated, [
             'invoice_number' => $invoiceNumber,
@@ -60,8 +68,28 @@ class InstallerInvoiceController extends Controller
             'created_by'     => Auth::id(),
         ]));
 
+        // Create line items if provided
+        $sortOrder = 0;
+        foreach ($lineItems as $item) {
+            if (!empty($item['description']) && !empty($item['qty'])) {
+                $sortOrder++;
+                InvoiceItem::create([
+                    'invoice_id'  => $invoice->id,
+                    'description' => $item['description'],
+                    'qty'         => $item['qty'],
+                    'unit_price'  => $item['unit_price'] ?? 0,
+                    'total'       => round(($item['qty'] ?? 0) * ($item['unit_price'] ?? 0), 2),
+                    'sort_order'  => $sortOrder,
+                ]);
+            }
+        }
+
+        if ($sortOrder > 0) {
+            $this->recalculateTotals($invoice);
+        }
+
         if ($request->ajax()) {
-            return response()->json(['success' => true, 'invoice' => $invoice]);
+            return response()->json(['success' => true, 'invoice' => $invoice->fresh()]);
         }
 
         return redirect()->route('installer.invoices.index')->with('success', 'Invoice created successfully.');
