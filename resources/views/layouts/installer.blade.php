@@ -165,6 +165,10 @@
                 <i class="bi bi-tools"></i> My Services
             </a>
 
+            <a href="{{ route('installer.attendance.index') }}" class="{{ request()->routeIs('installer.attendance.*') ? 'active' : '' }}">
+                <i class="bi bi-clock-history"></i> Attendance
+            </a>
+
             <div class="nav-label mt-3">{{ __('installer.customers') }}</div>
             <a href="{{ route('installer.customers.index') }}" class="{{ request()->routeIs('installer.customers.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> {{ __('installer.my_customers') }}

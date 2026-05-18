@@ -158,6 +158,9 @@
             <a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> Customers
             </a>
+            <a href="{{ route('admin.attendance.index') }}" class="{{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}">
+                <i class="bi bi-clock-history"></i> Attendance
+            </a>
 
             <div class="nav-label mt-3">Content</div>
             <a href="{{ route('admin.gallery.index') }}" class="{{ request()->routeIs('admin.gallery.*') ? 'active' : '' }}">

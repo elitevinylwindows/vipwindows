@@ -420,6 +420,11 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/bookings', [InstallerAvailabilityController::class, 'bookings'])->name('bookings');
     Route::put('/bookings/{id}', [InstallerAvailabilityController::class, 'updateBooking'])->name('bookings.update');
 
+    // Attendance
+    Route::get('/attendance', [InstallerAttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/clock-in', [InstallerAttendanceController::class, 'clockIn'])->name('attendance.clockIn');
+    Route::post('/attendance/clock-out', [InstallerAttendanceController::class, 'clockOut'])->name('attendance.clockOut');
+
     // Profile
     Route::get('/profile', [InstallerProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [InstallerProfileController::class, 'update'])->name('profile.update');
