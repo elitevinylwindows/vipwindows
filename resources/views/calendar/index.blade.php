@@ -309,7 +309,7 @@
                         <input type="text" name="address" class="form-control form-control-sm" placeholder="e.g. 123 Main St, Dallas TX">
                     </div>
                     <div class="row g-2 mb-3">
-                        <div class="col-8">
+                        <div class="col-12">
                             <label class="form-label">Service (optional)</label>
                             <select name="service_id" class="form-select form-select-sm">
                                 <option value="">— None —</option>
@@ -317,10 +317,6 @@
                                     <option value="{{ $svc->id }}">{{ $svc->name }}</option>
                                 @endforeach
                             </select>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label">Color</label>
-                            <input type="color" name="color" class="form-control form-control-sm form-control-color" value="#c9a84c">
                         </div>
                     </div>
                     <div class="mb-0">
