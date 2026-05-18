@@ -443,4 +443,268 @@
 
     </div>
 </div>
+
+{{-- Manage Availability Modal --}}
+<div class="modal fade" id="availabilityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-clock me-2"></i>Manage Weekly Availability</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" id="availTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#weeklyTab">Weekly Schedule</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#overridesTab">Date Overrides</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    {{-- Weekly Schedule Tab --}}
+                    <div class="tab-pane fade show active" id="weeklyTab">
+                        <p class="text-muted" style="font-size:.82rem;">Set your default weekly working hours. These apply to all weeks unless overridden for specific dates.</p>
+                        <div id="weeklyDays">
+                            <!-- Populated by JS -->
+                        </div>
+                        <button class="btn btn-vip mt-3" onclick="saveWeeklyAvailability()">
+                            <i class="bi bi-check-lg me-1"></i> Save Weekly Schedule
+                        </button>
+                    </div>
+
+                    {{-- Date Overrides Tab --}}
+                    <div class="tab-pane fade" id="overridesTab">
+                        <p class="text-muted" style="font-size:.82rem;">Add exceptions for specific dates — mark days off, holidays, or custom hours.</p>
+                        <div class="row g-2 mb-3 align-items-end">
+                            <div class="col-3">
+                                <label class="form-label" style="font-size:.75rem;">Date</label>
+                                <input type="date" id="overrideDate" class="form-control form-control-sm" min="{{ today()->format('Y-m-d') }}">
+                            </div>
+                            <div class="col-2">
+                                <label class="form-label" style="font-size:.75rem;">Available?</label>
+                                <select id="overrideAvailable" class="form-select form-select-sm" onchange="toggleOverrideTimes()">
+                                    <option value="0">Day Off</option>
+                                    <option value="1">Custom Hours</option>
+                                </select>
+                            </div>
+                            <div class="col-2 override-time-fields" style="display:none;">
+                                <label class="form-label" style="font-size:.75rem;">Start</label>
+                                <input type="time" id="overrideStart" class="form-control form-control-sm" value="08:00">
+                            </div>
+                            <div class="col-2 override-time-fields" style="display:none;">
+                                <label class="form-label" style="font-size:.75rem;">End</label>
+                                <input type="time" id="overrideEnd" class="form-control form-control-sm" value="17:00">
+                            </div>
+                            <div class="col-2">
+                                <label class="form-label" style="font-size:.75rem;">Reason</label>
+                                <input type="text" id="overrideReason" class="form-control form-control-sm" placeholder="e.g. Holiday">
+                            </div>
+                            <div class="col-1">
+                                <button class="btn btn-sm btn-vip w-100" onclick="addOverride()"><i class="bi bi-plus"></i></button>
+                            </div>
+                        </div>
+                        <div id="overridesList">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+let currentAvailability = {};
+let currentOverrides = [];
+
+function openAvailabilityModal() {
+    // Fetch current availability
+    fetch('{{ route("admin.calendar.availability") }}', {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        currentAvailability = data.availability || {};
+        currentOverrides = data.overrides || [];
+        renderWeeklyDays();
+        renderOverrides();
+        new bootstrap.Modal(document.getElementById('availabilityModal')).show();
+    })
+    .catch(() => alert('Failed to load availability data.'));
+}
+
+function renderWeeklyDays() {
+    const container = document.getElementById('weeklyDays');
+    let html = '';
+    for (let d = 0; d < 7; d++) {
+        const avail = currentAvailability[d] || {};
+        const isAvail = avail.is_available !== undefined ? avail.is_available : (d >= 1 && d <= 5);
+        const start = avail.start_time ? avail.start_time.substring(0,5) : '08:00';
+        const end = avail.end_time ? avail.end_time.substring(0,5) : '17:00';
+        const duration = avail.slot_duration || 60;
+        const maxBook = avail.max_bookings_per_slot || 5;
+
+        html += `
+        <div class="avail-day-row ${isAvail ? '' : 'avail-toggle-off'}" id="dayRow${d}">
+            <div class="avail-day-name">${dayNames[d]}</div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="dayAvail${d}" ${isAvail ? 'checked' : ''} onchange="toggleDayRow(${d})">
+            </div>
+            <div class="avail-times d-flex gap-2 flex-grow-1">
+                <input type="time" class="form-control" id="dayStart${d}" value="${start}" style="max-width:120px;">
+                <span class="align-self-center" style="font-size:.8rem;color:#999;">to</span>
+                <input type="time" class="form-control" id="dayEnd${d}" value="${end}" style="max-width:120px;">
+                <select class="form-select" id="dayDuration${d}" style="max-width:100px;">
+                    <option value="30" ${duration==30?'selected':''}>30 min</option>
+                    <option value="60" ${duration==60?'selected':''}>1 hr</option>
+                    <option value="90" ${duration==90?'selected':''}>1.5 hr</option>
+                    <option value="120" ${duration==120?'selected':''}>2 hr</option>
+                    <option value="240" ${duration==240?'selected':''}>4 hr</option>
+                    <option value="480" ${duration==480?'selected':''}>8 hr</option>
+                </select>
+                <input type="number" class="form-control" id="dayMax${d}" value="${maxBook}" min="1" max="50" style="max-width:70px;" title="Max bookings per slot">
+            </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+function toggleDayRow(d) {
+    const checked = document.getElementById('dayAvail' + d).checked;
+    const row = document.getElementById('dayRow' + d);
+    if (checked) row.classList.remove('avail-toggle-off');
+    else row.classList.add('avail-toggle-off');
+}
+
+function saveWeeklyAvailability() {
+    const days = [];
+    for (let d = 0; d < 7; d++) {
+        days.push({
+            day_of_week: d,
+            is_available: document.getElementById('dayAvail' + d).checked ? 1 : 0,
+            start_time: document.getElementById('dayStart' + d).value,
+            end_time: document.getElementById('dayEnd' + d).value,
+            slot_duration: parseInt(document.getElementById('dayDuration' + d).value),
+            max_bookings_per_slot: parseInt(document.getElementById('dayMax' + d).value),
+        });
+    }
+
+    fetch('{{ route("admin.calendar.availability.saveWeekly") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ days })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Weekly availability saved!');
+        } else {
+            alert('Error: ' + (data.message || 'Unknown'));
+        }
+    })
+    .catch(() => alert('Failed to save.'));
+}
+
+function toggleOverrideTimes() {
+    const show = document.getElementById('overrideAvailable').value === '1';
+    document.querySelectorAll('.override-time-fields').forEach(el => {
+        el.style.display = show ? '' : 'none';
+    });
+}
+
+function addOverride() {
+    const date = document.getElementById('overrideDate').value;
+    if (!date) { alert('Please select a date.'); return; }
+
+    const isAvail = document.getElementById('overrideAvailable').value === '1';
+    const payload = {
+        override_date: date,
+        is_available: isAvail ? 1 : 0,
+        reason: document.getElementById('overrideReason').value || null,
+    };
+    if (isAvail) {
+        payload.start_time = document.getElementById('overrideStart').value;
+        payload.end_time = document.getElementById('overrideEnd').value;
+    }
+
+    fetch('{{ route("admin.calendar.availability.addOverride") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Add to list and re-render
+            const existing = currentOverrides.findIndex(o => o.override_date === date || (o.override_date && o.override_date.startsWith && o.override_date.startsWith(date)));
+            if (existing >= 0) currentOverrides[existing] = data.override;
+            else currentOverrides.push(data.override);
+            renderOverrides();
+            document.getElementById('overrideDate').value = '';
+            document.getElementById('overrideReason').value = '';
+        } else {
+            alert('Error saving override.');
+        }
+    })
+    .catch(() => alert('Failed to save override.'));
+}
+
+function removeOverride(id) {
+    if (!confirm('Remove this date override?')) return;
+
+    fetch(`/admin/calendar/availability/override/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            currentOverrides = currentOverrides.filter(o => o.id !== id);
+            renderOverrides();
+        }
+    })
+    .catch(() => alert('Failed to remove override.'));
+}
+
+function renderOverrides() {
+    const container = document.getElementById('overridesList');
+    if (!currentOverrides.length) {
+        container.innerHTML = '<p class="text-muted" style="font-size:.82rem;">No date overrides set.</p>';
+        return;
+    }
+    container.innerHTML = currentOverrides.map(o => {
+        const dateStr = o.override_date ? (typeof o.override_date === 'string' ? o.override_date.substring(0,10) : o.override_date) : '';
+        const isOff = !o.is_available;
+        return `
+        <div class="override-card">
+            <div>
+                <strong>${dateStr}</strong>
+                <span class="${isOff ? 'badge-off' : 'badge-on'} ms-2">${isOff ? 'DAY OFF' : 'Custom Hours'}</span>
+                ${!isOff && o.start_time ? `<span class="ms-2" style="font-size:.78rem;color:#666;">${o.start_time.substring(0,5)} – ${o.end_time.substring(0,5)}</span>` : ''}
+                ${o.reason ? `<span class="ms-2 text-muted" style="font-size:.78rem;">— ${o.reason}</span>` : ''}
+            </div>
+            <button class="btn btn-sm btn-outline-danger" onclick="removeOverride(${o.id})" style="font-size:.7rem;padding:2px 8px;">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>`;
+    }).join('');
+}
+</script>
+@endpush
