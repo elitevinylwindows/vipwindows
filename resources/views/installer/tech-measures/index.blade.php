@@ -240,12 +240,48 @@ function renderMeasureDetail(data) {
 
     // Toolbar actions
     let actions = '';
-    if (m.status === 'pending') {
-        actions += `<button class="btn btn-sm btn-info text-white" onclick="startMeasure(${m.id})"><i class="bi bi-play-circle me-1"></i>Start Job</button> `;
-    } else if (m.status === 'in_progress') {
-        actions += `<button class="btn btn-sm btn-success" onclick="completeMeasure(${m.id})"><i class="bi bi-check-lg me-1"></i>Complete</button> `;
+    if (m.status === 'in_progress') {
+        actions += `<span class="badge bg-primary me-2" id="elapsedBadge" style="font-size:.75rem;"><i class="bi bi-clock me-1"></i><span id="elapsedTime">--:--</span></span>`;
+        actions += `<button class="btn btn-sm btn-success" onclick="completeMeasure(${m.id})"><i class="bi bi-check-lg me-1"></i>Complete Measure</button> `;
+    } else if (m.status === 'completed') {
+        const start = m.started_at ? new Date(m.started_at) : null;
+        const end = m.completed_at ? new Date(m.completed_at) : null;
+        if (start && end) {
+            const diffMin = Math.round((end - start) / 60000);
+            const hrs = Math.floor(diffMin / 60), mins = diffMin % 60;
+            actions += `<span class="badge bg-success me-2" style="font-size:.75rem;"><i class="bi bi-check-circle me-1"></i>Done in ${hrs}h ${mins}m</span>`;
+        }
     }
     toolbar.innerHTML = actions;
+
+    // Start elapsed timer if in progress
+    if (m.status === 'in_progress' && m.started_at) {
+        startElapsedTimer(new Date(m.started_at));
+    }
+
+    // If pending, show the big "Start Tech Measure" hero instead of details
+    if (m.status === 'pending') {
+        body.innerHTML = `
+            <div class="tm-info-grid">
+                <div class="tm-info-card"><div class="label">Customer</div><div class="value">${m.customer_name || '—'}</div></div>
+                <div class="tm-info-card"><div class="label">Phone</div><div class="value">${m.customer_phone ? `<a href="tel:${m.customer_phone}">${m.customer_phone}</a>` : '—'}</div></div>
+                <div class="tm-info-card"><div class="label">Address</div><div class="value">${m.address || '—'}</div></div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem 2rem; background:#fff; border-radius:.75rem; box-shadow:0 2px 12px rgba(0,0,0,.06); margin-top:1rem;">
+                <div style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,#17a2b8,#0d6efd); display:flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
+                    <i class="bi bi-rulers" style="font-size:2rem; color:#fff;"></i>
+                </div>
+                <h4 style="font-weight:700; margin-bottom:.5rem;">Ready to Start</h4>
+                <p style="color:#888; margin-bottom:1.5rem; text-align:center; max-width:400px;">Tap the button below when you arrive on site. This will clock you in and open the measurement form.</p>
+                <button class="btn btn-lg btn-primary px-5 py-2" onclick="startMeasure(${m.id})" style="font-size:1.1rem; font-weight:600; border-radius:.5rem;">
+                    <i class="bi bi-play-circle me-2"></i>Start Tech Measure
+                </button>
+                ${m.customer_phone ? `<a href="tel:${m.customer_phone}" class="btn btn-sm btn-outline-secondary mt-3"><i class="bi bi-telephone me-1"></i>Call Customer</a>` : ''}
+                ${m.address ? `<a href="https://maps.google.com/?q=${encodeURIComponent(m.address)}" target="_blank" class="btn btn-sm btn-outline-secondary mt-2"><i class="bi bi-geo-alt me-1"></i>Get Directions</a>` : ''}
+            </div>
+        `;
+        return;
+    }
 
     // Series options for add form
     let seriesOpts = '<option value="">— Select Series —</option>' + seriesData.map(s => `<option value="${s.id}">${s.series}</option>`).join('');
@@ -602,6 +638,23 @@ function saveNotes(measureId) {
         if (data.success) alert('Notes saved.');
     })
     .catch(() => alert('Failed to save notes.'));
+}
+
+// Elapsed timer for active measures
+let elapsedInterval = null;
+function startElapsedTimer(startDate) {
+    if (elapsedInterval) clearInterval(elapsedInterval);
+    function update() {
+        const now = new Date();
+        const diff = Math.floor((now - startDate) / 1000);
+        const hrs = Math.floor(diff / 3600);
+        const mins = Math.floor((diff % 3600) / 60);
+        const secs = diff % 60;
+        const el = document.getElementById('elapsedTime');
+        if (el) el.textContent = `${hrs}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+    }
+    update();
+    elapsedInterval = setInterval(update, 1000);
 }
 </script>
 @endpush

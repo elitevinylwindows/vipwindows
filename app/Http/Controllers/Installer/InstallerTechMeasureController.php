@@ -24,7 +24,7 @@ class InstallerTechMeasureController extends Controller
             ->where(function ($q) use ($user) {
                 $q->where('assigned_to', $user->id)
                   ->orWhereHas('crew', function ($cq) use ($user) {
-                      $cq->whereHas('members', fn($mq) => $mq->where('vip_user_id', $user->id));
+                      $cq->whereHas('members', fn($mq) => $mq->where('crew_members.user_id', $user->id));
                   });
             })
             ->orderByDesc('created_at');
