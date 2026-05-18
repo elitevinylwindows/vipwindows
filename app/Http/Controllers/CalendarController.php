@@ -106,7 +106,6 @@ class CalendarController extends Controller
             'event_time'     => 'nullable|string|max:20',
             'end_time'       => 'nullable|string|max:20',
             'end_date'       => 'nullable|date|after_or_equal:event_date',
-            'color'          => 'nullable|string|max:10',
             'service_id'     => 'nullable|exists:vip_services,id',
             'address'        => 'nullable|string|max:500',
             'customer_name'  => 'nullable|string|max:255',
@@ -174,13 +173,20 @@ class CalendarController extends Controller
             'event_time'     => 'nullable|string|max:20',
             'end_time'       => 'nullable|string|max:20',
             'end_date'       => 'nullable|date|after_or_equal:event_date',
-            'color'          => 'nullable|string|max:10',
             'service_id'     => 'nullable|exists:vip_services,id',
             'address'        => 'nullable|string|max:500',
             'customer_name'  => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
             'customer_phone' => 'nullable|string|max:50',
         ]);
+
+        // Auto-set color from selected service (fallback to gold)
+        if (!empty($validated['service_id'])) {
+            $svcColor = Service::where('id', $validated['service_id'])->value('color');
+            $validated['color'] = $svcColor ?: '#c9a84c';
+        } else {
+            $validated['color'] = '#c9a84c';
+        }
 
         $event->update($validated);
 

@@ -306,7 +306,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Address</label>
-                        <input type="text" name="address" class="form-control form-control-sm" placeholder="e.g. 123 Main St, Dallas TX">
+                        <input type="text" name="address" id="evAddress" class="form-control form-control-sm" placeholder="Start typing an address..." autocomplete="off">
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-12">
@@ -507,7 +507,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Address</label>
-                        <input type="text" name="address" id="editEvAddress" class="form-control form-control-sm">
+                        <input type="text" name="address" id="editEvAddress" class="form-control form-control-sm" placeholder="Start typing an address..." autocomplete="off">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Service</label>
@@ -764,4 +764,52 @@ function openEditEvent(eventId) {
     .catch(() => alert('Failed to load event details.'));
 }
 </script>
+
+{{-- Google Places Autocomplete --}}
+@if(config('services.google.maps_key'))
+<script>
+function initGooglePlaces() {
+    const options = {
+        types: ['address'],
+        componentRestrictions: { country: 'us' }
+    };
+
+    // Create modal address field
+    const createAddr = document.getElementById('evAddress');
+    if (createAddr) {
+        const ac1 = new google.maps.places.Autocomplete(createAddr, options);
+        ac1.addListener('place_changed', function() {
+            const place = ac1.getPlace();
+            if (place.formatted_address) {
+                createAddr.value = place.formatted_address;
+            }
+        });
+        // Prevent form submit on Enter when selecting from dropdown
+        createAddr.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.querySelector('.pac-container:not([style*="display: none"])')) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // Edit modal address field
+    const editAddr = document.getElementById('editEvAddress');
+    if (editAddr) {
+        const ac2 = new google.maps.places.Autocomplete(editAddr, options);
+        ac2.addListener('place_changed', function() {
+            const place = ac2.getPlace();
+            if (place.formatted_address) {
+                editAddr.value = place.formatted_address;
+            }
+        });
+        editAddr.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.querySelector('.pac-container:not([style*="display: none"])')) {
+                e.preventDefault();
+            }
+        });
+    }
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&libraries=places&callback=initGooglePlaces" async defer></script>
+@endif
 @endpush
