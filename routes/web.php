@@ -48,7 +48,9 @@ use App\Http\Controllers\Installer\InstallerProfileController;
 use App\Http\Controllers\Installer\InstallerAttendanceController;
 use App\Http\Controllers\Installer\InstallerServiceController;
 use App\Http\Controllers\Installer\InstallerMessageController;
+use App\Http\Controllers\Installer\InstallerTechMeasureController;
 use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\TechMeasureController;
 use App\Http\Controllers\CrewController;
 use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\ServiceController;
@@ -184,6 +186,12 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{id}/send', [MessageController::class, 'send'])->name('messages.send');
     Route::post('/messages/start', [MessageController::class, 'startConversation'])->name('messages.start');
+
+    // Tech Measures (admin view + convert to quote)
+    Route::get('/tech-measures', [TechMeasureController::class, 'index'])->name('tech-measures.index');
+    Route::get('/tech-measures/{id}', [TechMeasureController::class, 'show'])->name('tech-measures.show');
+    Route::post('/tech-measures/from-event', [TechMeasureController::class, 'createFromEvent'])->name('tech-measures.fromEvent');
+    Route::post('/tech-measures/{id}/convert-to-quote', [TechMeasureController::class, 'convertToQuote'])->name('tech-measures.convertToQuote');
 
     // Quotes (full configurator)
     Route::get('/quotes', [VipQuoteController::class, 'index'])->name('quotes.index');
