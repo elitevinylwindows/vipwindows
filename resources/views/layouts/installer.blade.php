@@ -148,12 +148,14 @@
             <a href="{{ route('installer.dashboard') }}" class="{{ request()->routeIs('installer.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i> {{ __('installer.dashboard') }}
             </a>
-            {{-- Quotes temporarily removed --}}
+            <a href="{{ route('installer.calendar') }}" class="{{ request()->routeIs('installer.calendar') ? 'active' : '' }}">
+                <i class="bi bi-calendar3"></i> {{ __('installer.calendar') }}
+            </a>
             <a href="{{ route('installer.jobs.index') }}" class="{{ request()->routeIs('installer.jobs.*') ? 'active' : '' }}">
                 <i class="bi bi-tools"></i> {{ __('installer.my_jobs') }}
             </a>
-            <a href="{{ route('installer.calendar') }}" class="{{ request()->routeIs('installer.calendar') ? 'active' : '' }}">
-                <i class="bi bi-calendar3"></i> {{ __('installer.calendar') }}
+            <a href="{{ route('installer.tech-measures.index') }}" class="{{ request()->routeIs('installer.tech-measures.*') ? 'active' : '' }}">
+                <i class="bi bi-rulers"></i> Tech Measures
             </a>
             <a href="{{ route('installer.invoices.index') }}" class="{{ request()->routeIs('installer.invoices.*') ? 'active' : '' }}">
                 <i class="bi bi-receipt"></i> {{ __('installer.my_invoices') }}

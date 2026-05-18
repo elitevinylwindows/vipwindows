@@ -187,6 +187,10 @@
                 @endif
             </a>
 
+            <a href="{{ route('admin.tech-measures.index') }}" class="{{ request()->routeIs('admin.tech-measures.*') ? 'active' : '' }}">
+                <i class="bi bi-rulers"></i> Tech Measures
+            </a>
+
             <div class="nav-label mt-3">Configuration</div>
             <a href="{{ route('admin.master.hub') }}" class="{{ request()->routeIs('admin.master.*') ? 'active' : '' }}">
                 <i class="bi bi-database-gear"></i> Master Data

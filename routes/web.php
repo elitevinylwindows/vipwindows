@@ -449,6 +449,18 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/messages/{id}', [InstallerMessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{id}/send', [InstallerMessageController::class, 'send'])->name('messages.send');
 
+    // Tech Measures (installer/tech data entry)
+    Route::get('/tech-measures', [InstallerTechMeasureController::class, 'index'])->name('tech-measures.index');
+    Route::get('/tech-measures/{id}', [InstallerTechMeasureController::class, 'show'])->name('tech-measures.show');
+    Route::post('/tech-measures/{id}/start', [InstallerTechMeasureController::class, 'start'])->name('tech-measures.start');
+    Route::post('/tech-measures/{id}/complete', [InstallerTechMeasureController::class, 'complete'])->name('tech-measures.complete');
+    Route::post('/tech-measures/{id}/item', [InstallerTechMeasureController::class, 'addItem'])->name('tech-measures.addItem');
+    Route::put('/tech-measures/{id}/item/{itemId}', [InstallerTechMeasureController::class, 'updateItem'])->name('tech-measures.updateItem');
+    Route::delete('/tech-measures/{id}/item/{itemId}', [InstallerTechMeasureController::class, 'removeItem'])->name('tech-measures.removeItem');
+    Route::post('/tech-measures/{id}/photo', [InstallerTechMeasureController::class, 'uploadPhoto'])->name('tech-measures.uploadPhoto');
+    Route::delete('/tech-measures/{id}/photo/{photoId}', [InstallerTechMeasureController::class, 'deletePhoto'])->name('tech-measures.deletePhoto');
+    Route::post('/tech-measures/{id}/notes', [InstallerTechMeasureController::class, 'updateNotes'])->name('tech-measures.updateNotes');
+
     // Profile
     Route::get('/profile', [InstallerProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [InstallerProfileController::class, 'update'])->name('profile.update');
