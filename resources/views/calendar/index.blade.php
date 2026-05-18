@@ -232,7 +232,6 @@
                         foreach($dayOrderList as $o) { $allItems->push(['type' => 'order', 'label' => Str::limit($o->customer_name, 10), 'color' => ($serviceColors[$o->service_type] ?? '#007bff')]); }
                         foreach($dayEventList as $ev) { $allItems->push(['type' => 'event', 'label' => Str::limit($ev->title, 10), 'color' => $ev->color]); }
                     @endphp
-                    <td></td>{{-- Blade needs something --}}
                     <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}">
                         <span class="cell-date">{{ $current->day }}</span>
                         <div class="cell-items">
