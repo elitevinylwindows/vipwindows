@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\InstallerAvailability;
 use App\Models\InstallerAvailabilityOverride;
 use App\Models\InstallerBooking;
+use App\Models\Crew;
 use App\Models\Job;
 use App\Models\JobItem;
 use App\Models\JobNote;
 use App\Models\Service;
+use App\Models\VipUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -85,8 +87,10 @@ class InstallerJobController extends Controller
         $inProgress = Job::where('assigned_to', Auth::id())->where('status', 'in_progress')->count();
 
         $services = Service::where('is_active', true)->orderBy('name')->get();
+        $crews = Crew::where('status', 'active')->with('members')->orderBy('name')->get();
+        $installers = VipUser::whereIn('role', ['installer', 'technician'])->where('is_active', true)->orderBy('name')->get();
 
-        return view('installer.jobs.index', compact('jobs', 'status', 'todayJobs', 'weekJobs', 'inProgress', 'services'));
+        return view('installer.jobs.index', compact('jobs', 'status', 'todayJobs', 'weekJobs', 'inProgress', 'services', 'crews', 'installers'));
     }
 
     public function store(Request $request)
@@ -101,7 +105,11 @@ class InstallerJobController extends Controller
             'install_zip'      => 'nullable|string|max:20',
             'description'      => 'nullable|string|max:5000',
             'priority'         => 'nullable|in:low,normal,high,urgent',
+            'assignment_type'  => 'nullable|in:crew,installer',
+            'crew_id'          => 'nullable|exists:crews,id',
+            'assigned_to'      => 'nullable|exists:vip_users,id',
             'scheduled_date'   => 'nullable|date',
+            'end_date'         => 'nullable|date|after_or_equal:scheduled_date',
             'scheduled_time'   => 'nullable|string|max:20',
             'estimated_duration' => 'nullable|string|max:50',
             'notes'            => 'nullable|string|max:5000',
@@ -113,12 +121,18 @@ class InstallerJobController extends Controller
         $next = $last ? (intval(substr($last->job_number, strlen($prefix))) + 1) : 1;
         $jobNumber = $prefix . str_pad($next, 4, '0', STR_PAD_LEFT);
 
+        $assignmentType = $validated['assignment_type'] ?? 'crew';
+        $assignedTo = $assignmentType === 'installer' ? ($validated['assigned_to'] ?? Auth::id()) : Auth::id();
+        $crewId = $assignmentType === 'crew' ? ($validated['crew_id'] ?? null) : null;
+
         $job = Job::create(array_merge($validated, [
-            'job_number'  => $jobNumber,
-            'status'      => !empty($validated['scheduled_date']) ? 'scheduled' : 'pending',
-            'priority'    => $validated['priority'] ?? 'normal',
-            'assigned_to' => Auth::id(),
-            'created_by'  => Auth::id(),
+            'job_number'      => $jobNumber,
+            'status'          => !empty($validated['scheduled_date']) ? 'scheduled' : 'pending',
+            'priority'        => $validated['priority'] ?? 'normal',
+            'assignment_type' => $assignmentType,
+            'assigned_to'     => $assignedTo,
+            'crew_id'         => $crewId,
+            'created_by'      => Auth::id(),
         ]));
 
         if ($request->ajax()) {
@@ -295,7 +309,11 @@ class InstallerJobController extends Controller
             'install_zip'      => 'nullable|string|max:20',
             'description'      => 'nullable|string|max:5000',
             'priority'         => 'nullable|in:low,normal,high,urgent',
+            'assignment_type'  => 'nullable|in:crew,installer',
+            'crew_id'          => 'nullable|exists:crews,id',
+            'assigned_to'      => 'nullable|exists:vip_users,id',
             'scheduled_date'   => 'nullable|date',
+            'end_date'         => 'nullable|date|after_or_equal:scheduled_date',
             'scheduled_time'   => 'nullable|string|max:20',
             'estimated_duration' => 'nullable|string|max:50',
             'notes'            => 'nullable|string|max:5000',

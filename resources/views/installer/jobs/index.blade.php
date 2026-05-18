@@ -152,155 +152,224 @@
         </div>
     </div>
 </div>
-{{-- Create Job Modal --}}
+{{-- Create Job Modal (compact) --}}
 <div class="modal fade" id="createJobModal" tabindex="-1" aria-labelledby="createJobModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="background:var(--vip-primary); color:#fff; border:1px solid rgba(255,255,255,.1);">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title" id="createJobModalLabel"><i class="bi bi-tools me-2"></i>{{ __('installer.new_job') }}</h5>
+            <div class="modal-header border-0 py-2">
+                <h6 class="modal-title mb-0" id="createJobModalLabel"><i class="bi bi-tools me-1"></i>New Job</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="createJobForm" method="POST" action="{{ route('installer.jobs.store') }}">
                 @csrf
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small text-white-50">{{ __('installer.customer_name') }} <span class="text-danger">*</span></label>
-                            <input type="text" name="customer_name" class="form-control bg-dark text-white border-secondary" required>
+                <div class="modal-body py-2">
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Customer *</label>
+                            <input type="text" name="customer_name" class="form-control form-control-sm bg-dark text-white border-secondary" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-white-50">{{ __('installer.customer_email') }}</label>
-                            <input type="email" name="customer_email" class="form-control bg-dark text-white border-secondary">
+                        <div class="col-4">
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Email</label>
+                            <input type="email" name="customer_email" class="form-control form-control-sm bg-dark text-white border-secondary">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-white-50">{{ __('installer.customer_phone') }}</label>
-                            <input type="text" name="customer_phone" class="form-control bg-dark text-white border-secondary">
+                        <div class="col-4">
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Phone</label>
+                            <input type="text" name="customer_phone" class="form-control form-control-sm bg-dark text-white border-secondary">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-white-50">{{ __('installer.priority') }}</label>
-                            <select name="priority" class="form-select bg-dark text-white border-secondary">
-                                <option value="normal" selected>{{ __('installer.normal') }}</option>
-                                <option value="low">{{ __('installer.low') }}</option>
-                                <option value="high">{{ __('installer.high') }}</option>
-                                <option value="urgent">{{ __('installer.urgent') }}</option>
+
+                        {{-- Assignment: Crew or Installer toggle --}}
+                        <div class="col-12 mt-2">
+                            <label class="form-label mb-1" style="font-size:.68rem;color:rgba(255,255,255,.4);">Assign To</label>
+                            <div class="d-flex gap-2 mb-1">
+                                <div class="btn-group btn-group-sm w-100" role="group">
+                                    <input type="radio" class="btn-check" name="assignment_type" value="crew" id="createAssignCrew" checked>
+                                    <label class="btn btn-outline-light" for="createAssignCrew"><i class="bi bi-people-fill me-1"></i>Crew</label>
+                                    <input type="radio" class="btn-check" name="assignment_type" value="installer" id="createAssignInstaller">
+                                    <label class="btn btn-outline-light" for="createAssignInstaller"><i class="bi bi-person-badge me-1"></i>Installer</label>
+                                </div>
+                            </div>
+                            <div id="createCrewSelect">
+                                <select name="crew_id" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                    <option value="">Select crew...</option>
+                                    @foreach($crews as $crew)
+                                        <option value="{{ $crew->id }}">{{ $crew->name }} ({{ $crew->members->count() }} members)</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div id="createInstallerSelect" style="display:none;">
+                                <select name="assigned_to" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                    <option value="">Select installer...</option>
+                                    @foreach($installers as $inst)
+                                        <option value="{{ $inst->id }}">{{ $inst->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-1"><hr class="border-secondary my-1"></div>
+                        <div class="col-8">
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Address</label>
+                            <input type="text" name="install_address" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Street">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Priority</label>
+                            <select name="priority" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                <option value="normal" selected>Normal</option>
+                                <option value="low">Low</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
                             </select>
                         </div>
-
-                        <div class="col-12"><hr class="border-secondary my-1"><label class="form-label small text-white-50 mt-1">{{ __('installer.install_address') }}</label></div>
-                        <div class="col-md-12">
-                            <input type="text" name="install_address" class="form-control bg-dark text-white border-secondary" placeholder="Street address">
+                        <div class="col-5">
+                            <input type="text" name="install_city" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="City">
                         </div>
-                        <div class="col-md-5">
-                            <input type="text" name="install_city" class="form-control bg-dark text-white border-secondary" placeholder="City">
+                        <div class="col-4">
+                            <input type="text" name="install_state" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="State">
                         </div>
-                        <div class="col-md-4">
-                            <input type="text" name="install_state" class="form-control bg-dark text-white border-secondary" placeholder="State">
-                        </div>
-                        <div class="col-md-3">
-                            <input type="text" name="install_zip" class="form-control bg-dark text-white border-secondary" placeholder="Zip">
+                        <div class="col-3">
+                            <input type="text" name="install_zip" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Zip">
                         </div>
 
-                        <div class="col-12"><hr class="border-secondary my-1"></div>
-                        <div class="col-md-4">
-                            <label class="form-label small text-white-50">{{ __('installer.scheduled_date') }}</label>
-                            <input type="date" name="scheduled_date" class="form-control bg-dark text-white border-secondary">
+                        <div class="col-12 mt-1"><hr class="border-secondary my-1"></div>
+                        <div class="col-3">
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Start Date</label>
+                            <input type="date" name="scheduled_date" class="form-control form-control-sm bg-dark text-white border-secondary">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small text-white-50">{{ __('installer.scheduled_time') }}</label>
-                            <input type="time" name="scheduled_time" class="form-control bg-dark text-white border-secondary">
+                        <div class="col-3">
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">End Date</label>
+                            <input type="date" name="end_date" class="form-control form-control-sm bg-dark text-white border-secondary">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small text-white-50">{{ __('installer.estimated_duration') }}</label>
-                            <input type="text" name="estimated_duration" class="form-control bg-dark text-white border-secondary" placeholder="e.g. 2 hours">
+                        <div class="col-3">
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Time</label>
+                            <input type="time" name="scheduled_time" class="form-control form-control-sm bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Est. Duration</label>
+                            <input type="text" name="estimated_duration" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="e.g. 2 days">
                         </div>
                         <div class="col-12">
-                            <label class="form-label small text-white-50">{{ __('installer.description') }}</label>
-                            <textarea name="description" rows="3" class="form-control bg-dark text-white border-secondary" placeholder="Job details..."></textarea>
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Description</label>
+                            <textarea name="description" rows="2" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Job details..."></textarea>
                         </div>
                         <div class="col-12">
-                            <label class="form-label small text-white-50">{{ __('installer.notes') }}</label>
-                            <textarea name="notes" rows="2" class="form-control bg-dark text-white border-secondary" placeholder="Internal notes..."></textarea>
+                            <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Notes</label>
+                            <textarea name="notes" rows="1" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Internal notes..."></textarea>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">{{ __('installer.cancel') }}</button>
-                    <button type="submit" class="btn btn-vip btn-sm"><i class="bi bi-check-lg me-1"></i>{{ __('installer.create_job') }}</button>
+                <div class="modal-footer border-0 py-2">
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-vip btn-sm"><i class="bi bi-check-lg me-1"></i>Create Job</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-{{-- Edit Job Modal --}}
+{{-- Edit Job Modal (compact) --}}
 <div class="modal fade" id="editJobModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="background:var(--vip-primary); color:#fff; border:1px solid rgba(255,255,255,.1);">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>{{ __('installer.edit_job') }}</h5>
+            <div class="modal-header border-0 py-2">
+                <h6 class="modal-title mb-0"><i class="bi bi-pencil me-1"></i>Edit Job</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label small text-white-50">{{ __('installer.customer_name') }} <span class="text-danger">*</span></label>
-                        <input type="text" name="customer_name" class="form-control bg-dark text-white border-secondary" required>
+            <div class="modal-body py-2">
+                <div class="row g-2">
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Customer *</label>
+                        <input type="text" name="customer_name" class="form-control form-control-sm bg-dark text-white border-secondary" required>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small text-white-50">{{ __('installer.customer_email') }}</label>
-                        <input type="email" name="customer_email" class="form-control bg-dark text-white border-secondary">
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Email</label>
+                        <input type="email" name="customer_email" class="form-control form-control-sm bg-dark text-white border-secondary">
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small text-white-50">{{ __('installer.customer_phone') }}</label>
-                        <input type="text" name="customer_phone" class="form-control bg-dark text-white border-secondary">
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Phone</label>
+                        <input type="text" name="customer_phone" class="form-control form-control-sm bg-dark text-white border-secondary">
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small text-white-50">{{ __('installer.priority') }}</label>
-                        <select name="priority" class="form-select bg-dark text-white border-secondary">
-                            <option value="normal">{{ __('installer.normal') }}</option>
-                            <option value="low">{{ __('installer.low') }}</option>
-                            <option value="high">{{ __('installer.high') }}</option>
-                            <option value="urgent">{{ __('installer.urgent') }}</option>
+
+                    {{-- Assignment toggle --}}
+                    <div class="col-12 mt-2">
+                        <label class="form-label mb-1" style="font-size:.68rem;color:rgba(255,255,255,.4);">Assign To</label>
+                        <div class="d-flex gap-2 mb-1">
+                            <div class="btn-group btn-group-sm w-100" role="group">
+                                <input type="radio" class="btn-check" name="assignment_type" value="crew" id="editAssignCrew" checked>
+                                <label class="btn btn-outline-light" for="editAssignCrew"><i class="bi bi-people-fill me-1"></i>Crew</label>
+                                <input type="radio" class="btn-check" name="assignment_type" value="installer" id="editAssignInstaller">
+                                <label class="btn btn-outline-light" for="editAssignInstaller"><i class="bi bi-person-badge me-1"></i>Installer</label>
+                            </div>
+                        </div>
+                        <div id="editCrewSelect">
+                            <select name="crew_id" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                <option value="">Select crew...</option>
+                                @foreach($crews as $crew)
+                                    <option value="{{ $crew->id }}">{{ $crew->name }} ({{ $crew->members->count() }} members)</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div id="editInstallerSelect" style="display:none;">
+                            <select name="assigned_to" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                <option value="">Select installer...</option>
+                                @foreach($installers as $inst)
+                                    <option value="{{ $inst->id }}">{{ $inst->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-1"><hr class="border-secondary my-1"></div>
+                    <div class="col-8">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Address</label>
+                        <input type="text" name="install_address" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Priority</label>
+                        <select name="priority" class="form-select form-select-sm bg-dark text-white border-secondary">
+                            <option value="normal">Normal</option>
+                            <option value="low">Low</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
                         </select>
                     </div>
-                    <div class="col-12"><hr class="border-secondary my-1"><label class="form-label small text-white-50 mt-1">{{ __('installer.install_address') }}</label></div>
-                    <div class="col-md-12">
-                        <input type="text" name="install_address" class="form-control bg-dark text-white border-secondary" placeholder="Street address">
+                    <div class="col-5">
+                        <input type="text" name="install_city" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="City">
                     </div>
-                    <div class="col-md-5">
-                        <input type="text" name="install_city" class="form-control bg-dark text-white border-secondary" placeholder="City">
+                    <div class="col-4">
+                        <input type="text" name="install_state" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="State">
                     </div>
-                    <div class="col-md-4">
-                        <input type="text" name="install_state" class="form-control bg-dark text-white border-secondary" placeholder="State">
+                    <div class="col-3">
+                        <input type="text" name="install_zip" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Zip">
                     </div>
-                    <div class="col-md-3">
-                        <input type="text" name="install_zip" class="form-control bg-dark text-white border-secondary" placeholder="Zip">
+                    <div class="col-12 mt-1"><hr class="border-secondary my-1"></div>
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Start Date</label>
+                        <input type="date" name="scheduled_date" class="form-control form-control-sm bg-dark text-white border-secondary">
                     </div>
-                    <div class="col-12"><hr class="border-secondary my-1"></div>
-                    <div class="col-md-4">
-                        <label class="form-label small text-white-50">{{ __('installer.scheduled_date') }}</label>
-                        <input type="date" name="scheduled_date" class="form-control bg-dark text-white border-secondary">
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">End Date</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm bg-dark text-white border-secondary">
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label small text-white-50">{{ __('installer.scheduled_time') }}</label>
-                        <input type="time" name="scheduled_time" class="form-control bg-dark text-white border-secondary">
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Time</label>
+                        <input type="time" name="scheduled_time" class="form-control form-control-sm bg-dark text-white border-secondary">
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label small text-white-50">{{ __('installer.estimated_duration') }}</label>
-                        <input type="text" name="estimated_duration" class="form-control bg-dark text-white border-secondary" placeholder="e.g. 2 hours">
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label small text-white-50">{{ __('installer.description') }}</label>
-                        <textarea name="description" rows="3" class="form-control bg-dark text-white border-secondary"></textarea>
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Est. Duration</label>
+                        <input type="text" name="estimated_duration" class="form-control form-control-sm bg-dark text-white border-secondary">
                     </div>
                     <div class="col-12">
-                        <label class="form-label small text-white-50">{{ __('installer.notes') }}</label>
-                        <textarea name="notes" rows="2" class="form-control bg-dark text-white border-secondary"></textarea>
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Description</label>
+                        <textarea name="description" rows="2" class="form-control form-control-sm bg-dark text-white border-secondary"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Notes</label>
+                        <textarea name="notes" rows="1" class="form-control form-control-sm bg-dark text-white border-secondary"></textarea>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">{{ __('installer.cancel') }}</button>
-                <button type="button" class="btn btn-vip btn-sm" onclick="saveEditJob()"><i class="bi bi-check-lg me-1"></i>{{ __('installer.save_changes') }}</button>
+            <div class="modal-footer border-0 py-2">
+                <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="saveEditJob()"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
             </div>
         </div>
     </div>
@@ -309,6 +378,9 @@
 
 @push('scripts')
 <script>
+// Services data for item service dropdown
+const servicesData = @json($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'installer_pay' => $s->installer_pay, 'installer_pay_type' => $s->installer_pay_type, 'base_price' => $s->base_price]));
+
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.iq-card');
     const detailBody = document.getElementById('iqDetailBody');
@@ -317,6 +389,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrf = document.querySelector('meta[name=csrf-token]').content;
     let currentJobId = null;
     let currentJobData = null;
+
+    // Assignment type toggle for create modal
+    document.querySelectorAll('#createJobModal input[name="assignment_type"]').forEach(r => {
+        r.addEventListener('change', function() {
+            document.getElementById('createCrewSelect').style.display = this.value === 'crew' ? '' : 'none';
+            document.getElementById('createInstallerSelect').style.display = this.value === 'installer' ? '' : 'none';
+        });
+    });
+    // Assignment type toggle for edit modal
+    document.querySelectorAll('#editJobModal input[name="assignment_type"]').forEach(r => {
+        r.addEventListener('change', function() {
+            document.getElementById('editCrewSelect').style.display = this.value === 'crew' ? '' : 'none';
+            document.getElementById('editInstallerSelect').style.display = this.value === 'installer' ? '' : 'none';
+        });
+    });
 
     // Tab filters
     document.querySelectorAll('.iq-rail-tabs .tab-btn').forEach(btn => {
@@ -355,9 +442,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const j = data.job;
                 const notes = data.notes || [];
                 const items = data.items || [];
+                const totalPay = parseFloat(data.total_pay || 0);
                 detailTitle.textContent = j.job_number || ('JOB-' + j.id);
 
-                // Toolbar actions
                 currentJobId = j.id;
                 currentJobData = j;
                 let actions = '';
@@ -370,12 +457,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 actions += `<button class="btn btn-sm btn-outline-danger" onclick="deleteJob(${j.id}, '${j.job_number || 'JOB-' + j.id}')" title="Delete"><i class="bi bi-trash"></i></button>`;
                 toolbarActions.innerHTML = actions;
 
+                // Date display
+                let dateDisplay = j.scheduled_date || 'Not set';
+                if (j.end_date && j.end_date !== j.scheduled_date) {
+                    dateDisplay = (j.scheduled_date || '?') + ' → ' + j.end_date;
+                }
+                if (j.scheduled_time) dateDisplay += ' @ ' + j.scheduled_time;
+
                 // Notes HTML
-                let notesHtml = '';
-                if (notes.length) {
-                    notesHtml = notes.map(n => `<div class="note-card"><div class="d-flex justify-content-between"><strong class="small">${n.author || 'System'}</strong><span class="text-muted small">${n.created_at || ''}</span></div><p class="mb-0 small mt-1">${n.note}</p></div>`).join('');
+                let notesHtml = notes.length
+                    ? notes.map(n => `<div class="note-card"><div class="d-flex justify-content-between"><strong class="small">${n.author || 'System'}</strong><span class="text-muted small">${n.created_at || ''}</span></div><p class="mb-0 small mt-1">${n.note}</p></div>`).join('')
+                    : '<p class="text-muted small">No notes yet.</p>';
+
+                // Service dropdown options
+                let svcOptions = '<option value="">— No service —</option>' + servicesData.map(s => `<option value="${s.id}">${s.name} ($${parseFloat(s.installer_pay).toFixed(2)}/${s.installer_pay_type?.replace(/_/g,' ') || 'unit'})</option>`).join('');
+
+                // Items table with pay columns
+                let itemsHtml = '';
+                if (items.length) {
+                    itemsHtml = `<table class="job-items-tbl mb-2">
+                        <thead><tr><th style="width:28px;"></th><th>Item</th><th>Service</th><th class="text-center">Qty</th><th class="text-end">Unit Pay</th><th class="text-end">Total Pay</th><th style="width:32px;"></th></tr></thead>
+                        <tbody>${items.map(i => `<tr class="${i.completed ? 'item-done' : ''}">
+                            <td class="text-center"><input type="checkbox" class="item-check" ${i.completed ? 'checked' : ''} onchange="toggleJobItem(${j.id}, ${i.id})"></td>
+                            <td>${i.description}${i.notes ? '<br><small class="text-muted">' + i.notes + '</small>' : ''}</td>
+                            <td><span class="badge bg-light text-dark" style="font-size:.6rem;">${i.service_name || i.item_type || '—'}</span></td>
+                            <td class="text-center">${parseFloat(i.qty)}</td>
+                            <td class="text-end text-muted">$${parseFloat(i.unit_pay || 0).toFixed(2)}</td>
+                            <td class="text-end fw-semibold text-success">$${parseFloat(i.total_pay || 0).toFixed(2)}</td>
+                            <td class="text-center"><button class="btn btn-sm text-danger p-0" onclick="removeJobItem(${j.id}, ${i.id})" title="Remove"><i class="bi bi-x-lg" style="font-size:.65rem;"></i></button></td>
+                        </tr>`).join('')}
+                        <tr style="background:#f0fdf4;"><td colspan="5" class="text-end fw-bold small" style="padding-right:8px;">TOTAL PAY</td><td class="text-end fw-bold text-success">$${totalPay.toFixed(2)}</td><td></td></tr>
+                        </tbody>
+                    </table>`;
                 } else {
-                    notesHtml = '<p class="text-muted small">No notes yet.</p>';
+                    itemsHtml = '<p class="text-muted small">No items added yet.</p>';
                 }
 
                 detailBody.innerHTML = `
@@ -383,9 +498,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="iq-info-card"><div class="label">Customer</div><div class="value">${j.customer_name || '—'}</div></div>
                         <div class="iq-info-card"><div class="label">Phone</div><div class="value">${j.customer_phone || '—'}</div></div>
                         <div class="iq-info-card"><div class="label">Status</div><div class="value"><span class="badge badge-${j.status}">${j.status ? j.status.replace('_',' ').replace(/^./,c=>c.toUpperCase()) : '—'}</span></div></div>
-                        <div class="iq-info-card"><div class="label">Scheduled</div><div class="value">${j.scheduled_date || 'Not set'}${j.scheduled_time ? ' @ ' + j.scheduled_time : ''}</div></div>
+                        <div class="iq-info-card"><div class="label">Schedule</div><div class="value">${dateDisplay}</div></div>
                         <div class="iq-info-card"><div class="label">Priority</div><div class="value">${j.priority ? j.priority.charAt(0).toUpperCase() + j.priority.slice(1) : 'Normal'}</div></div>
-                        <div class="iq-info-card"><div class="label">Email</div><div class="value">${j.customer_email || '—'}</div></div>
+                        <div class="iq-info-card" style="background:linear-gradient(135deg,#198754,#157347);color:#fff;"><div class="label" style="color:rgba(255,255,255,.6);">My Pay</div><div class="value" style="color:#fff;font-size:1.1rem;">$${totalPay.toFixed(2)}</div></div>
                     </div>
 
                     ${j.install_address ? `
@@ -396,25 +511,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>` : ''}
 
-                    ${j.description ? `<div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);"><div class="card-body py-2 px-3"><div class="small text-muted text-uppercase mb-1" style="letter-spacing:.5px;">Description</div><p class="mb-0">${j.description}</p></div></div>` : ''}
+                    ${j.description ? `<div class="card mb-3" style="border:none;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div class="card-body py-2 px-3"><div class="small text-muted text-uppercase mb-1" style="letter-spacing:.5px;">Description</div><p class="mb-0 small">${j.description}</p></div></div>` : ''}
 
-                    <h6 class="mb-2 mt-3" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5);"><i class="bi bi-list-check me-1"></i>Installation Items</h6>
-                    ${items.length ? `<table class="job-items-tbl mb-2">
-                        <thead><tr><th style="width:30px;"></th><th>Item</th><th>Type</th><th class="text-center">Qty</th><th style="width:40px;"></th></tr></thead>
-                        <tbody>${items.map(i => `<tr class="${i.completed ? 'item-done' : ''}">
-                            <td class="text-center"><input type="checkbox" class="item-check" ${i.completed ? 'checked' : ''} onchange="toggleJobItem(${j.id}, ${i.id})"></td>
-                            <td>${i.description}${i.notes ? '<br><small class="text-muted">' + i.notes + '</small>' : ''}</td>
-                            <td><span class="badge bg-light text-dark" style="font-size:.65rem;">${i.item_type || 'other'}</span></td>
-                            <td class="text-center">${parseFloat(i.qty)}</td>
-                            <td class="text-center"><button class="btn btn-sm text-danger p-0" onclick="removeJobItem(${j.id}, ${i.id})" title="Remove"><i class="bi bi-x-lg" style="font-size:.7rem;"></i></button></td>
-                        </tr>`).join('')}</tbody>
-                    </table>` : '<p class="text-muted small">No items added yet.</p>'}
+                    <h6 class="mb-2 mt-3" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:rgba(0,0,0,.5);"><i class="bi bi-list-check me-1"></i>Line Items & Pay</h6>
+                    ${itemsHtml}
 
                     <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
                         <div class="card-body py-2 px-3">
                             <div class="row g-2 align-items-end">
-                                <div class="col-md-4"><input type="text" id="addJobItemDesc" class="form-control form-control-sm" placeholder="Description (e.g. Double Hung 36x48)"></div>
+                                <div class="col-md-3">
+                                    <label style="font-size:.65rem;color:#999;">Service</label>
+                                    <select id="addJobItemService" class="form-select form-select-sm" onchange="onServiceSelect()">${svcOptions}</select>
+                                </div>
+                                <div class="col-md-3"><label style="font-size:.65rem;color:#999;">Description</label><input type="text" id="addJobItemDesc" class="form-control form-control-sm" placeholder="e.g. Double Hung 36x48"></div>
                                 <div class="col-md-2">
+                                    <label style="font-size:.65rem;color:#999;">Type</label>
                                     <select id="addJobItemType" class="form-select form-select-sm">
                                         <option value="window">Window</option>
                                         <option value="door">Door</option>
@@ -422,19 +533,17 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <option value="other">Other</option>
                                     </select>
                                 </div>
-                                <div class="col-md-2"><input type="number" id="addJobItemQty" class="form-control form-control-sm" placeholder="Qty" value="1" min="1" step="1"></div>
-                                <div class="col-md-3"><input type="text" id="addJobItemNotes" class="form-control form-control-sm" placeholder="Notes (optional)"></div>
-                                <div class="col-md-1"><button class="btn btn-sm btn-vip w-100" onclick="addJobItem(${j.id})"><i class="bi bi-plus"></i></button></div>
+                                <div class="col-md-2"><label style="font-size:.65rem;color:#999;">Qty</label><input type="number" id="addJobItemQty" class="form-control form-control-sm" value="1" min="1" step="1"></div>
+                                <div class="col-md-2"><button class="btn btn-sm btn-vip w-100" onclick="addJobItem(${j.id})"><i class="bi bi-plus me-1"></i>Add</button></div>
                             </div>
                         </div>
                     </div>
 
-                    <h6 class="mb-2 mt-4" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5);"><i class="bi bi-chat-left-text me-1"></i>Notes</h6>
+                    <h6 class="mb-2 mt-3" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:rgba(0,0,0,.5);"><i class="bi bi-chat-left-text me-1"></i>Notes</h6>
                     ${notesHtml}
-
-                    <form method="POST" action="/installer/jobs/${j.id}/note" class="mt-3">
+                    <form method="POST" action="/installer/jobs/${j.id}/note" class="mt-2">
                         <input type="hidden" name="_token" value="${csrf}">
-                        <div class="input-group">
+                        <div class="input-group input-group-sm">
                             <input type="text" name="note" class="form-control" placeholder="Add a note..." required>
                             <button class="btn btn-vip" type="submit"><i class="bi bi-plus"></i></button>
                         </div>
@@ -446,19 +555,29 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
+    // When a service is selected, auto-fill description
+    window.onServiceSelect = function() {
+        const sel = document.getElementById('addJobItemService');
+        const svc = servicesData.find(s => s.id == sel.value);
+        if (svc) {
+            const descEl = document.getElementById('addJobItemDesc');
+            if (!descEl.value) descEl.value = svc.name;
+        }
+    };
+
     // Job items management
     window.addJobItem = function(jobId) {
         const desc = document.getElementById('addJobItemDesc')?.value?.trim();
         const itemType = document.getElementById('addJobItemType')?.value;
         const qty = parseFloat(document.getElementById('addJobItemQty')?.value || 1);
-        const notes = document.getElementById('addJobItemNotes')?.value?.trim();
+        const serviceId = document.getElementById('addJobItemService')?.value || null;
 
         if (!desc) { alert('Please enter an item description.'); return; }
 
         fetch(`/installer/jobs/${jobId}/item`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-            body: JSON.stringify({ description: desc, item_type: itemType, qty: qty, notes: notes || null })
+            body: JSON.stringify({ description: desc, item_type: itemType, qty: qty, service_id: serviceId || null, notes: null })
         })
         .then(r => r.json())
         .then(data => {
@@ -503,10 +622,20 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.querySelector('[name="install_zip"]').value = j.install_zip || '';
         modal.querySelector('[name="priority"]').value = j.priority || 'normal';
         modal.querySelector('[name="scheduled_date"]').value = j.scheduled_date ? j.scheduled_date.substring(0,10) : '';
+        modal.querySelector('[name="end_date"]').value = j.end_date ? j.end_date.substring(0,10) : '';
         modal.querySelector('[name="scheduled_time"]').value = j.scheduled_time || '';
         modal.querySelector('[name="estimated_duration"]').value = j.estimated_duration || '';
         modal.querySelector('[name="description"]').value = j.description || '';
         modal.querySelector('[name="notes"]').value = j.notes || '';
+
+        // Set assignment type
+        const aType = j.assignment_type || 'crew';
+        modal.querySelector(`input[name="assignment_type"][value="${aType}"]`).checked = true;
+        document.getElementById('editCrewSelect').style.display = aType === 'crew' ? '' : 'none';
+        document.getElementById('editInstallerSelect').style.display = aType === 'installer' ? '' : 'none';
+        if (j.crew_id) modal.querySelector('#editCrewSelect select').value = j.crew_id;
+        if (j.assigned_to) modal.querySelector('#editInstallerSelect select').value = j.assigned_to;
+
         new bootstrap.Modal(modal).show();
     };
 
@@ -514,9 +643,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!currentJobId) return;
         const modal = document.getElementById('editJobModal');
         const formData = {};
-        modal.querySelectorAll('input[name], select[name], textarea[name]').forEach(el => {
+        modal.querySelectorAll('input[name]:not([type="radio"]), select[name], textarea[name]').forEach(el => {
             formData[el.name] = el.value;
         });
+        // Get checked radio
+        const checkedRadio = modal.querySelector('input[name="assignment_type"]:checked');
+        if (checkedRadio) formData.assignment_type = checkedRadio.value;
 
         fetch(`/installer/jobs/${currentJobId}`, {
             method: 'PUT',
@@ -528,14 +660,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 bootstrap.Modal.getInstance(modal).hide();
                 loadDetail(currentJobId);
-                // Update left rail card text
                 const card = document.querySelector(`.iq-card[data-id="${currentJobId}"]`);
-                if (card) {
-                    card.querySelector('.q-customer').innerHTML = '<i class="bi bi-person me-1"></i>' + (formData.customer_name || 'No customer');
-                }
-            } else {
-                alert('Failed to update job.');
-            }
+                if (card) card.querySelector('.q-customer').innerHTML = '<i class="bi bi-person me-1"></i>' + (formData.customer_name || 'No customer');
+            } else alert('Failed to update job.');
         })
         .catch(() => alert('Failed to update job.'));
     };
@@ -555,9 +682,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 detailBody.innerHTML = '<div class="iq-empty-state"><i class="bi bi-tools"></i><p>Job deleted. Select another job.</p></div>';
                 toolbarActions.innerHTML = '';
                 detailTitle.textContent = 'Job Details';
-            } else {
-                alert('Failed to delete job.');
-            }
+            } else alert('Failed to delete job.');
         })
         .catch(() => alert('Failed to delete job.'));
     };

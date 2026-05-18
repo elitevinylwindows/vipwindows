@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('vip_users', function (Blueprint $table) {
-            $table->decimal('price_markup_pct', 5, 2)->default(0)->after('logo_path')
+            $table->decimal('price_markup_pct', 5, 2)->default(0)
                   ->comment('Installer markup percentage added on top of admin price');
-            $table->decimal('price_markup_flat', 10, 2)->default(0)->after('price_markup_pct')
+            $table->decimal('price_markup_flat', 10, 2)->default(0)
                   ->comment('Flat dollar amount added per item on top of admin price');
         });
     }

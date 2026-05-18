@@ -15,12 +15,14 @@ class Job extends Model
         'job_number', 'quote_id', 'invoice_id', 'customer_name', 'customer_email',
         'customer_phone', 'install_address', 'install_city', 'install_state',
         'install_zip', 'description', 'status', 'priority', 'assigned_to',
-        'scheduled_date', 'scheduled_time', 'estimated_duration', 'actual_start',
+        'assignment_type', 'crew_id', 'scheduled_date', 'end_date',
+        'scheduled_time', 'estimated_duration', 'actual_start',
         'actual_end', 'notes', 'completion_notes', 'created_by',
     ];
 
     protected $casts = [
         'scheduled_date' => 'date',
+        'end_date' => 'date',
         'actual_start' => 'datetime',
         'actual_end' => 'datetime',
     ];
@@ -28,6 +30,11 @@ class Job extends Model
     public function assignee()
     {
         return $this->belongsTo(VipUser::class, 'assigned_to');
+    }
+
+    public function crew()
+    {
+        return $this->belongsTo(Crew::class);
     }
 
     public function creator()
