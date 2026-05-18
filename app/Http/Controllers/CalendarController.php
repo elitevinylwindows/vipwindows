@@ -131,6 +131,7 @@ class CalendarController extends Controller
         // Send email notification to client if email provided
         if ($customerEmail && filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
             try {
+                $svcName = !empty($validated['service_id']) ? Service::find($validated['service_id'])?->name : null;
                 Mail::to($customerEmail)->send(new ScheduleNotification([
                     'title'         => $validated['title'],
                     'event_date'    => $validated['event_date'],
@@ -139,6 +140,7 @@ class CalendarController extends Controller
                     'address'       => $validated['address'] ?? null,
                     'description'   => $validated['description'] ?? null,
                     'customer_name' => $customerName,
+                    'service_name'  => $svcName,
                     'type'          => 'event',
                 ]));
             } catch (\Exception $e) {
@@ -214,6 +216,7 @@ class CalendarController extends Controller
                 'address'       => $event->address,
                 'description'   => $event->description,
                 'customer_name' => $event->customer_name ?? 'Customer',
+                'service_name'  => $event->service?->name,
                 'type'          => 'event',
             ]));
 

@@ -33,8 +33,15 @@
                             <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f6; border:1px solid #eee; border-radius:8px; overflow:hidden;">
                                 <tr>
                                     <td style="padding:20px 25px;">
-                                        {{-- Event Title --}}
+                                        {{-- Service badge + Event Title --}}
                                         <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:15px;">
+                                            @if($serviceName)
+                                            <tr>
+                                                <td style="padding-bottom:8px;">
+                                                    <span style="display:inline-block; background:#c9a84c; color:#fff; font-size:11px; font-weight:600; padding:3px 10px; border-radius:4px; text-transform:uppercase; letter-spacing:0.5px;">{{ $serviceName }}</span>
+                                                </td>
+                                            </tr>
+                                            @endif
                                             <tr>
                                                 <td style="font-size:18px; font-weight:700; color:#111;">{{ $eventTitle }}</td>
                                             </tr>
