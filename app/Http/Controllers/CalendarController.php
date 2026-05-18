@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CalendarSlot;
 use App\Models\InstallationOrder;
+use App\Models\Job;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,11 +37,22 @@ class CalendarController extends Controller
         // Build service color map for calendar
         try {
             $serviceColors = Service::pluck('color', 'name')->toArray();
+            $serviceColorById = Service::pluck('color', 'id')->toArray();
         } catch (\Exception $e) {
             $serviceColors = [];
+            $serviceColorById = [];
         }
 
-        return view('calendar.index', compact('slots', 'scheduledOrders', 'month', 'startOfMonth', 'endOfMonth', 'serviceColors'));
+        // Scheduled Jobs for the calendar
+        $scheduledJobs = Job::with('service')
+            ->whereNotNull('scheduled_date')
+            ->whereBetween('scheduled_date', [$startOfMonth, $endOfMonth])
+            ->whereIn('status', ['scheduled', 'in_progress', 'pending'])
+            ->orderBy('scheduled_date')
+            ->get()
+            ->groupBy(fn($j) => $j->scheduled_date->format('Y-m-d'));
+
+        return view('calendar.index', compact('slots', 'scheduledOrders', 'scheduledJobs', 'month', 'startOfMonth', 'endOfMonth', 'serviceColors', 'serviceColorById'));
     }
 
     /**

@@ -12,10 +12,10 @@ class Job extends Model
     protected $table = 'vip_jobs';
 
     protected $fillable = [
-        'job_number', 'quote_id', 'invoice_id', 'customer_name', 'customer_email',
-        'customer_phone', 'install_address', 'install_city', 'install_state',
-        'install_zip', 'description', 'status', 'priority', 'assigned_to',
-        'assignment_type', 'crew_id', 'scheduled_date', 'end_date',
+        'job_number', 'quote_id', 'invoice_id', 'service_id', 'customer_name',
+        'customer_email', 'customer_phone', 'install_address', 'install_city',
+        'install_state', 'install_zip', 'description', 'status', 'priority',
+        'assigned_to', 'assignment_type', 'crew_id', 'scheduled_date', 'end_date',
         'scheduled_time', 'estimated_duration', 'actual_start',
         'actual_end', 'notes', 'completion_notes', 'created_by',
     ];
@@ -35,6 +35,11 @@ class Job extends Model
     public function crew()
     {
         return $this->belongsTo(Crew::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
     }
 
     public function creator()

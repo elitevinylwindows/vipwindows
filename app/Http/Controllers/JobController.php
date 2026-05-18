@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Crew;
 use App\Models\Invoice;
 use App\Models\Job;
+use App\Models\JobItem;
 use App\Models\JobNote;
 use App\Models\Service;
 use App\Models\VipQuote as Quote;
@@ -18,7 +19,7 @@ class JobController extends Controller
     {
         $status = $request->get('status', 'all');
 
-        $query = Job::with(['assignee', 'creator'])
+        $query = Job::with(['assignee', 'creator', 'service'])
             ->orderByDesc('created_at');
 
         if ($status !== 'all') {
@@ -71,6 +72,10 @@ class JobController extends Controller
             'notes' => 'nullable|string',
             'from_quote' => 'nullable|exists:vip_quotes,id',
             'from_invoice' => 'nullable|exists:vip_invoices,id',
+            'service_id' => 'nullable|exists:vip_services,id',
+            'items' => 'nullable|array',
+            'items.*.service_id' => 'nullable|exists:vip_services,id',
+            'items.*.qty' => 'nullable|integer|min:1',
         ]);
 
         // Generate job number
@@ -91,6 +96,7 @@ class JobController extends Controller
             'job_number' => $jobNumber,
             'quote_id' => $validated['from_quote'] ?? null,
             'invoice_id' => $validated['from_invoice'] ?? null,
+            'service_id' => $validated['service_id'] ?? null,
             'customer_name' => $validated['customer_name'],
             'customer_email' => $validated['customer_email'] ?? null,
             'customer_phone' => $validated['customer_phone'] ?? null,
@@ -112,19 +118,62 @@ class JobController extends Controller
             'created_by' => Auth::id(),
         ]);
 
+        // Create service line items
+        $items = $validated['items'] ?? [];
+        $sortOrder = 0;
+        $primaryServiceId = null;
+        foreach ($items as $item) {
+            if (empty($item['service_id']) || empty($item['qty'])) continue;
+
+            $service = Service::find($item['service_id']);
+            if (!$service) continue;
+
+            if (!$primaryServiceId) $primaryServiceId = $service->id;
+
+            // Calculate installer pay
+            $unitPay = 0;
+            switch ($service->installer_pay_type) {
+                case 'percentage':
+                    $unitPay = $service->base_price * ($service->installer_pay / 100);
+                    break;
+                case 'per_job':
+                    $unitPay = $service->installer_pay;
+                    break;
+                default: // per_unit, per_hour
+                    $unitPay = $service->installer_pay ?? 0;
+            }
+
+            JobItem::create([
+                'job_id' => $job->id,
+                'service_id' => $service->id,
+                'description' => $service->name,
+                'item_type' => 'service',
+                'qty' => $item['qty'],
+                'unit_pay' => $unitPay,
+                'total_pay' => $unitPay * $item['qty'],
+                'sort_order' => $sortOrder++,
+            ]);
+        }
+
+        // Set primary service on job for calendar color
+        if ($primaryServiceId) {
+            $job->update(['service_id' => $primaryServiceId]);
+        }
+
         return redirect()->route('admin.jobs.index')
             ->with('success', "Job {$jobNumber} created successfully.");
     }
 
     public function show($id)
     {
-        $job = Job::with(['assignee', 'creator', 'quote', 'invoice', 'jobNotes.author'])->findOrFail($id);
+        $job = Job::with(['assignee', 'creator', 'quote', 'invoice', 'service', 'jobItems.service', 'jobNotes.author'])->findOrFail($id);
 
         return response()->json([
             'job' => $job,
             'assignee' => $job->assignee,
             'creator' => $job->creator,
             'notes' => $job->jobNotes,
+            'items' => $job->jobItems,
         ]);
     }
 
@@ -142,6 +191,7 @@ class JobController extends Controller
             'install_zip' => 'nullable|string|max:20',
             'description' => 'nullable|string',
             'priority' => 'nullable|in:low,normal,high,urgent',
+            'service_id' => 'nullable|exists:vip_services,id',
             'scheduled_date' => 'nullable|date',
             'scheduled_time' => 'nullable|string|max:20',
             'estimated_duration' => 'nullable|string|max:50',

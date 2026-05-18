@@ -71,7 +71,7 @@
                             <tr>
                                 <th>Job #</th>
                                 <th>Customer</th>
-                                <th>Address</th>
+                                <th>Service</th>
                                 <th>Assigned To</th>
                                 <th>Date</th>
                                 <th>Priority</th>
@@ -85,11 +85,13 @@
                                     <td class="fw-semibold">{{ $job->job_number }}</td>
                                     <td>{{ $job->customer_name }}</td>
                                     <td class="small">
-                                        @if($job->install_address)
-                                            {{ $job->install_address }}<br>
-                                            <span class="text-muted">{{ $job->install_city }}{{ $job->install_state ? ', '.$job->install_state : '' }} {{ $job->install_zip }}</span>
+                                        @if($job->service)
+                                            <span class="d-inline-flex align-items-center gap-1">
+                                                <span style="width:8px;height:8px;border-radius:50%;background:{{ $job->service->color ?? '#6c757d' }};flex-shrink:0;"></span>
+                                                {{ $job->service->name }}
+                                            </span>
                                         @else
-                                            —
+                                            <span class="text-muted">—</span>
                                         @endif
                                     </td>
                                     <td>{{ $job->assignee?->name ?? '—' }}</td>
@@ -370,6 +372,16 @@
                             </select>
                         </div>
                     </div>
+                    {{-- Service Line Items --}}
+                    <div class="mt-2">
+                        <label class="form-label mb-1 small text-muted fw-bold">SERVICE LINE ITEMS</label>
+                        <div id="jobServiceLines">
+                            {{-- Dynamic rows added by JS --}}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="addServiceLine()">
+                            <i class="bi bi-plus me-1"></i> Add Service
+                        </button>
+                    </div>
                     <hr class="my-2">
                     <div class="row g-2">
                         <div class="col-4">
@@ -487,6 +499,81 @@
 <script>
 const csrfToken = '{{ csrf_token() }}';
 let currentViewJobId = null;
+let serviceLineIdx = 0;
+
+// Services data for dynamic line items
+const servicesData = @json($services->map(fn($s) => [
+    'id' => $s->id,
+    'name' => $s->name,
+    'base_price' => $s->base_price,
+    'installer_pay' => $s->installer_pay ?? 0,
+    'installer_pay_type' => $s->installer_pay_type ?? 'per_unit',
+    'unit' => $s->unit,
+    'color' => $s->color ?? '#0d6efd',
+]));
+
+function addServiceLine(svcId = '', qty = 1) {
+    const idx = serviceLineIdx++;
+    const container = document.getElementById('jobServiceLines');
+    const row = document.createElement('div');
+    row.className = 'row g-1 align-items-center mb-1';
+    row.id = 'svcLine' + idx;
+
+    let options = '<option value="">— Select —</option>';
+    servicesData.forEach(s => {
+        const sel = s.id == svcId ? 'selected' : '';
+        options += `<option value="${s.id}" ${sel}>${s.name} — $${parseFloat(s.base_price).toFixed(2)}</option>`;
+    });
+
+    row.innerHTML = `
+        <div class="col-6">
+            <select name="items[${idx}][service_id]" class="form-select form-select-sm" onchange="updateLineTotal(${idx})">
+                ${options}
+            </select>
+        </div>
+        <div class="col-2">
+            <input type="number" name="items[${idx}][qty]" class="form-control form-control-sm" value="${qty}" min="1" placeholder="Qty" onchange="updateLineTotal(${idx})">
+        </div>
+        <div class="col-3">
+            <span class="small text-muted" id="lineTotal${idx}">—</span>
+        </div>
+        <div class="col-1 text-end">
+            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1" onclick="document.getElementById('svcLine${idx}').remove()" style="font-size:.75rem;">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(row);
+    updateLineTotal(idx);
+}
+
+function updateLineTotal(idx) {
+    const row = document.getElementById('svcLine' + idx);
+    if (!row) return;
+    const sel = row.querySelector('select');
+    const qtyInput = row.querySelector('input[type="number"]');
+    const totalSpan = document.getElementById('lineTotal' + idx);
+    const svcId = sel.value;
+    const qty = parseInt(qtyInput.value) || 0;
+
+    if (!svcId || !qty) { totalSpan.textContent = '—'; return; }
+
+    const svc = servicesData.find(s => s.id == svcId);
+    if (!svc) { totalSpan.textContent = '—'; return; }
+
+    const total = svc.base_price * qty;
+    const pay = svc.installer_pay_type === 'percentage'
+        ? (svc.base_price * svc.installer_pay / 100) * qty
+        : svc.installer_pay * qty;
+    const profit = total - pay;
+
+    totalSpan.innerHTML = `<span style="color:var(--vip-accent);font-weight:600;">$${total.toFixed(2)}</span> <span style="font-size:.65rem;color:#666;">(pay $${pay.toFixed(2)})</span>`;
+}
+
+// Add one blank row by default
+document.addEventListener('DOMContentLoaded', function() {
+    addServiceLine();
+});
 
 // Crew/Installer toggle for create modal
 document.querySelectorAll('#createJobModal input[name="assignment_type"]').forEach(r => {

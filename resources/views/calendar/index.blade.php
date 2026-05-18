@@ -430,6 +430,15 @@
                                                     <i class="bi bi-tools"></i> {{ Str::limit($ord->customer_name, 8) }}
                                                 </div>
                                             @endforeach
+                                            @php $dayJobs = $scheduledJobs[$dateKey] ?? collect(); @endphp
+                                            @foreach($dayJobs as $jb)
+                                                @php
+                                                    $jobColor = ($jb->service && isset($serviceColorById[$jb->service_id])) ? $serviceColorById[$jb->service_id] : '#6c757d';
+                                                @endphp
+                                                <div class="cal-order-chip" style="background:{{ $jobColor }}20; color:{{ $jobColor }};" title="{{ $jb->service?->name ?? 'Job' }} — {{ $jb->job_number }}">
+                                                    <i class="bi bi-wrench"></i> {{ Str::limit($jb->customer_name, 8) }}
+                                                </div>
+                                            @endforeach
                                         </td>
                                         @php $day++; @endphp
                                     @endif
