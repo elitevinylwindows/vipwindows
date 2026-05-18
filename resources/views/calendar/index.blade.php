@@ -703,7 +703,10 @@ function openCalItem(item) {
         footer.innerHTML = `<a href="/admin/jobs?highlight=${item.id}" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i>View Job</a>`;
     } else {
         title.innerHTML = `<i class="bi bi-tools me-1" style="color:${item.color}"></i> ${item.full_label}`;
-        body.innerHTML = '<p class="text-muted small mb-0">Installation order.</p>';
+        let orderDetails = '';
+        if (item.service_name) orderDetails += `<p class="mb-1"><span class="badge" style="background:${item.color}; color:#fff; font-size:.75rem;"><i class="bi bi-tag me-1"></i>${item.service_name}</span></p>`;
+        orderDetails += '<p class="text-muted small mb-0">Installation order.</p>';
+        body.innerHTML = orderDetails;
         footer.innerHTML = '';
     }
 
@@ -720,7 +723,7 @@ function openDaySummary(items, dateKey) {
             <i class="bi bi-${icon} me-2" style="color:${item.color};"></i>
             <div>
                 <div class="small fw-semibold">${item.full_label}</div>
-                <div style="font-size:.7rem; color:#888;">${item.type}${item.time ? ' · ' + item.time : ''}</div>
+                <div style="font-size:.7rem; color:#888;">${item.service_name ? item.service_name + ' · ' : ''}${item.type}${item.time ? ' · ' + item.time : ''}</div>
             </div>
         </div>`;
     });
