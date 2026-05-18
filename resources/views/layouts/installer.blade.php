@@ -148,9 +148,7 @@
             <a href="{{ route('installer.dashboard') }}" class="{{ request()->routeIs('installer.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i> {{ __('installer.dashboard') }}
             </a>
-            <a href="{{ route('installer.quotes.index') }}" class="{{ request()->routeIs('installer.quotes.*') ? 'active' : '' }}">
-                <i class="bi bi-calculator"></i> {{ __('installer.my_quotes') }}
-            </a>
+            {{-- Quotes temporarily removed --}}
             <a href="{{ route('installer.jobs.index') }}" class="{{ request()->routeIs('installer.jobs.*') ? 'active' : '' }}">
                 <i class="bi bi-tools"></i> {{ __('installer.my_jobs') }}
             </a>
