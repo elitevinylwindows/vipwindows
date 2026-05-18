@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminAvailabilityController;
 use App\Http\Controllers\CalendarController;
@@ -44,6 +45,7 @@ use App\Http\Controllers\Installer\InstallerInvoiceController;
 use App\Http\Controllers\Installer\InstallerCustomerController;
 use App\Http\Controllers\Installer\InstallerAvailabilityController;
 use App\Http\Controllers\Installer\InstallerProfileController;
+use App\Http\Controllers\Installer\InstallerAttendanceController;
 use App\Http\Controllers\Installer\InstallerServiceController;
 use App\Http\Controllers\CrewController;
 use App\Http\Controllers\PublicBookingController;
@@ -157,6 +159,9 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::put('/services/{id}', [ServiceController::class, 'update'])->name('services.update');
     Route::delete('/services/{id}', [ServiceController::class, 'destroy'])->name('services.destroy');
     Route::post('/services/{id}/toggle-active', [ServiceController::class, 'toggleActive'])->name('services.toggleActive');
+
+    // Attendance (admin view)
+    Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
 
     // Email
     Route::get('/email/compose', [EmailController::class, 'compose'])->name('email.compose');
