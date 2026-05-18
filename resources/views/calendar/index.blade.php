@@ -682,8 +682,7 @@ function openCalItem(item) {
         body.innerHTML = details;
         let footerHtml = '';
         if (item.customer_email) {
-            footerHtml += `<button class="btn btn-sm btn-outline-info" onclick="sendReminder(${item.id})"><i class="bi bi-bell me-1"></i>Send Reminder</button> `;
-            footerHtml += `<a href="mailto:${item.customer_email}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-envelope me-1"></i>Email</a> `;
+            footerHtml += `<button class="btn btn-sm btn-outline-info" onclick="sendReminder(${item.id})"><i class="bi bi-send me-1"></i>Send Email</button> `;
         }
         if (item.customer_phone) {
             footerHtml += `<a href="tel:${item.customer_phone}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-telephone me-1"></i>Call</a> `;
@@ -736,17 +735,24 @@ function openDaySummary(items, dateKey) {
 }
 
 function sendReminder(eventId) {
-    if (!confirm('Send a reminder email to the client?')) return;
+    if (!confirm('Send a branded email notification to the client?')) return;
+    const btn = event.target.closest('button');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Sending...'; }
     fetch(`/admin/calendar/event/${eventId}/reminder`, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) alert(data.message);
-        else alert(data.error || 'Failed to send reminder.');
+        if (data.success) {
+            if (btn) { btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Sent!'; btn.classList.replace('btn-outline-info', 'btn-success'); }
+            setTimeout(() => { if (btn) { btn.innerHTML = '<i class="bi bi-send me-1"></i>Send Email'; btn.classList.replace('btn-success', 'btn-outline-info'); btn.disabled = false; } }, 2000);
+        } else {
+            alert(data.error || 'Failed to send email.');
+            if (btn) { btn.innerHTML = '<i class="bi bi-send me-1"></i>Send Email'; btn.disabled = false; }
+        }
     })
-    .catch(() => alert('Failed to send reminder.'));
+    .catch(() => { alert('Failed to send email.'); if (btn) { btn.innerHTML = '<i class="bi bi-send me-1"></i>Send Email'; btn.disabled = false; } });
 }
 
 function openEditEvent(eventId) {

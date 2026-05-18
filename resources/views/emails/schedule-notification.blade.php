@@ -1,53 +1,128 @@
-<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-    <div style="background: #111; padding: 20px; text-align: center;">
-        <h1 style="color: #c9a84c; margin: 0; font-size: 24px;">VIP Windows</h1>
-    </div>
-    <div style="background: #fff; padding: 30px; border: 1px solid #eee;">
-        <h2 style="color: #111; margin-top: 0;">{{ $type === 'job' ? 'Installation Scheduled' : 'Appointment Scheduled' }}</h2>
-        <p>Hello {{ $customerName }},</p>
-        <p>{{ $type === 'job' ? 'Your installation has been scheduled with VIP Windows.' : 'An appointment has been scheduled for you with VIP Windows.' }} Here are the details:</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0; padding:0; background:#f4f3f0; font-family:'Segoe UI', Arial, Helvetica, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f3f0; padding:30px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%;">
 
-        <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 8px 0; color: #666; width: 120px;">Event:</td>
-                    <td style="padding: 8px 0; font-weight: bold;">{{ $eventTitle }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Date:</td>
-                    <td style="padding: 8px 0; font-weight: bold;">{{ \Carbon\Carbon::parse($eventDate)->format('l, F j, Y') }}</td>
-                </tr>
-                @if($startTime)
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Time:</td>
-                    <td style="padding: 8px 0; font-weight: bold;">
-                        {{ $startTime }}@if($endTime) &mdash; {{ $endTime }}@endif
-                    </td>
-                </tr>
-                @endif
-                @if($address)
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Location:</td>
-                    <td style="padding: 8px 0; font-weight: bold;">{{ $address }}</td>
-                </tr>
-                @endif
-            </table>
-        </div>
+                    {{-- Header with logo --}}
+                    <tr>
+                        <td style="background:linear-gradient(135deg, #0a0a0a, #1a1a1a); padding:30px 40px; text-align:center; border-radius:12px 12px 0 0;">
+                            <img src="{{ url('/images/logo.png') }}" alt="VIP Windows" style="height:60px; max-width:200px;" />
+                            <p style="color:#c9a84c; margin:10px 0 0; font-size:13px; letter-spacing:2px; text-transform:uppercase;">
+                                {{ $type === 'job' ? 'Installation Scheduled' : 'Appointment Confirmation' }}
+                            </p>
+                        </td>
+                    </tr>
 
-        @if($description)
-        <p><strong>Details:</strong></p>
-        <p>{{ $description }}</p>
-        @endif
+                    {{-- Body --}}
+                    <tr>
+                        <td style="background:#ffffff; padding:35px 40px;">
+                            <p style="font-size:16px; color:#333; margin:0 0 20px;">Hi {{ $customerName }},</p>
+                            <p style="font-size:15px; color:#555; line-height:1.6; margin:0 0 25px;">
+                                {{ $type === 'job' ? 'Your installation has been scheduled.' : 'Your appointment has been confirmed.' }}
+                                Here are the details:
+                            </p>
 
-        <p>If you need to reschedule or have any questions, please call us at <strong>(562) 368-0313</strong> or reply to this email.</p>
+                            {{-- Details card --}}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f6; border:1px solid #eee; border-radius:8px; overflow:hidden;">
+                                <tr>
+                                    <td style="padding:20px 25px;">
+                                        {{-- Event Title --}}
+                                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:15px;">
+                                            <tr>
+                                                <td style="font-size:18px; font-weight:700; color:#111;">{{ $eventTitle }}</td>
+                                            </tr>
+                                        </table>
 
-        <p style="margin-top: 30px;">
-            Best regards,<br>
-            <strong>VIP Windows Team</strong>
-        </p>
-    </div>
-    <div style="background: #111; padding: 15px; text-align: center; color: #888; font-size: 12px;">
-        VIP Windows &mdash; Professional Window Installation<br>
-        (562) 368-0313 &bull; info@vipwindows.net
-    </div>
-</div>
+                                        {{-- Date --}}
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="35" style="vertical-align:top; padding:6px 0;">
+                                                    <span style="font-size:18px;">&#128197;</span>
+                                                </td>
+                                                <td style="padding:6px 0;">
+                                                    <span style="font-size:12px; color:#999; text-transform:uppercase; letter-spacing:1px;">Date</span><br>
+                                                    <span style="font-size:15px; font-weight:600; color:#111;">{{ \Carbon\Carbon::parse($eventDate)->format('l, F j, Y') }}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        @if($startTime)
+                                        {{-- Time --}}
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="35" style="vertical-align:top; padding:6px 0;">
+                                                    <span style="font-size:18px;">&#128336;</span>
+                                                </td>
+                                                <td style="padding:6px 0;">
+                                                    <span style="font-size:12px; color:#999; text-transform:uppercase; letter-spacing:1px;">Time</span><br>
+                                                    <span style="font-size:15px; font-weight:600; color:#111;">
+                                                        {{ $startTime }}@if($endTime) &mdash; {{ $endTime }}@endif
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        @endif
+
+                                        @if($address)
+                                        {{-- Location --}}
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="35" style="vertical-align:top; padding:6px 0;">
+                                                    <span style="font-size:18px;">&#128205;</span>
+                                                </td>
+                                                <td style="padding:6px 0;">
+                                                    <span style="font-size:12px; color:#999; text-transform:uppercase; letter-spacing:1px;">Location</span><br>
+                                                    <span style="font-size:15px; font-weight:600; color:#111;">{{ $address }}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+
+                            @if($description)
+                            <div style="margin-top:20px; padding:15px 20px; background:#f0f0f0; border-radius:6px;">
+                                <p style="font-size:12px; color:#999; text-transform:uppercase; letter-spacing:1px; margin:0 0 5px;">Additional Details</p>
+                                <p style="font-size:14px; color:#444; margin:0; line-height:1.5;">{{ $description }}</p>
+                            </div>
+                            @endif
+
+                            {{-- CTA --}}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:30px;">
+                                <tr>
+                                    <td align="center">
+                                        <p style="font-size:14px; color:#666; margin:0 0 15px;">Need to reschedule or have questions?</p>
+                                        <a href="tel:+15623680313" style="display:inline-block; background:#c9a84c; color:#fff; padding:12px 30px; border-radius:6px; text-decoration:none; font-weight:600; font-size:14px;">
+                                            Call (562) 368-0313
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    {{-- Footer --}}
+                    <tr>
+                        <td style="background:#111; padding:25px 40px; text-align:center; border-radius:0 0 12px 12px;">
+                            <p style="color:#c9a84c; font-weight:700; font-size:14px; margin:0 0 5px;">VIP Windows</p>
+                            <p style="color:#888; font-size:12px; margin:0 0 3px;">Professional Window & Door Installation</p>
+                            <p style="color:#666; font-size:11px; margin:10px 0 0;">
+                                (562) 368-0313 &bull; info@vipwindows.net &bull; vipwindows.net
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

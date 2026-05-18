@@ -20,6 +20,7 @@ class ScheduleNotification extends Mailable
     public ?string $description;
     public string $customerName;
     public string $type; // 'event', 'job'
+    public ?string $serviceName;
 
     public function __construct(array $data)
     {
@@ -31,6 +32,7 @@ class ScheduleNotification extends Mailable
         $this->description  = $data['description'] ?? null;
         $this->customerName = $data['customer_name'] ?? 'Customer';
         $this->type         = $data['type'] ?? 'event';
+        $this->serviceName  = $data['service_name'] ?? null;
     }
 
     public function envelope(): Envelope
