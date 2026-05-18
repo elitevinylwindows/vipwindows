@@ -236,7 +236,7 @@
                         foreach($dayEventList as $ev) {
                             // Always use live service color when a service is assigned; fallback to stored color or gold
                             $evColor = ($ev->service && $ev->service->color) ? $ev->service->color : ($ev->color ?: '#c9a84c');
-                            $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone]);
+                            $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'crew_id' => $ev->crew_id, 'crew_name' => $ev->crew?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone]);
                         }
                     @endphp
                     <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}">
@@ -316,12 +316,21 @@
                         <input type="text" name="address" id="evAddress" class="form-control form-control-sm" placeholder="Start typing an address..." autocomplete="off">
                     </div>
                     <div class="row g-2 mb-3">
-                        <div class="col-12">
-                            <label class="form-label">Service (optional)</label>
+                        <div class="col-6">
+                            <label class="form-label">Service</label>
                             <select name="service_id" class="form-select form-select-sm">
                                 <option value="">— None —</option>
                                 @foreach($services as $svc)
                                     <option value="{{ $svc->id }}">{{ $svc->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Assign Crew</label>
+                            <select name="crew_id" class="form-select form-select-sm">
+                                <option value="">— None —</option>
+                                @foreach($crews as $crew)
+                                    <option value="{{ $crew->id }}">{{ $crew->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -516,14 +525,25 @@
                         <label class="form-label">Address</label>
                         <input type="text" name="address" id="editEvAddress" class="form-control form-control-sm" placeholder="Start typing an address..." autocomplete="off">
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Service</label>
-                        <select name="service_id" id="editEvService" class="form-select form-select-sm">
-                            <option value="">— None —</option>
-                            @foreach($services as $svc)
-                                <option value="{{ $svc->id }}">{{ $svc->name }}</option>
-                            @endforeach
-                        </select>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Service</label>
+                            <select name="service_id" id="editEvService" class="form-select form-select-sm">
+                                <option value="">— None —</option>
+                                @foreach($services as $svc)
+                                    <option value="{{ $svc->id }}">{{ $svc->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Crew</label>
+                            <select name="crew_id" id="editEvCrew" class="form-select form-select-sm">
+                                <option value="">— None —</option>
+                                @foreach($crews as $crew)
+                                    <option value="{{ $crew->id }}">{{ $crew->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Description</label>
@@ -676,6 +696,7 @@ function openCalItem(item) {
         // Schedule details
         if (item.time) details += `<p class="mb-1 small"><i class="bi bi-clock me-1"></i><strong>Time:</strong> ${item.time}${item.end_time ? ' – ' + item.end_time : ''}</p>`;
         if (item.address) details += `<p class="mb-1 small"><i class="bi bi-geo-alt me-1"></i><strong>Address:</strong> ${item.address}</p>`;
+        if (item.crew_name) details += `<p class="mb-1 small"><i class="bi bi-people me-1"></i><strong>Crew:</strong> ${item.crew_name}</p>`;
         if (item.description) details += `<p class="mb-1 small"><i class="bi bi-card-text me-1"></i>${item.description}</p>`;
         if (item.end_date) details += `<p class="mb-1 small"><i class="bi bi-calendar-range me-1"></i><strong>Until:</strong> ${item.end_date}</p>`;
         if (!details) details = '<p class="text-muted small mb-0">No additional details.</p>';
@@ -784,6 +805,7 @@ function openEditEvent(eventId) {
         document.getElementById('editEvCustEmail').value = ev.customer_email || '';
         document.getElementById('editEvCustPhone').value = ev.customer_phone || '';
         document.getElementById('editEvService').value = ev.service_id || '';
+        document.getElementById('editEvCrew').value = ev.crew_id || '';
         document.getElementById('editEvDesc').value = ev.description || '';
         document.getElementById('editEventForm').action = `/admin/calendar/event/${eventId}`;
 

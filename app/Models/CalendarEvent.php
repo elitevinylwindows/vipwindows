@@ -10,7 +10,7 @@ class CalendarEvent extends Model
 
     protected $fillable = [
         'title', 'description', 'event_date', 'event_time', 'end_time',
-        'end_date', 'color', 'service_id', 'created_by', 'address',
+        'end_date', 'color', 'service_id', 'crew_id', 'created_by', 'address',
         'customer_name', 'customer_email', 'customer_phone',
     ];
 
@@ -22,6 +22,11 @@ class CalendarEvent extends Model
     public function service()
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function crew()
+    {
+        return $this->belongsTo(Crew::class);
     }
 
     public function creator()

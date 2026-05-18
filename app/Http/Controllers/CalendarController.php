@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AdminAvailability;
 use App\Models\CalendarEvent;
 use App\Models\CalendarSlot;
+use App\Models\Crew;
 use App\Models\InstallationOrder;
 use App\Models\Job;
 use App\Models\Service;
@@ -61,7 +62,7 @@ class CalendarController extends Controller
         $scheduledJobs = $allJobs->groupBy(fn($j) => $j->scheduled_date->format('Y-m-d'));
 
         // Calendar events (standalone, not from jobs)
-        $calendarEvents = CalendarEvent::with('service')
+        $calendarEvents = CalendarEvent::with('service', 'crew')
             ->whereBetween('event_date', [$startOfMonth, $endOfMonth])
             ->orderBy('event_date')
             ->get()
@@ -81,8 +82,9 @@ class CalendarController extends Controller
         // Availability for the modal
         $availability = AdminAvailability::orderBy('day_of_week')->get()->keyBy('day_of_week');
 
-        // Services for the add event form
+        // Services and crews for the add event form
         $services = Service::where('is_active', true)->orderBy('name')->get();
+        $crews = Crew::where('status', 'active')->orderBy('name')->get();
 
         return view('calendar.index', compact(
             'slots', 'scheduledOrders', 'scheduledJobs', 'calendarEvents',
@@ -90,7 +92,7 @@ class CalendarController extends Controller
             'serviceColors', 'serviceColorById',
             'totalJobs', 'pendingJobs', 'scheduledCount', 'inProgressCount', 'completedCount',
             'totalOrders', 'totalEvents',
-            'availability', 'services'
+            'availability', 'services', 'crews'
         ));
     }
 
@@ -107,6 +109,7 @@ class CalendarController extends Controller
             'end_time'       => 'nullable|string|max:20',
             'end_date'       => 'nullable|date|after_or_equal:event_date',
             'service_id'     => 'nullable|exists:vip_services,id',
+            'crew_id'        => 'nullable|exists:crews,id',
             'address'        => 'nullable|string|max:500',
             'customer_name'  => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
@@ -158,7 +161,7 @@ class CalendarController extends Controller
      */
     public function showEvent($id)
     {
-        return response()->json(CalendarEvent::findOrFail($id));
+        return response()->json(CalendarEvent::with('crew')->findOrFail($id));
     }
 
     /**
@@ -176,6 +179,7 @@ class CalendarController extends Controller
             'end_time'       => 'nullable|string|max:20',
             'end_date'       => 'nullable|date|after_or_equal:event_date',
             'service_id'     => 'nullable|exists:vip_services,id',
+            'crew_id'        => 'nullable|exists:crews,id',
             'address'        => 'nullable|string|max:500',
             'customer_name'  => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',

@@ -379,7 +379,12 @@
 @push('scripts')
 <script>
 // Services data for item service dropdown
-const servicesData = @json($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'installer_pay' => $s->installer_pay, 'installer_pay_type' => $s->installer_pay_type, 'base_price' => $s->base_price]));
+@php
+$servicesJson = $services->map(function($s) {
+    return ['id' => $s->id, 'name' => $s->name, 'installer_pay' => $s->installer_pay, 'installer_pay_type' => $s->installer_pay_type, 'base_price' => $s->base_price];
+});
+@endphp
+const servicesData = @json($servicesJson);
 
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.iq-card');
