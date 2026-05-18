@@ -7,8 +7,8 @@
     <div class="container position-relative" style="z-index:1;">
         <h1 class="display-4 fw-bold mb-3">Expert Window Installation<br>You Can Trust</h1>
         <p class="lead opacity-90 mb-4" style="max-width:650px; margin:0 auto;">
-            Professional vinyl window installation, replacement, and upgrade services.
-            Licensed, insured, and backed by years of experience.
+            Professional vinyl window and door installation, replacement, and upgrade services.
+            Licensed, insured, and backed by 25 years of experience.
         </p>
         <div class="d-flex gap-3 justify-content-center flex-wrap">
             <a href="{{ route('public.book.website') }}" class="btn btn-vip btn-lg px-4">

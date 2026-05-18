@@ -442,7 +442,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 // ── Services CRUD ──────────────────────────
 function loadServices() {
-    fetch('{{ route("installer.services.index") }}', { headers: { 'Accept': 'application/json' } })
+    fetch('{{ route("installer.services") }}', { headers: { 'Accept': 'application/json' } })
         .then(r => r.json())
         .then(data => {
             const c = document.getElementById('servicesListContainer');
