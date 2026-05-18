@@ -107,6 +107,9 @@
         .cal-sidebar { width: 100%; min-width: 100%; max-height: 35vh; }
         .cal-cell { min-height: 60px; }
     }
+
+    /* Google Places autocomplete dropdown above Bootstrap modals */
+    .pac-container { z-index: 1060 !important; }
 </style>
 @endpush
 
