@@ -10,6 +10,7 @@ use App\Models\Crew;
 use App\Models\Job;
 use App\Models\JobItem;
 use App\Models\JobNote;
+use App\Models\JobTimeLog;
 use App\Models\Service;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
@@ -330,5 +331,114 @@ class InstallerJobController extends Controller
         $job->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Clock in to a job.
+     */
+    public function clockIn($id)
+    {
+        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+
+        // Check if already clocked in
+        $active = $job->activeTimeLog(Auth::id());
+        if ($active) {
+            return response()->json(['error' => 'You are already clocked in to this job.'], 422);
+        }
+
+        $log = JobTimeLog::create([
+            'job_id'   => $job->id,
+            'user_id'  => Auth::id(),
+            'clock_in' => now(),
+        ]);
+
+        // Auto-set job to in_progress if not already
+        if (in_array($job->status, ['pending', 'scheduled'])) {
+            $job->update([
+                'status' => 'in_progress',
+                'actual_start' => $job->actual_start ?? now(),
+            ]);
+        }
+
+        return response()->json(['success' => true, 'log' => $log, 'message' => 'Clocked in.']);
+    }
+
+    /**
+     * Clock out of a job.
+     */
+    public function clockOut($id)
+    {
+        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+
+        $active = $job->activeTimeLog(Auth::id());
+        if (!$active) {
+            return response()->json(['error' => 'You are not clocked in to this job.'], 422);
+        }
+
+        $clockOut = now();
+        $totalMinutes = $active->clock_in->diffInMinutes($clockOut);
+
+        $active->update([
+            'clock_out'     => $clockOut,
+            'total_minutes' => $totalMinutes,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'log' => $active->fresh(),
+            'total_minutes' => $totalMinutes,
+            'message' => 'Clocked out. ' . floor($totalMinutes / 60) . 'h ' . ($totalMinutes % 60) . 'm logged.',
+        ]);
+    }
+
+    /**
+     * Get time logs for a job.
+     */
+    public function timeLogs($id)
+    {
+        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+
+        $logs = $job->timeLogs()->with('user')->get()->map(function ($log) {
+            return [
+                'id' => $log->id,
+                'user' => $log->user?->name ?? 'Unknown',
+                'clock_in' => $log->clock_in?->format('M d, g:ia'),
+                'clock_out' => $log->clock_out?->format('M d, g:ia'),
+                'total_minutes' => $log->total_minutes,
+                'is_active' => $log->isActive(),
+            ];
+        });
+
+        $activeLog = $job->activeTimeLog(Auth::id());
+
+        return response()->json([
+            'logs' => $logs,
+            'is_clocked_in' => (bool) $activeLog,
+            'active_since' => $activeLog?->clock_in?->format('g:ia'),
+        ]);
+    }
+
+    /**
+     * Upload a single image for a job.
+     */
+    public function uploadImage(Request $request, $id)
+    {
+        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+        ]);
+
+        $file = $request->file('image');
+        $filename = 'job_' . $job->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs('job-images', $filename, 'public');
+
+        $job->update(['image' => $path]);
+
+        return response()->json([
+            'success' => true,
+            'image_url' => asset('storage/' . $path),
+            'message' => 'Image uploaded.',
+        ]);
     }
 }

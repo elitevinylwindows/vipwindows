@@ -102,9 +102,11 @@ class CalendarController extends Controller
             'description' => 'nullable|string',
             'event_date'  => 'required|date',
             'event_time'  => 'nullable|string|max:20',
+            'end_time'    => 'nullable|string|max:20',
             'end_date'    => 'nullable|date|after_or_equal:event_date',
             'color'       => 'nullable|string|max:10',
             'service_id'  => 'nullable|exists:vip_services,id',
+            'address'     => 'nullable|string|max:500',
         ]);
 
         $validated['created_by'] = Auth::id();

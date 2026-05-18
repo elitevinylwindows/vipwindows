@@ -17,7 +17,7 @@ class Job extends Model
         'install_state', 'install_zip', 'description', 'status', 'priority',
         'assigned_to', 'assignment_type', 'crew_id', 'scheduled_date', 'end_date',
         'scheduled_time', 'estimated_duration', 'actual_start',
-        'actual_end', 'notes', 'completion_notes', 'created_by',
+        'actual_end', 'notes', 'completion_notes', 'created_by', 'image',
     ];
 
     protected $casts = [
@@ -65,5 +65,21 @@ class Job extends Model
     public function jobItems()
     {
         return $this->hasMany(JobItem::class)->orderBy('sort_order');
+    }
+
+    public function timeLogs()
+    {
+        return $this->hasMany(JobTimeLog::class)->orderByDesc('clock_in');
+    }
+
+    /**
+     * Get the currently active time log (clocked in, not out) for a user.
+     */
+    public function activeTimeLog($userId = null)
+    {
+        return $this->timeLogs()
+            ->when($userId, fn($q) => $q->where('user_id', $userId))
+            ->whereNull('clock_out')
+            ->first();
     }
 }

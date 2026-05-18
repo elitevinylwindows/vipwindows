@@ -9,8 +9,8 @@ class CalendarEvent extends Model
     protected $table = 'calendar_events';
 
     protected $fillable = [
-        'title', 'description', 'event_date', 'event_time',
-        'end_date', 'color', 'service_id', 'created_by',
+        'title', 'description', 'event_date', 'event_time', 'end_time',
+        'end_date', 'color', 'service_id', 'created_by', 'address',
     ];
 
     protected $casts = [
