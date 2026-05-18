@@ -231,9 +231,9 @@
                         $maxShow = 3;
 
                         $allItems = collect();
-                        foreach($dayJobList as $j) { $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => Str::limit($j->customer_name ?: $j->job_number, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . ($j->customer_name ?? ''), 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status]); }
-                        foreach($dayOrderList as $o) { $allItems->push(['type' => 'order', 'id' => $o->id, 'label' => Str::limit($o->customer_name, 10), 'full_label' => $o->customer_name, 'time' => null, 'color' => ($serviceColors[$o->service_type] ?? '#007bff'), 'address' => '', 'status' => $o->status]); }
-                        foreach($dayEventList as $ev) { $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $ev->color, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone]); }
+                        foreach($dayJobList as $j) { $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => Str::limit($j->customer_name ?: $j->job_number, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . ($j->customer_name ?? ''), 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status, 'service_name' => $j->service?->name]); }
+                        foreach($dayOrderList as $o) { $allItems->push(['type' => 'order', 'id' => $o->id, 'label' => Str::limit($o->customer_name, 10), 'full_label' => $o->customer_name, 'time' => null, 'color' => ($serviceColors[$o->service_type] ?? '#007bff'), 'address' => '', 'status' => $o->status, 'service_name' => $o->service_type]); }
+                        foreach($dayEventList as $ev) { $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $ev->color ?? ($ev->service ? $ev->service->color : '#c9a84c'), 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone]); }
                     @endphp
                     <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}">
                         <span class="cell-date">{{ $current->day }}</span>
@@ -662,6 +662,8 @@ function openCalItem(item) {
     if (item.type === 'event') {
         title.innerHTML = `<i class="bi bi-calendar-event me-1" style="color:${item.color}"></i> ${item.full_label}`;
         let details = '';
+        // Service badge
+        if (item.service_name) details += `<p class="mb-1"><span class="badge" style="background:${item.color}; color:#fff; font-size:.75rem;"><i class="bi bi-tag me-1"></i>${item.service_name}</span></p>`;
         // Contact info
         if (item.customer_name) details += `<p class="mb-1 small"><i class="bi bi-person me-1"></i><strong>${item.customer_name}</strong></p>`;
         if (item.customer_phone) details += `<p class="mb-1 small"><i class="bi bi-telephone me-1"></i><a href="tel:${item.customer_phone}">${item.customer_phone}</a></p>`;
