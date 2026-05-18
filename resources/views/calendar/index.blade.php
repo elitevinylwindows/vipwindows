@@ -694,6 +694,7 @@ function openCalItem(item) {
     } else if (item.type === 'job') {
         title.innerHTML = `<i class="bi bi-wrench me-1" style="color:${item.color}"></i> ${item.full_label}`;
         let details = '';
+        if (item.service_name) details += `<p class="mb-1"><span class="badge" style="background:${item.color}; color:#fff; font-size:.75rem;"><i class="bi bi-tag me-1"></i>${item.service_name}</span></p>`;
         if (item.time) details += `<p class="mb-1 small"><i class="bi bi-clock me-1"></i><strong>Time:</strong> ${item.time}</p>`;
         if (item.address) details += `<p class="mb-1 small"><i class="bi bi-geo-alt me-1"></i><strong>Address:</strong> ${item.address}</p>`;
         if (item.status) details += `<p class="mb-1 small"><i class="bi bi-flag me-1"></i><strong>Status:</strong> ${item.status.replace('_',' ')}</p>`;
