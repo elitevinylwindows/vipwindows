@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminAvailability;
 use App\Models\CalendarSlot;
+use App\Models\CalendarEvent;
 use App\Models\InstallationOrder;
 use App\Models\Job;
 use App\Models\Service;

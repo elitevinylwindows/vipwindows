@@ -502,15 +502,20 @@ let currentViewJobId = null;
 let serviceLineIdx = 0;
 
 // Services data for dynamic line items
-const servicesData = @json($services->map(fn($s) => [
-    'id' => $s->id,
-    'name' => $s->name,
-    'base_price' => $s->base_price,
-    'installer_pay' => $s->installer_pay ?? 0,
-    'installer_pay_type' => $s->installer_pay_type ?? 'per_unit',
-    'unit' => $s->unit,
-    'color' => $s->color ?? '#0d6efd',
-]));
+@php
+    $svcJson = $services->map(function($s) {
+        return [
+            'id' => $s->id,
+            'name' => $s->name,
+            'base_price' => $s->base_price,
+            'installer_pay' => $s->installer_pay ?? 0,
+            'installer_pay_type' => $s->installer_pay_type ?? 'per_unit',
+            'unit' => $s->unit,
+            'color' => $s->color ?? '#0d6efd',
+        ];
+    });
+@endphp
+const servicesData = @json($svcJson);
 
 function addServiceLine(svcId = '', qty = 1) {
     const idx = serviceLineIdx++;
