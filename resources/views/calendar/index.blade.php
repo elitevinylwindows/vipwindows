@@ -240,6 +240,40 @@
         margin-bottom: 2px;
     }
 
+    /* Availability modal */
+    .avail-day-row {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 0; border-bottom: 1px solid #f0f0f0;
+    }
+    .avail-day-row:last-child { border-bottom: none; }
+    .avail-day-name { width: 80px; font-weight: 600; font-size: .85rem; }
+    .avail-day-row .form-control, .avail-day-row .form-select {
+        font-size: .82rem; padding: 4px 8px;
+    }
+    .avail-day-row .form-check-input { width: 18px; height: 18px; }
+    .avail-toggle-off .avail-times { opacity: .3; pointer-events: none; }
+
+    .override-card {
+        display: flex; align-items: center; justify-content: space-between;
+        background: #f8f9fa; border-radius: 6px; padding: 8px 12px;
+        margin-bottom: 6px; font-size: .82rem;
+    }
+    .override-card .badge-off { background: #f8d7da; color: #721c24; padding: 2px 8px; border-radius: 3px; font-size: .7rem; }
+    .override-card .badge-on { background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 3px; font-size: .7rem; }
+
+    .btn-manage-avail {
+        background: rgba(255,255,255,.1);
+        border: 1px solid rgba(255,255,255,.2);
+        color: #fff;
+        font-size: .75rem;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 6px;
+        width: 100%;
+        margin-top: 8px;
+    }
+    .btn-manage-avail:hover { background: rgba(255,255,255,.15); color: var(--vip-accent); }
+
     @media (max-width: 991.98px) {
         .cal-wrapper { flex-direction: column; height: auto; min-height: calc(100vh - 120px); }
         .cal-sidebar { width: 100%; min-width: 100%; max-height: 350px; }
@@ -289,6 +323,13 @@
                     <input type="number" name="max_bookings" class="form-control mb-3" value="2" min="1" max="20" required>
                     <button type="submit" class="btn-add-slot"><i class="bi bi-plus-circle me-1"></i> Add Slot</button>
                 </form>
+            </div>
+
+            {{-- Manage Availability --}}
+            <div style="padding: 0 14px;">
+                <button class="btn-manage-avail" onclick="openAvailabilityModal()">
+                    <i class="bi bi-clock-history me-1"></i> Manage Weekly Availability
+                </button>
             </div>
 
             {{-- Upcoming installations this month --}}
