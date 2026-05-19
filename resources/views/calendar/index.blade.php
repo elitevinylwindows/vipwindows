@@ -484,6 +484,35 @@
     </div>
 </div>
 
+{{-- ── Admin Reschedule Modal ──────────────────── --}}
+<div class="modal fade" id="adminRescheduleModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0"><i class="bi bi-calendar2-week me-1"></i> Reschedule Event</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="adminRescheduleId" value="">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">New Date</label>
+                    <input type="date" class="form-control" id="adminRescheduleDate">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">New Time</label>
+                    <input type="time" class="form-control" id="adminRescheduleTime">
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="submitAdminReschedule()">
+                    <i class="bi bi-check2 me-1"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- ── Edit Event Modal ──────────────────── --}}
 <div class="modal fade" id="editEventModal" tabindex="-1">
     <div class="modal-dialog">
@@ -745,7 +774,7 @@ function openCalItem(item) {
         if (item.customer_phone) {
             footerHtml += `<a href="tel:${item.customer_phone}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-telephone me-1"></i>Call</a> `;
         }
-        footerHtml += `<button class="btn btn-sm btn-outline-info" onclick="openAdminReschedule(${item.id}, '${(item.date || '').substring(0,10)}', '${item.time || ''}')"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button> `;
+        footerHtml += `<button class="btn btn-sm btn-outline-info" onclick="openAdminReschedule(${item.id}, '', '${item.time || ''}')"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button> `;
         footerHtml += `<button class="btn btn-sm btn-outline-primary" onclick="openEditEvent(${item.id})"><i class="bi bi-pencil me-1"></i>Edit</button> `;
         footerHtml += `<form method="POST" action="/admin/calendar/event/${item.id}" class="d-inline" onsubmit="return confirm('Delete this event?')">
                 <input type="hidden" name="_token" value="${csrfToken}">
@@ -856,6 +885,75 @@ function openEditEvent(eventId) {
         setTimeout(() => new bootstrap.Modal(document.getElementById('editEventModal')).show(), 300);
     })
     .catch(() => alert('Failed to load event details.'));
+}
+
+// ── Admin Reschedule ──
+function openAdminReschedule(eventId, currentDate, currentTime) {
+    bootstrap.Modal.getInstance(document.getElementById('viewItemModal'))?.hide();
+    document.getElementById('adminRescheduleId').value = eventId;
+    document.getElementById('adminRescheduleDate').value = currentDate || '';
+    document.getElementById('adminRescheduleTime').value = currentTime || '';
+    setTimeout(() => new bootstrap.Modal(document.getElementById('adminRescheduleModal')).show(), 300);
+}
+
+function submitAdminReschedule() {
+    const eventId = document.getElementById('adminRescheduleId').value;
+    const newDate = document.getElementById('adminRescheduleDate').value;
+    const newTime = document.getElementById('adminRescheduleTime').value;
+
+    if (!newDate) { alert('Please select a date.'); return; }
+
+    // Fetch current event, then update with new date/time
+    fetch(`/admin/calendar/event/${eventId}`, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(ev => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/calendar/event/${eventId}`;
+        form.style.display = 'none';
+
+        const fields = {
+            '_token': csrfToken,
+            '_method': 'PUT',
+            'title': ev.title || '',
+            'event_date': newDate,
+            'event_time': newTime || ev.event_time || '',
+            'end_time': ev.end_time || '',
+            'end_date': ev.end_date ? ev.end_date.substring(0,10) : '',
+            'address': ev.address || '',
+            'customer_name': ev.customer_name || '',
+            'customer_email': ev.customer_email || '',
+            'customer_phone': ev.customer_phone || '',
+            'service_id': ev.service_id || '',
+            'crew_id': ev.crew_id || '',
+            'description': ev.description || '',
+        };
+
+        Object.entries(fields).forEach(([k, v]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = k;
+            input.value = v;
+            form.appendChild(input);
+        });
+
+        // Installation types
+        if (ev.installation_types && ev.installation_types.length) {
+            ev.installation_types.forEach(t => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'installation_types[]';
+                input.value = t;
+                form.appendChild(input);
+            });
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    })
+    .catch(() => alert('Failed to reschedule.'));
 }
 </script>
 
