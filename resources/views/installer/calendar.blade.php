@@ -514,7 +514,7 @@ function showJobPopup(jobId) {
     const detailLabel = isTechMeasure ? 'Tech Measure' : 'Job Details';
 
     document.getElementById('jobPopupBody').innerHTML = `
-        ${job.is_rescheduled ? `<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;"><i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Rescheduled</strong>${job.reschedule_reason ? ': ' + job.reschedule_reason : ''}</div>` : ''}
+        ${job.is_rescheduled ? `<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;"><i class="bi bi-send-check me-1"></i> <strong>Reschedule Request Sent to Admin</strong>${job.reschedule_reason ? ': ' + job.reschedule_reason : ''}</div>` : ''}
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
                 <h6 class="fw-bold mb-1">${job.customer_name || 'No Customer'}</h6>
@@ -633,7 +633,7 @@ function showEventPopup(eventId) {
     document.getElementById('eventPopupTitle').innerHTML = `<i class="bi bi-calendar-event me-1" style="color:${ev.color}"></i> ${ev.title}`;
 
     let bodyHtml = `
-        ${ev.is_rescheduled ? `<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;"><i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Rescheduled</strong>${ev.reschedule_reason ? ': ' + ev.reschedule_reason : ''}</div>` : ''}
+        ${ev.is_rescheduled ? `<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;"><i class="bi bi-send-check me-1"></i> <strong>Reschedule Request Sent to Admin</strong>${ev.reschedule_reason ? ': ' + ev.reschedule_reason : ''}</div>` : ''}
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
                 <h6 class="fw-bold mb-1">${ev.customer_name || 'No Customer'}</h6>
@@ -771,6 +771,8 @@ function submitReschedule() {
     })
     .then(data => {
         bootstrap.Modal.getInstance(document.getElementById('rescheduleModal'))?.hide();
+        // Show confirmation then reload
+        alert('Reschedule request sent to admin.');
         location.reload();
     })
     .catch(e => alert('Failed to reschedule: ' + e.message));
