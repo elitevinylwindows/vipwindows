@@ -463,7 +463,11 @@
         ];
     })->keyBy('id');
 
-    $eventsJson = $calendarEvents->map(function($e) {
+    // Get tech measure IDs linked to calendar events
+    $techMeasureMap = \App\Models\TechMeasure::whereIn('calendar_event_id', $calendarEvents->pluck('id'))
+        ->pluck('id', 'calendar_event_id');
+
+    $eventsJson = $calendarEvents->map(function($e) use ($techMeasureMap) {
         return [
             'id' => $e->id,
             'title' => $e->title,
@@ -482,6 +486,7 @@
             'event_status' => $e->event_status ?? 'scheduled',
             'is_rescheduled' => (bool) $e->rescheduled_at,
             'reschedule_reason' => $e->reschedule_reason,
+            'tech_measure_id' => $techMeasureMap[$e->id] ?? null,
         ];
     })->keyBy('id');
 @endphp
@@ -648,12 +653,14 @@ function showEventPopup(eventId) {
     const isTechMeasureEvent = (ev.service_name || '').toLowerCase().includes('measure') || (ev.title || '').toLowerCase().includes('measure');
     const eventDetailUrl = isTechMeasureEvent ? `/installer/tech-measures` : null;
 
+    const techMeasureId = ev.tech_measure_id || null;
+
     if (ev.address) {
         const evMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(ev.address);
         // Single progressive button: Start Route → Arrived at Location → Start Measure
-        routeRow += `<button class="btn btn-vip w-100" id="evtProgressBtn_${eventId}" onclick="advanceEventStep(${eventId}, '${evMapsUrl}', '${eventDetailUrl || ''}')"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
+        routeRow += `<button class="btn btn-vip w-100" id="evtProgressBtn_${eventId}" onclick="advanceEventStep(${eventId}, '${evMapsUrl}', '${eventDetailUrl || ''}', ${techMeasureId || 'null'})"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
     } else if (eventDetailUrl) {
-        routeRow += `<a href="${eventDetailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> Start Measure</a>`;
+        routeRow += `<a href="${eventDetailUrl}" class="btn btn-success w-100" onclick="startTechMeasure(${techMeasureId})"><i class="bi bi-play-circle me-1"></i> Start Measure</a>`;
     }
 
     if (ev.customer_phone) {
@@ -675,41 +682,47 @@ function showEventPopup(eventId) {
 }
 
 // ── Progressive Button Steps ──
-// Job: Start Route → Arrived at Location → Start Job
+// Job: Start Route → Arrived at Location → In Progress (go to job)
 const jobSteps = {};
 function advanceJobStep(jobId, mapsUrl, detailUrl) {
     const btn = document.getElementById(`jobProgressBtn_${jobId}`);
     if (!btn) return;
     const step = jobSteps[jobId] || 0;
+    const csrfToken = document.querySelector('meta[name=csrf-token]').content;
 
     if (step === 0) {
-        // Step 1: Open Google Maps for route
+        // Step 1: Open Google Maps & start the job clock
         window.open(mapsUrl, '_blank');
+        fetch(`/installer/jobs/${jobId}/start`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+        }).catch(() => {});
         // Advance to "Arrived at Location"
         jobSteps[jobId] = 1;
         btn.className = 'btn btn-warning w-100';
         btn.innerHTML = '<i class="bi bi-geo-fill me-1"></i> Arrived at Location';
     } else if (step === 1) {
-        // Step 2: Mark as arrived, advance to "Start Job"
+        // Step 2: Mark as arrived, advance to "In Progress"
         jobSteps[jobId] = 2;
         btn.className = 'btn btn-success w-100';
-        btn.innerHTML = '<i class="bi bi-play-circle me-1"></i> Start Job';
+        btn.innerHTML = '<i class="bi bi-play-circle me-1"></i> In Progress — View Job';
     } else {
         // Step 3: Go to job detail page
         window.location.href = detailUrl;
     }
 }
 
-// Event: Start Route → Arrived at Location → Start Measure
+// Event: Start Route → Arrived at Location → In Progress (go to tech measures)
 const evtSteps = {};
-function advanceEventStep(eventId, mapsUrl, detailUrl) {
+function advanceEventStep(eventId, mapsUrl, detailUrl, techMeasureId) {
     const btn = document.getElementById(`evtProgressBtn_${eventId}`);
     if (!btn) return;
     const step = evtSteps[eventId] || 0;
 
     if (step === 0) {
-        // Step 1: Open Google Maps for route
+        // Step 1: Open Google Maps & start the tech measure clock
         window.open(mapsUrl, '_blank');
+        if (techMeasureId) startTechMeasure(techMeasureId);
         // Advance to "Arrived at Location"
         evtSteps[eventId] = 1;
         btn.className = 'btn btn-warning w-100';
@@ -717,12 +730,11 @@ function advanceEventStep(eventId, mapsUrl, detailUrl) {
     } else if (step === 1) {
         // Step 2: Mark as arrived
         if (detailUrl) {
-            // Advance to "Start Measure"
+            // Advance to "In Progress" — go to tech measures
             evtSteps[eventId] = 2;
             btn.className = 'btn btn-success w-100';
-            btn.innerHTML = '<i class="bi bi-play-circle me-1"></i> Start Measure';
+            btn.innerHTML = '<i class="bi bi-play-circle me-1"></i> In Progress — View Measure';
         } else {
-            // No detail page — just mark as arrived with visual confirmation
             btn.className = 'btn btn-success w-100';
             btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Arrived';
             btn.disabled = true;
@@ -731,6 +743,16 @@ function advanceEventStep(eventId, mapsUrl, detailUrl) {
         // Step 3: Go to tech measures page
         window.location.href = detailUrl;
     }
+}
+
+// Start a tech measure (set status to in_progress, start the clock)
+function startTechMeasure(techMeasureId) {
+    if (!techMeasureId) return;
+    const csrfToken = document.querySelector('meta[name=csrf-token]').content;
+    fetch(`/installer/tech-measures/${techMeasureId}/start`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+    }).catch(() => {});
 }
 
 // ── Send Reminder (Job) ──
