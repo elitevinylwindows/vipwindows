@@ -486,7 +486,7 @@
 
 {{-- ── Admin Reschedule Modal ──────────────────── --}}
 <div class="modal fade" id="adminRescheduleModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header py-2">
                 <h6 class="modal-title mb-0"><i class="bi bi-calendar2-week me-1"></i> Reschedule Event</h6>
@@ -494,19 +494,25 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="adminRescheduleId" value="">
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">New Date</label>
-                    <input type="date" class="form-control" id="adminRescheduleDate">
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">New Date</label>
+                        <input type="date" class="form-control" id="adminRescheduleDate">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">New Time</label>
+                        <input type="time" class="form-control" id="adminRescheduleTime">
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">New Time</label>
-                    <input type="time" class="form-control" id="adminRescheduleTime">
+                <div class="mb-0">
+                    <label class="form-label small fw-semibold">Reason for Rescheduling</label>
+                    <textarea class="form-control" id="adminRescheduleReason" rows="3" placeholder="e.g. Customer requested, weather, crew unavailable..."></textarea>
                 </div>
             </div>
             <div class="modal-footer py-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-vip btn-sm" onclick="submitAdminReschedule()">
-                    <i class="bi bi-check2 me-1"></i> Confirm
+                    <i class="bi bi-check2 me-1"></i> Confirm Reschedule
                 </button>
             </div>
         </div>
