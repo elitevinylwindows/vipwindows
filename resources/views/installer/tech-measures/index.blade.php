@@ -405,19 +405,6 @@ function renderMeasureDetail(data) {
         ${itemsHtml}
 
         ${m.status === 'in_progress' || m.status === 'pending' ? `
-        {{-- Frame Type — applies to all openings --}}
-        <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type <small class="text-muted fw-normal">(applies to all openings)</small></h6>
-        <div class="tm-add-form mb-3">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-4">
-                    <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id})">
-                        <option value="">— Select Frame Type —</option>
-                        ${frameTypeOptions.map(o => `<option value="${escHtml(o.name)}" ${m.frame_type === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
-                    </select>
-                </div>
-            </div>
-        </div>
-
         <h6 class="section-title"><i class="bi bi-plus-circle"></i> Add Opening</h6>
         <div class="tm-add-form">
             <div class="row g-2 align-items-end">
@@ -450,6 +437,19 @@ function renderMeasureDetail(data) {
                 </div>
                 <div class="col-md-1 d-flex align-items-end">
                     <button class="btn btn-sm btn-vip w-100" onclick="addItem(${m.id})" title="Add Opening"><i class="bi bi-plus-lg"></i></button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Frame Type — applies to all openings --}}
+        <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type <small class="text-muted fw-normal">(applies to all openings)</small></h6>
+        <div class="tm-add-form mb-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id})">
+                        <option value="">— Select Frame Type —</option>
+                        ${frameTypeOptions.map(o => `<option value="${escHtml(o.name)}" ${m.frame_type === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
+                    </select>
                 </div>
             </div>
         </div>

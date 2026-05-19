@@ -213,13 +213,9 @@
             <div class="modal-body">
                 <input type="hidden" id="vmEditId">
                 <div class="row g-3">
-                    <div class="col-8">
+                    <div class="col-12">
                         <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
                         <input type="text" id="vmName" class="form-control" required placeholder="e.g. SH, Retrofit, SDL...">
-                    </div>
-                    <div class="col-4">
-                        <label class="form-label fw-semibold">Code</label>
-                        <input type="text" id="vmCode" class="form-control" placeholder="Short code">
                     </div>
                     <div class="col-12">
                         <div class="form-check">
@@ -321,7 +317,6 @@ function vmLoadList() {
             <thead><tr>
                 <th style="width:40px;">#</th>
                 <th>Name</th>
-                <th>Code</th>
                 <th class="text-center" style="width:80px;">Active</th>
                 <th class="text-end" style="width:100px;">Actions</th>
             </tr></thead>
@@ -331,7 +326,6 @@ function vmLoadList() {
             html += `<tr data-id="${item.id}">
                 <td class="text-muted">${i + 1}</td>
                 <td class="fw-semibold">${escHtml(item.name)}</td>
-                <td class="text-muted">${item.code || '—'}</td>
                 <td class="text-center">
                     <label class="toggle-switch">
                         <input type="checkbox" ${item.is_active ? 'checked' : ''} onchange="vmToggle(${item.id})">
@@ -363,7 +357,6 @@ function vmShowAdd() {
     document.getElementById('vmSaveLabel').textContent = 'Create';
     document.getElementById('vmEditId').value = '';
     document.getElementById('vmName').value = '';
-    document.getElementById('vmCode').value = '';
     document.getElementById('vmActive').checked = true;
     modal.show();
 }
@@ -374,7 +367,6 @@ function vmEdit(item) {
     document.getElementById('vmSaveLabel').textContent = 'Update';
     document.getElementById('vmEditId').value = item.id;
     document.getElementById('vmName').value = item.name;
-    document.getElementById('vmCode').value = item.code || '';
     document.getElementById('vmActive').checked = !!item.is_active;
     modal.show();
 }
@@ -382,7 +374,6 @@ function vmEdit(item) {
 function vmSave() {
     const editId = document.getElementById('vmEditId').value;
     const name = document.getElementById('vmName').value.trim();
-    const code = document.getElementById('vmCode').value.trim();
     const isActive = document.getElementById('vmActive').checked ? 1 : 0;
 
     if (!name) { alert('Name is required.'); return; }
@@ -399,7 +390,7 @@ function vmSave() {
             'X-CSRF-TOKEN': csrf,
             'Accept': 'application/json'
         },
-        body: JSON.stringify({ name, code: code || null, is_active: isActive })
+        body: JSON.stringify({ name, is_active: isActive })
     })
     .then(r => r.json())
     .then(data => {
