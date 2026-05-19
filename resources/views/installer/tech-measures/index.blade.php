@@ -415,6 +415,7 @@ function renderMeasureDetail(data) {
                 <td>${item.room_label || '—'}${photoHtml}</td>
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
                 <td class="text-center text-nowrap">
+                    <button class="btn btn-sm text-primary p-0 me-1" onclick="editItemFromData(${m.id}, ${item.id})" title="Edit"><i class="bi bi-pencil" style="font-size:.75rem;"></i></button>
                     <button class="btn btn-sm text-primary p-0 me-1" onclick="uploadItemPhoto(${m.id}, ${item.id})" title="Add Photo"><i class="bi bi-camera" style="font-size:.75rem;"></i></button>
                     <button class="btn btn-sm text-danger p-0" onclick="removeItem(${m.id}, ${item.id})" title="Remove"><i class="bi bi-x-lg" style="font-size:.65rem;"></i></button>
                 </td>
@@ -609,6 +610,13 @@ function addItem(measureId) {
         else alert(data.error || 'Failed to add item.');
     })
     .catch(() => alert('Failed to add item.'));
+}
+
+function editItemFromData(measureId, itemId) {
+    if (!currentMeasureData) return;
+    const item = (currentMeasureData.items || []).find(i => i.id === itemId);
+    if (!item) return;
+    editItem(measureId, itemId, item);
 }
 
 function editItem(measureId, itemId, item) {
