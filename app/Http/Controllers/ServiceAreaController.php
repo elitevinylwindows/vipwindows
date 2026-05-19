@@ -30,7 +30,7 @@ class ServiceAreaController extends Controller
             'is_active'   => true,
         ]);
 
-        return redirect()->route('admin.service-areas.index')->with('success', 'Service area added.');
+        return redirect()->route('admin.content.index', ['#service-areas'])->with('success', 'Service area added.');
     }
 
     public function update(Request $request, $id)
@@ -53,12 +53,12 @@ class ServiceAreaController extends Controller
             'is_active'   => $request->has('is_active'),
         ]);
 
-        return redirect()->route('admin.service-areas.index')->with('success', 'Service area updated.');
+        return redirect()->route('admin.content.index', ['#service-areas'])->with('success', 'Service area updated.');
     }
 
     public function destroy($id)
     {
         ServiceArea::findOrFail($id)->delete();
-        return redirect()->route('admin.service-areas.index')->with('success', 'Service area removed.');
+        return redirect()->route('admin.content.index', ['#service-areas'])->with('success', 'Service area removed.');
     }
 }

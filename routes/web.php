@@ -4,7 +4,9 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminAvailabilityController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\AdminServiceJobController;
 use App\Http\Controllers\ConsultationController;
+use App\Http\Controllers\ContentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerManagementController;
 use App\Http\Controllers\InstallerManagementController;
@@ -127,6 +129,9 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/calendar/availability/override', [AdminAvailabilityController::class, 'addOverride'])->name('calendar.availability.addOverride');
     Route::delete('/calendar/availability/override/{id}', [AdminAvailabilityController::class, 'removeOverride'])->name('calendar.availability.removeOverride');
 
+    // Content (combined gallery + service areas)
+    Route::get('/content', [ContentController::class, 'index'])->name('content.index');
+
     // Gallery management
     Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
     Route::post('/gallery', [GalleryController::class, 'store'])->name('gallery.store');
@@ -162,7 +167,11 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::put('/crews/{id}', [CrewController::class, 'update'])->name('crews.update');
     Route::delete('/crews/{id}', [CrewController::class, 'destroy'])->name('crews.destroy');
 
-    // Services management
+    // Service Jobs (admin view — matches installer services page)
+    Route::get('/service-jobs', [AdminServiceJobController::class, 'index'])->name('service-jobs.index');
+    Route::get('/service-jobs/{id}', [AdminServiceJobController::class, 'show'])->name('service-jobs.show');
+
+    // Services management (Service Types)
     Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
     Route::post('/services', [ServiceController::class, 'store'])->name('services.store');
     Route::get('/services/{id}', [ServiceController::class, 'show'])->name('services.show');

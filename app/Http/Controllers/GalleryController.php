@@ -52,7 +52,7 @@ class GalleryController extends Controller
             $count++;
         }
 
-        return redirect()->route('admin.gallery.index')
+        return redirect()->route('admin.content.index')
             ->with('success', $count . ' image(s) uploaded successfully.');
     }
 
@@ -79,7 +79,7 @@ class GalleryController extends Controller
             'is_active'   => $request->has('is_active'),
         ]);
 
-        return redirect()->route('admin.gallery.index')
+        return redirect()->route('admin.content.index')
             ->with('success', 'Image updated.');
     }
 
@@ -98,7 +98,7 @@ class GalleryController extends Controller
 
         $image->delete();
 
-        return redirect()->route('admin.gallery.index')
+        return redirect()->route('admin.content.index')
             ->with('success', 'Image deleted.');
     }
 }

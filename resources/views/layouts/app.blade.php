@@ -149,8 +149,11 @@
             <a href="{{ route('admin.tech-measures.index') }}" class="{{ request()->routeIs('admin.tech-measures.*') ? 'active' : '' }}">
                 <i class="bi bi-rulers"></i> Tech Measures
             </a>
-            <a href="{{ route('admin.services.index') }}" class="{{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.service-jobs.index') }}" class="{{ request()->routeIs('admin.service-jobs.*') ? 'active' : '' }}">
                 <i class="bi bi-wrench"></i> Services
+            </a>
+            <a href="{{ route('admin.services.index') }}" class="{{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
+                <i class="bi bi-gear-wide-connected"></i> Service Types
             </a>
 
             <div class="nav-label mt-3">Management</div>
@@ -171,19 +174,13 @@
             </a>
 
             <div class="nav-label mt-3">Content</div>
-            <a href="{{ route('admin.gallery.index') }}" class="{{ request()->routeIs('admin.gallery.*') ? 'active' : '' }}">
-                <i class="bi bi-images"></i> Gallery
-            </a>
-            <a href="{{ route('admin.service-areas.index') }}" class="{{ request()->routeIs('admin.service-areas.*') ? 'active' : '' }}">
-                <i class="bi bi-geo-alt"></i> Service Areas
+            <a href="{{ route('admin.content.index') }}" class="{{ request()->routeIs('admin.content.*') || request()->routeIs('admin.gallery.*') || request()->routeIs('admin.service-areas.*') ? 'active' : '' }}">
+                <i class="bi bi-layout-text-window-reverse"></i> Content
             </a>
 
             <div class="nav-label mt-3">Communication</div>
             <a href="{{ route('admin.email.compose') }}" class="{{ request()->routeIs('admin.email.*') ? 'active' : '' }}">
                 <i class="bi bi-envelope"></i> Email
-            </a>
-            <a href="{{ route('admin.email-templates.index') }}" class="{{ request()->routeIs('admin.email-templates.*') ? 'active' : '' }}">
-                <i class="bi bi-envelope-paper"></i> Email Templates
             </a>
             <a href="{{ route('admin.consultations.index') }}" class="{{ request()->routeIs('admin.consultations.*') ? 'active' : '' }}">
                 <i class="bi bi-camera-video"></i> Consultations
@@ -202,9 +199,11 @@
             <a href="{{ route('admin.vip-master.index') }}" class="{{ request()->routeIs('admin.vip-master.*') ? 'active' : '' }}">
                 <i class="bi bi-star-fill"></i> VIP Master
             </a>
+            {{-- Master Data hidden for now
             <a href="{{ route('admin.master.hub') }}" class="{{ request()->routeIs('admin.master.*') ? 'active' : '' }}">
                 <i class="bi bi-database-gear"></i> Master Data
             </a>
+            --}}
 
             <div class="nav-label mt-3">System</div>
             <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
