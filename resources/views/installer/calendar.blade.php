@@ -234,10 +234,12 @@
                         $isToday = $current->isSameDay($today);
                         $isOtherMonth = $current->month !== (int)$month;
                         $dayJobs = $jobsByDate->get($dateKey, collect());
+                        $dayEvents = $eventsByDate->get($dateKey, collect());
                         $dayBookings = $bookingsByDate->get($dateKey, collect());
                         $maxShow = 3;
                         $allItems = collect();
                         foreach($dayJobs as $dj) { $allItems->push(['type' => 'job', 'item' => $dj]); }
+                        foreach($dayEvents as $de) { $allItems->push(['type' => 'event', 'item' => $de]); }
                         foreach($dayBookings as $db) { $allItems->push(['type' => 'booking', 'item' => $db]); }
                     @endphp
                     <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOtherMonth ? 'other-month' : '' }}">
@@ -246,6 +248,10 @@
                             @foreach($allItems->take($maxShow) as $entry)
                                 @if($entry['type'] === 'job')
                                     <span class="cell-job s-{{ $entry['item']->status }}" onclick="event.stopPropagation(); showJobPopup({{ $entry['item']->id }})" style="cursor:pointer;">{{ $entry['item']->customer_name ? substr($entry['item']->customer_name, 0, 12) : $entry['item']->job_number }}</span>
+                                @elseif($entry['type'] === 'event')
+                                    <span class="cell-job s-event" onclick="event.stopPropagation(); showEventPopup({{ $entry['item']->id }})" style="cursor:pointer; background:{{ $entry['item']->color ?? '#c9a84c' }}22; color:{{ $entry['item']->color ?? '#c9a84c' }}; border-left: 2px solid {{ $entry['item']->color ?? '#c9a84c' }};">
+                                        <i class="bi bi-calendar-event" style="font-size:.55rem;"></i> {{ substr($entry['item']->title, 0, 10) }}
+                                    </span>
                                 @else
                                     <span class="cell-job s-booking{{ $entry['item']->status === 'confirmed' ? '-confirmed' : '' }}">
                                         <i class="bi bi-bookmark-fill" style="font-size:.55rem;"></i> {{ substr($entry['item']->customer_name, 0, 10) }}

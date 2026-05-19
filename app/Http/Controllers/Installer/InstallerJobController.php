@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
+use App\Models\CalendarEvent;
 use App\Models\InstallerAvailability;
 use App\Models\InstallerAvailabilityOverride;
 use App\Models\InstallerBooking;
@@ -92,6 +93,19 @@ class InstallerJobController extends Controller
         $inProgress = $jobs->where('status', 'in_progress')->count();
         $completed = $jobs->where('status', 'completed')->count();
 
+        // Get calendar events assigned to this installer's crews (admin-scheduled events)
+        $crewIds = $this->myCrewIds();
+        $calendarEvents = collect();
+        if (!empty($crewIds)) {
+            $calendarEvents = CalendarEvent::with('service', 'crew')
+                ->whereBetween('event_date', [$startOfMonth, $endOfMonth])
+                ->whereIn('crew_id', $crewIds)
+                ->orderBy('event_date')
+                ->orderBy('event_time')
+                ->get();
+        }
+        $eventsByDate = $calendarEvents->groupBy(fn($e) => $e->event_date->format('Y-m-d'));
+
         // Get bookings for this month
         $bookings = InstallerBooking::where('installer_id', Auth::id())
             ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
@@ -112,6 +126,7 @@ class InstallerJobController extends Controller
         return view('installer.calendar', compact(
             'jobs', 'jobsByDate', 'month', 'year', 'startOfMonth', 'endOfMonth',
             'totalMonth', 'pending', 'scheduled', 'inProgress', 'completed',
+            'calendarEvents', 'eventsByDate',
             'bookings', 'bookingsByDate', 'pendingBookings', 'availability'
         ));
     }
