@@ -188,14 +188,14 @@
                 <div class="cal-day-section">
                     <div class="day-header">{{ __('installer.upcoming_jobs') }}</div>
                     @foreach($upcomingJobs as $uj)
-                        <a href="{{ route('installer.jobs.index') }}?highlight={{ $uj->id }}" class="cal-job-card status-{{ $uj->status }}" style="text-decoration:none; display:block;">
+                        <div class="cal-job-card status-{{ $uj->status }}" onclick="showJobPopup({{ $uj->id }})">
                             <div class="jc-title">{{ $uj->job_number }}</div>
                             <div class="jc-meta">
                                 <i class="bi bi-person me-1"></i>{{ $uj->customer_name ?? '—' }}
                                 &middot; {{ $uj->scheduled_date->format('M d') }}
                                 @if($uj->scheduled_time) @ {{ $uj->scheduled_time }} @endif
                             </div>
-                        </a>
+                        </div>
                     @endforeach
                 </div>
             @endif
@@ -245,7 +245,7 @@
                         <div class="cell-jobs">
                             @foreach($allItems->take($maxShow) as $entry)
                                 @if($entry['type'] === 'job')
-                                    <span class="cell-job s-{{ $entry['item']->status }}">{{ $entry['item']->customer_name ? substr($entry['item']->customer_name, 0, 12) : $entry['item']->job_number }}</span>
+                                    <span class="cell-job s-{{ $entry['item']->status }}" onclick="event.stopPropagation(); showJobPopup({{ $entry['item']->id }})" style="cursor:pointer;">{{ $entry['item']->customer_name ? substr($entry['item']->customer_name, 0, 12) : $entry['item']->job_number }}</span>
                                 @else
                                     <span class="cell-job s-booking{{ $entry['item']->status === 'confirmed' ? '-confirmed' : '' }}">
                                         <i class="bi bi-bookmark-fill" style="font-size:.55rem;"></i> {{ substr($entry['item']->customer_name, 0, 10) }}
@@ -323,6 +323,22 @@
     </div>
 </div>
 
+{{-- Job Detail Popup --}}
+<div class="modal fade" id="jobPopupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0" id="jobPopupTitle"><i class="bi bi-tools me-1"></i> Job</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="jobPopupBody">
+                <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-muted"></div></div>
+            </div>
+            <div class="modal-footer py-2" id="jobPopupFooter"></div>
+        </div>
+    </div>
+</div>
+
 {{-- Booking Detail Modal --}}
 <div class="modal fade" id="bookingModal" tabindex="-1">
     <div class="modal-dialog">
@@ -339,6 +355,127 @@
 
 @push('scripts')
 <script>
+// ── Job data for popup ──
+const jobsData = @json($jobs->map(function($j) {
+    return [
+        'id' => $j->id,
+        'job_number' => $j->job_number,
+        'customer_name' => $j->customer_name,
+        'customer_phone' => $j->customer_phone,
+        'customer_email' => $j->customer_email,
+        'install_address' => $j->install_address,
+        'install_city' => $j->install_city,
+        'install_state' => $j->install_state,
+        'install_zip' => $j->install_zip,
+        'scheduled_date' => $j->scheduled_date?->format('l, M d, Y'),
+        'scheduled_time' => $j->scheduled_time,
+        'status' => $j->status,
+        'service_name' => $j->service?->name ?? '—',
+        'description' => $j->description,
+    ];
+})->keyBy('id'));
+
+function showJobPopup(jobId) {
+    const job = jobsData[jobId];
+    if (!job) return;
+
+    document.getElementById('jobPopupTitle').innerHTML = `<i class="bi bi-tools me-1"></i> ${job.job_number}`;
+
+    const statusColors = {
+        pending: 'bg-warning text-dark', scheduled: 'bg-info',
+        in_progress: 'bg-primary', completed: 'bg-success', cancelled: 'bg-dark'
+    };
+    const statusBadge = statusColors[job.status] || 'bg-secondary';
+    const statusLabel = job.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    // Build full address for Google Maps
+    const addressParts = [job.install_address, job.install_city, job.install_state, job.install_zip].filter(Boolean);
+    const fullAddress = addressParts.join(', ');
+    const mapsUrl = fullAddress ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress)}` : '';
+
+    // Determine if it's a tech measure (by service name)
+    const isTechMeasure = (job.service_name || '').toLowerCase().includes('measure');
+    const detailUrl = isTechMeasure
+        ? `/installer/tech-measures?job=${jobId}`
+        : `/installer/jobs/${jobId}`;
+    const detailLabel = isTechMeasure ? 'Tech Measure' : 'Job Details';
+
+    document.getElementById('jobPopupBody').innerHTML = `
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h6 class="fw-bold mb-1">${job.customer_name || 'No Customer'}</h6>
+                ${job.customer_phone ? `<div class="small text-muted"><i class="bi bi-telephone me-1"></i><a href="tel:${job.customer_phone}">${job.customer_phone}</a></div>` : ''}
+                ${job.customer_email ? `<div class="small text-muted"><i class="bi bi-envelope me-1"></i>${job.customer_email}</div>` : ''}
+            </div>
+            <span class="badge ${statusBadge}">${statusLabel}</span>
+        </div>
+
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <div class="small text-muted">Service</div>
+                <div class="fw-semibold">${job.service_name}</div>
+            </div>
+            <div class="col-6">
+                <div class="small text-muted">Date & Time</div>
+                <div class="fw-semibold">${job.scheduled_date || '—'}${job.scheduled_time ? ' @ ' + job.scheduled_time : ''}</div>
+            </div>
+        </div>
+
+        ${fullAddress ? `
+        <div class="mb-3">
+            <div class="small text-muted">Address</div>
+            <div class="fw-semibold">${fullAddress}</div>
+        </div>` : ''}
+
+        ${job.description ? `
+        <div class="mb-3">
+            <div class="small text-muted">Description</div>
+            <div class="small">${job.description}</div>
+        </div>` : ''}
+    `;
+
+    // Footer buttons — Start Route + Arrived at Location
+    let footerHtml = '';
+
+    if (fullAddress) {
+        footerHtml += `
+            <a href="${mapsUrl}" target="_blank" id="startRouteBtn_${jobId}" class="btn btn-vip flex-fill" onclick="onRouteStarted(${jobId})">
+                <i class="bi bi-geo-alt-fill me-1"></i> Start Route
+            </a>
+        `;
+    }
+
+    footerHtml += `
+        <button class="btn btn-danger flex-fill" id="arrivedBtn_${jobId}" style="${fullAddress ? 'display:none;' : ''}"
+                onclick="onArrived(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
+            <i class="bi bi-pin-map-fill me-1"></i> Arrived at Location
+        </button>
+    `;
+
+    document.getElementById('jobPopupFooter').innerHTML = `<div class="d-flex gap-2 w-100">${footerHtml}</div>`;
+
+    new bootstrap.Modal(document.getElementById('jobPopupModal')).show();
+}
+
+function onRouteStarted(jobId) {
+    // After clicking Start Route (which opens Google Maps), show Arrived button
+    setTimeout(() => {
+        const routeBtn = document.getElementById('startRouteBtn_' + jobId);
+        const arrivedBtn = document.getElementById('arrivedBtn_' + jobId);
+        if (routeBtn) routeBtn.style.display = 'none';
+        if (arrivedBtn) arrivedBtn.style.display = '';
+    }, 500);
+}
+
+function onArrived(jobId, isTechMeasure) {
+    // Redirect to the correct page
+    if (isTechMeasure) {
+        window.location.href = '/installer/tech-measures';
+    } else {
+        window.location.href = '/installer/jobs/' + jobId;
+    }
+}
+
 function toggleDayFields(day) {
     const isOn = document.getElementById('dayOn' + day).checked;
     const fields = document.querySelector('.day-fields-' + day);

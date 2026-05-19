@@ -69,7 +69,7 @@ class InstallerJobController extends Controller
         $endOfMonth = $startOfMonth->copy()->endOfMonth();
 
         // Get all jobs for the month — direct assignment OR crew membership
-        $jobs = Job::whereNotNull('scheduled_date')
+        $jobs = Job::with('service')->whereNotNull('scheduled_date')
             ->whereBetween('scheduled_date', [$startOfMonth, $endOfMonth])
             ->where(function ($q) {
                 $crewIds = $this->myCrewIds();
