@@ -328,8 +328,28 @@
             <div class="modal-body" id="viewJobBody">
                 <div class="text-center py-4"><div class="spinner-border text-muted" role="status"></div></div>
             </div>
-            <div class="modal-footer">
-                <div class="w-100">
+            <div class="modal-footer d-block">
+                {{-- Email Actions --}}
+                <div class="mb-3 pb-3 border-bottom">
+                    <h6 class="fw-semibold mb-2"><i class="bi bi-envelope me-1"></i> Send Email to Customer</h6>
+                    <div class="d-flex flex-wrap gap-2" id="jobEmailActions">
+                        <button class="btn btn-sm btn-outline-info send-job-email-btn" data-slug="job-scheduled" title="Send scheduling confirmation">
+                            <i class="bi bi-calendar-check me-1"></i> Job Scheduled
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning send-job-email-btn" data-slug="day-before-reminder" title="Send day-before reminder">
+                            <i class="bi bi-bell me-1"></i> Day-Before Reminder
+                        </button>
+                        <button class="btn btn-sm btn-outline-success send-job-email-btn" data-slug="follow-up" title="Send follow-up after job">
+                            <i class="bi bi-chat-heart me-1"></i> Follow-Up
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary send-job-email-btn" data-slug="payment-received" title="Send payment confirmation">
+                            <i class="bi bi-credit-card me-1"></i> Payment Received
+                        </button>
+                    </div>
+                    <div id="emailSendResult" class="small mt-2" style="display:none;"></div>
+                </div>
+                {{-- Add Note --}}
+                <div>
                     <h6 class="fw-semibold mb-2">Add Note</h6>
                     <div class="input-group">
                         <input type="text" class="form-control" id="newJobNote" placeholder="Type a note...">
@@ -721,6 +741,48 @@ document.getElementById('addJobNoteBtn')?.addEventListener('click', function() {
             // Re-trigger view to refresh
             document.querySelector(`.view-job-btn[data-job-id="${currentViewJobId}"]`)?.click();
         }
+    });
+});
+
+// Send job email
+document.querySelectorAll('.send-job-email-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        if (!currentViewJobId) return;
+        const slug = this.dataset.slug;
+        const resultDiv = document.getElementById('emailSendResult');
+
+        if (!confirm(`Send "${this.textContent.trim()}" email to the customer?`)) return;
+
+        this.disabled = true;
+        const origHTML = this.innerHTML;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        fetch(`/admin/jobs/${currentViewJobId}/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify({ template_slug: slug })
+        })
+        .then(r => r.json())
+        .then(data => {
+            this.innerHTML = origHTML;
+            this.disabled = false;
+            resultDiv.style.display = 'block';
+            if (data.success) {
+                resultDiv.className = 'small mt-2 text-success';
+                resultDiv.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + data.message;
+            } else {
+                resultDiv.className = 'small mt-2 text-danger';
+                resultDiv.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + (data.error || 'Failed to send');
+            }
+            setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
+        })
+        .catch(() => {
+            this.innerHTML = origHTML;
+            this.disabled = false;
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'small mt-2 text-danger';
+            resultDiv.textContent = 'Network error. Try again.';
+        });
     });
 });
 

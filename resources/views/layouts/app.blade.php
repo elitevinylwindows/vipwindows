@@ -174,6 +174,9 @@
             <a href="{{ route('admin.email.compose') }}" class="{{ request()->routeIs('admin.email.*') ? 'active' : '' }}">
                 <i class="bi bi-envelope"></i> Email
             </a>
+            <a href="{{ route('admin.email-templates.index') }}" class="{{ request()->routeIs('admin.email-templates.*') ? 'active' : '' }}">
+                <i class="bi bi-envelope-paper"></i> Email Templates
+            </a>
             <a href="{{ route('admin.consultations.index') }}" class="{{ request()->routeIs('admin.consultations.*') ? 'active' : '' }}">
                 <i class="bi bi-camera-video"></i> Consultations
             </a>

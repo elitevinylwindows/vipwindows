@@ -49,6 +49,7 @@ use App\Http\Controllers\Installer\InstallerAttendanceController;
 use App\Http\Controllers\Installer\InstallerServiceController;
 use App\Http\Controllers\Installer\InstallerMessageController;
 use App\Http\Controllers\Installer\InstallerTechMeasureController;
+use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\TechMeasureController;
 use App\Http\Controllers\CrewController;
@@ -231,7 +232,13 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/jobs/{id}/assign', [JobController::class, 'assign'])->name('jobs.assign');
     Route::post('/jobs/{id}/status', [JobController::class, 'updateStatus'])->name('jobs.updateStatus');
     Route::post('/jobs/{id}/note', [JobController::class, 'addNote'])->name('jobs.addNote');
+    Route::post('/jobs/{id}/send-email', [EmailTemplateController::class, 'sendJobEmail'])->name('jobs.sendEmail');
     Route::delete('/jobs/{id}', [JobController::class, 'destroy'])->name('jobs.destroy');
+
+    // Email Templates
+    Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
+    Route::put('/email-templates/{id}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
+    Route::post('/email-templates/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
 
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
