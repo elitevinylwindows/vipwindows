@@ -264,7 +264,7 @@ class InstallerJobController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
-        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+        $job = $this->findMyJob($id);
 
         $validated = $request->validate([
             'status' => 'required|in:scheduled,in_progress,completed,cancelled',
@@ -272,9 +272,21 @@ class InstallerJobController extends Controller
 
         $job->update([
             'status' => $validated['status'],
-            'actual_start' => $validated['status'] === 'in_progress' ? now() : $job->actual_start,
-            'actual_end' => $validated['status'] === 'completed' ? now() : $job->actual_end,
+            'actual_start' => $validated['status'] === 'in_progress' ? ($job->actual_start ?? now()) : $job->actual_start,
+            'actual_end' => in_array($validated['status'], ['completed', 'cancelled']) ? now() : $job->actual_end,
         ]);
+
+        // Auto-clock-out all active time logs when job is completed or cancelled
+        if (in_array($validated['status'], ['completed', 'cancelled'])) {
+            $activeLogs = $job->timeLogs()->whereNull('clock_out')->get();
+            foreach ($activeLogs as $log) {
+                $clockOut = now();
+                $log->update([
+                    'clock_out'     => $clockOut,
+                    'total_minutes' => $log->clock_in->diffInMinutes($clockOut),
+                ]);
+            }
+        }
 
         return back()->with('success', 'Job status updated.');
     }
@@ -413,7 +425,7 @@ class InstallerJobController extends Controller
      */
     public function clockIn($id)
     {
-        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+        $job = $this->findMyJob($id);
 
         // Check if already clocked in
         $active = $job->activeTimeLog(Auth::id());
@@ -443,7 +455,7 @@ class InstallerJobController extends Controller
      */
     public function clockOut($id)
     {
-        $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+        $job = $this->findMyJob($id);
 
         $active = $job->activeTimeLog(Auth::id());
         if (!$active) {

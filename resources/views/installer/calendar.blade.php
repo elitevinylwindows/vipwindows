@@ -455,12 +455,32 @@ function showJobPopup(jobId) {
         </button>
     `;
 
+    // If job is already in_progress (already started route before), show Arrived directly
+    if (job.status === 'in_progress' && fullAddress) {
+        footerHtml = `
+            <button class="btn btn-danger flex-fill"
+                    onclick="onArrived(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
+                <i class="bi bi-pin-map-fill me-1"></i> Arrived at Location
+            </button>
+        `;
+    }
+
     document.getElementById('jobPopupFooter').innerHTML = `<div class="d-flex gap-2 w-100">${footerHtml}</div>`;
 
     new bootstrap.Modal(document.getElementById('jobPopupModal')).show();
 }
 
 function onRouteStarted(jobId) {
+    // Clock in to the job (starts attendance tracking)
+    fetch(`/installer/jobs/${jobId}/clock-in`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        },
+    }).catch(() => {}); // fire-and-forget, don't block navigation
+
     // After clicking Start Route (which opens Google Maps), show Arrived button
     setTimeout(() => {
         const routeBtn = document.getElementById('startRouteBtn_' + jobId);

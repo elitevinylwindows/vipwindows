@@ -3,87 +3,58 @@
 namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
-use App\Models\AttendanceLog;
+use App\Models\JobTimeLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class InstallerAttendanceController extends Controller
 {
     /**
-     * Attendance page — clock in/out + history.
+     * Attendance page — job-based time tracking history.
      */
     public function index(Request $request)
     {
         $user = Auth::user();
-        $active = AttendanceLog::activeFor($user->id);
-
-        // History — default to current month
         $month = $request->input('month', now()->format('Y-m'));
         $start = \Carbon\Carbon::parse($month . '-01')->startOfMonth();
         $end   = $start->copy()->endOfMonth();
 
-        $logs = AttendanceLog::where('user_id', $user->id)
-            ->whereBetween('date', [$start, $end])
-            ->orderByDesc('date')
+        // Get crew IDs for this installer
+        $crewIds = DB::table('crew_members')
+            ->where('user_id', $user->id)
+            ->pluck('crew_id')
+            ->toArray();
+
+        // Get time logs from jobs assigned to this user (direct or via crew)
+        $logs = JobTimeLog::with(['job.service', 'user'])
+            ->where('user_id', $user->id)
+            ->whereBetween('clock_in', [$start->startOfDay(), $end->endOfDay()])
             ->orderByDesc('clock_in')
             ->get();
 
+        // Currently active (clocked in, not out)
+        $active = $logs->whereNull('clock_out')->first();
+
         // Stats for the month
-        $totalMinutes = $logs->whereNotNull('clock_out')->sum('total_minutes');
-        $totalDays    = $logs->pluck('date')->unique()->count();
-        $avgMinutes   = $totalDays > 0 ? round($totalMinutes / $totalDays) : 0;
+        $completedLogs = $logs->whereNotNull('clock_out');
+        $totalMinutes  = $completedLogs->sum('total_minutes');
+        $totalDays     = $completedLogs->pluck(fn($l) => $l->clock_in->format('Y-m-d'))->unique()->count();
+        $avgMinutes    = $totalDays > 0 ? round($totalMinutes / $totalDays) : 0;
+        $totalJobs     = $completedLogs->pluck('job_id')->unique()->count();
+
+        // Per-service breakdown
+        $serviceBreakdown = $completedLogs->groupBy(fn($l) => $l->job?->service?->name ?? 'Unassigned')
+            ->map(fn($group) => [
+                'count'   => $group->pluck('job_id')->unique()->count(),
+                'minutes' => $group->sum('total_minutes'),
+            ])
+            ->sortByDesc('minutes');
 
         return view('installer.attendance.index', compact(
             'active', 'logs', 'month', 'start', 'end',
-            'totalMinutes', 'totalDays', 'avgMinutes'
+            'totalMinutes', 'totalDays', 'avgMinutes', 'totalJobs',
+            'serviceBreakdown'
         ));
-    }
-
-    /**
-     * Clock in.
-     */
-    public function clockIn()
-    {
-        $user = Auth::user();
-
-        // Prevent double clock-in
-        if (AttendanceLog::activeFor($user->id)) {
-            return back()->with('error', 'You are already clocked in.');
-        }
-
-        AttendanceLog::create([
-            'user_id'  => $user->id,
-            'clock_in' => now(),
-            'date'     => today(),
-        ]);
-
-        return back()->with('success', 'Clocked in at ' . now()->format('g:i A'));
-    }
-
-    /**
-     * Clock out.
-     */
-    public function clockOut(Request $request)
-    {
-        $user = Auth::user();
-        $active = AttendanceLog::activeFor($user->id);
-
-        if (!$active) {
-            return back()->with('error', 'You are not clocked in.');
-        }
-
-        $clockOut = now();
-        $totalMinutes = $active->clock_in->diffInMinutes($clockOut);
-
-        $active->update([
-            'clock_out'     => $clockOut,
-            'total_minutes' => $totalMinutes,
-            'notes'         => $request->input('notes'),
-        ]);
-
-        $h = intdiv($totalMinutes, 60);
-        $m = $totalMinutes % 60;
-
-        return back()->with('success', "Clocked out. Shift: {$h}h {$m}m");
     }
 }
