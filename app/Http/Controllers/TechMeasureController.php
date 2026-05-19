@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\JobNotification;
 use App\Models\CalendarEvent;
 use App\Models\Crew;
+use App\Models\EmailTemplate;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Job;
 use App\Models\JobItem;
 use App\Models\Service;
+use App\Models\Setting;
 use App\Models\TechMeasure;
 use App\Models\TechMeasureItem;
 use App\Models\TechMeasurePhoto;
@@ -15,6 +20,7 @@ use App\Models\InstallationType;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class TechMeasureController extends Controller
@@ -384,11 +390,66 @@ class TechMeasureController extends Controller
             ]),
         ]);
 
+        // Send email notification to customer
+        $emailSent = false;
+        if (!empty($job->customer_email)) {
+            try {
+                $placeholderData = [
+                    'customer_name'   => $job->customer_name ?? 'Customer',
+                    'job_number'      => $job->job_number,
+                    'scheduled_date'  => $job->scheduled_date ? $job->scheduled_date->format('l, F j, Y') : 'To be scheduled',
+                    'scheduled_time'  => $job->scheduled_time ?? 'To be confirmed',
+                    'install_address' => trim(implode(', ', array_filter([
+                        $job->install_address, $job->install_city, $job->install_state, $job->install_zip,
+                    ]))) ?: 'TBD',
+                    'service_name'    => $installService->name ?? 'Installation',
+                    'company_phone'   => '(562) 368-0313',
+                    'company_name'    => 'VIP Windows',
+                ];
+
+                // Try to use a "job_created" email template if one exists
+                $template = EmailTemplate::where('slug', 'job_created')->where('is_active', true)->first();
+
+                if ($template) {
+                    $rendered = $template->render($placeholderData);
+                    $emailSubject = $rendered['subject'];
+                    $emailBody = $rendered['body'];
+                } else {
+                    // Fallback: build a default email
+                    $emailSubject = "Your Installation Job {$jobNumber} — VIP Windows";
+                    $emailBody = "Dear {$placeholderData['customer_name']},\n\n"
+                        . "Thank you for choosing VIP Windows! Your installation job has been created.\n\n"
+                        . "Job Number: {$jobNumber}\n"
+                        . "Address: {$placeholderData['install_address']}\n"
+                        . "Scheduled Date: {$placeholderData['scheduled_date']}\n"
+                        . "Scheduled Time: {$placeholderData['scheduled_time']}\n\n"
+                        . "We will be in touch to confirm the details. If you have any questions, please don't hesitate to call us at {$placeholderData['company_phone']}.\n\n"
+                        . "Best regards,\nVIP Windows";
+                }
+
+                Mail::to($job->customer_email)->send(
+                    new JobNotification($emailSubject, $emailBody, $job->customer_name ?? 'Customer')
+                );
+                $emailSent = true;
+            } catch (\Exception $e) {
+                // Log but don't fail the conversion
+                \Log::warning("Failed to send job creation email for {$jobNumber}: " . $e->getMessage());
+            }
+        }
+
+        $message = "Job {$jobNumber} created successfully.";
+        if ($emailSent) {
+            $message .= " Notification sent to {$job->customer_email}.";
+        } elseif (empty($job->customer_email)) {
+            $message .= " No customer email on file — notification not sent.";
+        }
+
         return response()->json([
             'success'    => true,
-            'message'    => "Job {$jobNumber} created successfully.",
+            'message'    => $message,
             'job_id'     => $job->id,
             'job_number' => $jobNumber,
+            'email_sent' => $emailSent,
         ]);
     }
 }
