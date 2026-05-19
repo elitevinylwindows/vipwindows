@@ -643,9 +643,18 @@ function showEventPopup(eventId) {
         return;
     }
 
+    // Determine if this is a tech measure event
+    const isTechMeasureEvent = (ev.service_name || '').toLowerCase().includes('measure') || (ev.title || '').toLowerCase().includes('measure');
+    const eventDetailUrl = isTechMeasureEvent ? `/installer/tech-measures` : null;
+
     if (ev.address) {
         const evMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(ev.address);
-        routeRow = `<a href="${evMapsUrl}" target="_blank" class="btn btn-vip flex-fill"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</a>`;
+        routeRow += `<a href="${evMapsUrl}" target="_blank" class="btn btn-vip flex-fill"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</a>`;
+    }
+
+    // Arrived at Location button (goes to tech measures or just a visual confirmation)
+    if (eventDetailUrl) {
+        routeRow += `<a href="${eventDetailUrl}" class="btn btn-danger flex-fill"><i class="bi bi-geo-fill me-1"></i> Arrived at Location</a>`;
     }
 
     if (ev.customer_phone) {
@@ -657,8 +666,8 @@ function showEventPopup(eventId) {
     actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('event', ${eventId})"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
 
     document.getElementById('eventPopupFooter').innerHTML = `
-        <div class="w-100">
-            ${routeRow ? `<div class="d-flex gap-2 mb-2">${routeRow}</div>` : ''}
+        <div class="w-100 d-flex flex-column gap-2">
+            ${routeRow ? `<div class="d-flex gap-2">${routeRow}</div>` : ''}
             <div class="d-flex gap-2">${actionRow}</div>
         </div>
     `;

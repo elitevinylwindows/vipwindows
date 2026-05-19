@@ -485,6 +485,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::post('/tech-measures/{id}/photo', [InstallerTechMeasureController::class, 'uploadPhoto'])->name('tech-measures.uploadPhoto');
     Route::delete('/tech-measures/{id}/photo/{photoId}', [InstallerTechMeasureController::class, 'deletePhoto'])->name('tech-measures.deletePhoto');
     Route::post('/tech-measures/{id}/notes', [InstallerTechMeasureController::class, 'updateNotes'])->name('tech-measures.updateNotes');
+    Route::post('/tech-measures/{id}/grids', [InstallerTechMeasureController::class, 'updateGrids'])->name('tech-measures.updateGrids');
 
     // Profile
     Route::get('/profile', [InstallerProfileController::class, 'index'])->name('profile');

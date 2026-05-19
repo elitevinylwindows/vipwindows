@@ -792,8 +792,20 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(() => alert('Failed to upload image.'));
     };
 
-    // Auto-select first
-    if (cards.length > 0) cards[0].click();
+    // Auto-select: highlighted job from URL param, or first card
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightId = urlParams.get('highlight');
+    let autoSelected = false;
+    if (highlightId) {
+        cards.forEach(card => {
+            if (card.dataset.id === highlightId) {
+                card.click();
+                card.scrollIntoView({ block: 'center' });
+                autoSelected = true;
+            }
+        });
+    }
+    if (!autoSelected && cards.length > 0) cards[0].click();
 });
 </script>
 @endpush
