@@ -32,6 +32,12 @@ class SettingsController extends Controller
             'smtp_username'         => '',
             'smtp_password'         => '',
             'smtp_encryption'       => 'ssl',
+            'qb_client_id'          => '',
+            'qb_client_secret'      => '',
+            'qb_redirect_uri'       => url('/admin/settings/quickbooks/callback'),
+            'qb_environment'        => 'sandbox',
+            'qb_sync_invoices'      => '0',
+            'qb_sync_customers'     => '0',
         ];
 
         $settings = array_merge($defaults, $settings);
