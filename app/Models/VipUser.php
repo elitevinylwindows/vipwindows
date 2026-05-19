@@ -26,6 +26,11 @@ class VipUser extends Authenticatable
         return in_array($this->role, ['admin', 'technician']);
     }
 
+    public function isScheduler(): bool
+    {
+        return $this->role === 'scheduler';
+    }
+
     public function isInstaller(): bool
     {
         return $this->role === 'installer';
@@ -33,7 +38,7 @@ class VipUser extends Authenticatable
 
     public function isStaff(): bool
     {
-        return in_array($this->role, ['admin', 'technician', 'installer']);
+        return in_array($this->role, ['admin', 'technician', 'installer', 'scheduler']);
     }
 
     public function isCustomer(): bool

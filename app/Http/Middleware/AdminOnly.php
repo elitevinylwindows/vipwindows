@@ -20,6 +20,15 @@ class AdminOnly
             return $next($request);
         }
 
+        // Schedulers can access calendar routes only
+        if ($user->isScheduler()) {
+            if ($request->routeIs('admin.calendar.*') || $request->routeIs('admin.dashboard')) {
+                return $next($request);
+            }
+            return redirect()->route('admin.calendar.index')
+                ->with('error', 'Schedulers can only access the calendar.');
+        }
+
         // Redirect non-admins to their proper dashboard
         if ($user->isInstaller()) {
             return redirect()->route('installer.dashboard');

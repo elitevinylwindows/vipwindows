@@ -149,11 +149,14 @@
             </a>
 
             <div class="nav-label mt-3">Management</div>
+            <a href="{{ route('admin.team.index') }}" class="{{ request()->routeIs('admin.team.*') ? 'active' : '' }}">
+                <i class="bi bi-people-fill"></i> Team Members
+            </a>
             <a href="{{ route('admin.installers.index') }}" class="{{ request()->routeIs('admin.installers.*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge"></i> Installers
             </a>
             <a href="{{ route('admin.crews.index') }}" class="{{ request()->routeIs('admin.crews.*') ? 'active' : '' }}">
-                <i class="bi bi-people-fill"></i> Crews
+                <i class="bi bi-diagram-3"></i> Crews
             </a>
             <a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> Customers

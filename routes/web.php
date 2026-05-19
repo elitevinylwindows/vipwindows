@@ -51,6 +51,7 @@ use App\Http\Controllers\Installer\InstallerMessageController;
 use App\Http\Controllers\Installer\InstallerTechMeasureController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Admin\TeamMemberController;
 use App\Http\Controllers\TechMeasureController;
 use App\Http\Controllers\CrewController;
 use App\Http\Controllers\PublicBookingController;
@@ -239,6 +240,13 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/jobs/{id}/note', [JobController::class, 'addNote'])->name('jobs.addNote');
     Route::post('/jobs/{id}/send-email', [EmailTemplateController::class, 'sendJobEmail'])->name('jobs.sendEmail');
     Route::delete('/jobs/{id}', [JobController::class, 'destroy'])->name('jobs.destroy');
+
+    // Team Members
+    Route::get('/team', [TeamMemberController::class, 'index'])->name('team.index');
+    Route::post('/team', [TeamMemberController::class, 'store'])->name('team.store');
+    Route::put('/team/{id}', [TeamMemberController::class, 'update'])->name('team.update');
+    Route::delete('/team/{id}', [TeamMemberController::class, 'destroy'])->name('team.destroy');
+    Route::post('/team/{id}/toggle-status', [TeamMemberController::class, 'toggleStatus'])->name('team.toggleStatus');
 
     // Email Templates
     Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
