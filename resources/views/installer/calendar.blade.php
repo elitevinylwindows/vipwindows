@@ -501,24 +501,9 @@ function showJobPopup(jobId) {
     const statusBadge = statusColors[job.status] || 'bg-secondary';
     const statusLabel = job.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-    // Build full address for Google Maps (use comgooglemaps:// on iOS, fallback to web)
     const addressParts = [job.install_address, job.install_city, job.install_state, job.install_zip].filter(Boolean);
     const fullAddress = addressParts.join(', ');
-    const encodedAddr = encodeURIComponent(fullAddress);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-    let mapsUrl = '';
-    if (fullAddress) {
-        if (isIOS) {
-            mapsUrl = `comgooglemaps://?daddr=${encodedAddr}&directionsmode=driving`;
-        } else if (isAndroid) {
-            mapsUrl = `google.navigation:q=${encodedAddr}`;
-        } else {
-            mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddr}`;
-        }
-    }
-    // Fallback URL for when the app isn't installed
-    const mapsWebUrl = fullAddress ? `https://www.google.com/maps/dir/?api=1&destination=${encodedAddr}` : '';
+    const mapsUrl = fullAddress ? 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(fullAddress) : '';
 
     // Determine if it's a tech measure (by service name)
     const isTechMeasure = (job.service_name || '').toLowerCase().includes('measure');
@@ -562,118 +547,47 @@ function showJobPopup(jobId) {
         </div>` : ''}
     `;
 
-    // Store maps URLs on the data object
-    if (jobsData[jobId]) {
-        jobsData[jobId]._mapsUrl = mapsUrl;
-        jobsData[jobId]._mapsWebUrl = mapsWebUrl;
-        jobsData[jobId]._isTechMeasure = isTechMeasure;
-        jobsData[jobId]._detailUrl = detailUrl;
-        jobsData[jobId]._detailLabel = detailLabel;
-    }
-
-    // Render the correct footer based on job state
-    renderJobFooter(jobId);
-
-    new bootstrap.Modal(document.getElementById('jobPopupModal')).show();
-}
-
-function renderJobFooter(jobId) {
-    const job = jobsData[jobId];
-    if (!job) return;
-
-    const footer = document.getElementById('jobPopupFooter');
-    const isTechMeasure = job._isTechMeasure || false;
-    const detailUrl = job._detailUrl || `/installer/jobs/${jobId}`;
-    const detailLabel = job._detailLabel || 'Job Details';
-    const routeState = job._routeState || 'idle';
-
-    // If rescheduled — show only the red badge, no action buttons
+    // If rescheduled — only show red badge
     if (job.is_rescheduled) {
-        footer.innerHTML = `
+        document.getElementById('jobPopupFooter').innerHTML = `
             <div class="w-100">
                 <div class="alert alert-danger text-center mb-0 py-2" style="font-size:.85rem;">
                     <i class="bi bi-exclamation-triangle-fill me-1"></i> Event Has Been Rescheduled
                 </div>
             </div>
         `;
+        new bootstrap.Modal(document.getElementById('jobPopupModal')).show();
         return;
     }
 
-    let routeRow = '';
-    let actionRow = '';
+    let footerHtml = '<div class="w-100 d-flex flex-column gap-2">';
 
-    if (job.status === 'in_progress') {
-        routeRow = `<a href="${detailUrl}" class="btn btn-success flex-fill"><i class="bi bi-play-circle me-1"></i> ${detailLabel}</a>`;
-    } else if (job.status === 'completed') {
-        routeRow = `<a href="${detailUrl}" class="btn btn-outline-success flex-fill"><i class="bi bi-check-circle me-1"></i> View Completed Job</a>`;
-    } else if (routeState === 'arrived') {
-        routeRow = `<button class="btn btn-success flex-fill" onclick="onStartJob(${jobId})"><i class="bi bi-play-circle me-1"></i> Start Job</button>`;
-    } else if (routeState === 'routed') {
-        routeRow = `<button class="btn btn-danger flex-fill" onclick="onArrivedAtLocation(${jobId})"><i class="bi bi-pin-map-fill me-1"></i> Arrived at Location</button>`;
+    if (job.status === 'completed') {
+        footerHtml += `<a href="${detailUrl}" class="btn btn-outline-success w-100"><i class="bi bi-check-circle me-1"></i> View Completed Job</a>`;
+    } else if (job.status === 'in_progress') {
+        footerHtml += `<a href="${detailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> ${detailLabel}</a>`;
     } else {
-        routeRow = `<button class="btn btn-vip flex-fill" onclick="onRouteStarted(${jobId})"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
+        // Show all 3 steps as buttons — always visible
+        if (fullAddress) {
+            footerHtml += `<a href="${mapsUrl}" target="_blank" class="btn btn-vip w-100"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</a>`;
+        }
+        footerHtml += `<a href="${detailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> Arrived — Start Job</a>`;
     }
 
-    // Action buttons: Call, Send Reminder, Reschedule
+    // Action buttons row
+    footerHtml += '<div class="d-flex gap-2 mt-1">';
     if (job.customer_phone) {
-        actionRow += `<a href="tel:${job.customer_phone}" class="btn btn-outline-secondary btn-sm flex-fill"><i class="bi bi-telephone me-1"></i>Call</a>`;
+        footerHtml += `<a href="tel:${job.customer_phone}" class="btn btn-outline-secondary btn-sm flex-fill"><i class="bi bi-telephone me-1"></i>Call</a>`;
     }
     if (job.customer_email) {
-        actionRow += `<button class="btn btn-outline-warning btn-sm flex-fill" onclick="sendJobReminder(${jobId})"><i class="bi bi-bell me-1"></i>Reminder</button>`;
+        footerHtml += `<button class="btn btn-outline-warning btn-sm flex-fill" onclick="sendJobReminder(${jobId})"><i class="bi bi-bell me-1"></i>Reminder</button>`;
     }
-    actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('job', ${jobId})"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
+    footerHtml += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('job', ${jobId})"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
+    footerHtml += '</div></div>';
 
-    footer.innerHTML = `
-        <div class="w-100">
-            <div class="d-flex gap-2 mb-2">${routeRow}</div>
-            <div class="d-flex gap-2">${actionRow}</div>
-        </div>
-    `;
-}
+    document.getElementById('jobPopupFooter').innerHTML = footerHtml;
 
-function onRouteStarted(jobId) {
-    // Update state and re-render footer immediately
-    jobsData[jobId]._routeState = 'routed';
-    renderJobFooter(jobId);
-
-    // Open Google Maps
-    openMapsUrl(jobsData[jobId]._mapsUrl, jobsData[jobId]._mapsWebUrl);
-}
-
-function onArrivedAtLocation(jobId) {
-    jobsData[jobId]._routeState = 'arrived';
-    renderJobFooter(jobId);
-}
-
-function onStartJob(jobId) {
-    const job = jobsData[jobId];
-    const isTechMeasure = job._isTechMeasure || false;
-
-    fetch(`/installer/jobs/${jobId}/clock-in`, {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json' },
-    })
-    .then(r => r.json())
-    .then(() => {
-        jobsData[jobId].status = 'in_progress';
-        window.location.href = isTechMeasure ? '/installer/tech-measures?job=' + jobId : '/installer/jobs/' + jobId;
-    })
-    .catch(() => {
-        window.location.href = isTechMeasure ? '/installer/tech-measures?job=' + jobId : '/installer/jobs/' + jobId;
-    });
-}
-
-function openMapsUrl(appUrl, webUrl) {
-    if (!appUrl && !webUrl) return;
-    if (appUrl && appUrl.startsWith('http')) {
-        window.open(appUrl, '_blank');
-    } else if (appUrl) {
-        // iOS/Android — try app scheme, fall back to web
-        window.location.href = appUrl;
-        setTimeout(() => { if (webUrl) window.open(webUrl, '_blank'); }, 1500);
-    } else if (webUrl) {
-        window.open(webUrl, '_blank');
-    }
+    new bootstrap.Modal(document.getElementById('jobPopupModal')).show();
 }
 
 // ── Event Popup ──
@@ -730,21 +644,8 @@ function showEventPopup(eventId) {
     }
 
     if (ev.address) {
-        const evEncodedAddr = encodeURIComponent(ev.address);
-        const evIsIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const evIsAndroid = /Android/.test(navigator.userAgent);
-        let evAppUrl, evWebUrl;
-        if (evIsIOS) {
-            evAppUrl = `comgooglemaps://?daddr=${evEncodedAddr}&directionsmode=driving`;
-        } else if (evIsAndroid) {
-            evAppUrl = `google.navigation:q=${evEncodedAddr}`;
-        }
-        evWebUrl = `https://www.google.com/maps/dir/?api=1&destination=${evEncodedAddr}`;
-
-        eventsData[eventId]._mapsUrl = evAppUrl || evWebUrl;
-        eventsData[eventId]._mapsWebUrl = evWebUrl;
-
-        routeRow = `<button class="btn btn-vip flex-fill" onclick="openMapsUrl(eventsData[${eventId}]._mapsUrl, eventsData[${eventId}]._mapsWebUrl)"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
+        const evMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(ev.address);
+        routeRow = `<a href="${evMapsUrl}" target="_blank" class="btn btn-vip flex-fill"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</a>`;
     }
 
     if (ev.customer_phone) {
