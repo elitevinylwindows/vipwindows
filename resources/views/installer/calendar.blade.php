@@ -467,11 +467,43 @@
         ];
     })->keyBy('id');
 
-    // Get tech measure IDs linked to calendar events
-    $techMeasureMap = \App\Models\TechMeasure::whereIn('calendar_event_id', $calendarEvents->pluck('id'))
-        ->pluck('id', 'calendar_event_id');
+    // Get tech measures linked to calendar events with status + clock-in info
+    $techMeasures = \App\Models\TechMeasure::whereIn('calendar_event_id', $calendarEvents->pluck('id'))
+        ->get()
+        ->keyBy('calendar_event_id');
 
-    $eventsJson = $calendarEvents->map(function($e) use ($techMeasureMap) {
+    $userId = auth('vip')->id();
+
+    $eventsJson = $calendarEvents->map(function($e) use ($techMeasures, $userId) {
+        $tm = $techMeasures[$e->id] ?? null;
+        $isClockedIn = false;
+        $activeSince = null;
+        $totalTimeMinutes = 0;
+
+        // Check clock-in status from JobTimeLog via linked job
+        if ($tm) {
+            $job = \App\Models\Job::where('service_id', $e->service_id)
+                ->where('customer_name', $e->customer_name)
+                ->where('scheduled_date', $e->event_date)
+                ->first();
+
+            if (!$job) {
+                // Also check via tech measure time logs if any
+                $activeLog = \App\Models\JobTimeLog::where('user_id', $userId)
+                    ->whereNull('clock_out')
+                    ->whereHas('job', fn($q) => $q->where('assigned_to', $userId))
+                    ->first();
+            } else {
+                $activeLog = $job->timeLogs()->where('user_id', $userId)->whereNull('clock_out')->first();
+                $totalTimeMinutes = $job->timeLogs()->where('user_id', $userId)->whereNotNull('clock_out')->sum('total_minutes');
+            }
+
+            if (isset($activeLog) && $activeLog) {
+                $isClockedIn = true;
+                $activeSince = $activeLog->clock_in->toISOString();
+            }
+        }
+
         return [
             'id' => $e->id,
             'title' => $e->title,
@@ -490,7 +522,11 @@
             'event_status' => $e->event_status ?? 'scheduled',
             'is_rescheduled' => (bool) $e->rescheduled_at,
             'reschedule_reason' => $e->reschedule_reason,
-            'tech_measure_id' => $techMeasureMap[$e->id] ?? null,
+            'tech_measure_id' => $tm?->id ?? null,
+            'tech_measure_status' => $tm?->status ?? null,
+            'is_clocked_in' => $isClockedIn,
+            'active_since' => $activeSince,
+            'total_time_minutes' => $totalTimeMinutes,
         ];
     })->keyBy('id');
 @endphp

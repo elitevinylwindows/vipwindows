@@ -98,12 +98,82 @@
         </div>
     </div>
 </div>
+{{-- Edit Tech Measure Modal --}}
+<div class="modal fade" id="editTmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0"><i class="bi bi-pencil me-1"></i>Edit Tech Measure</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <div class="row g-2">
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Customer *</label>
+                        <input type="text" id="editTmCustName" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Email</label>
+                        <input type="email" id="editTmCustEmail" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Phone</label>
+                        <input type="text" id="editTmCustPhone" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-8">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Address</label>
+                        <input type="text" id="editTmAddress" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Notes</label>
+                        <textarea id="editTmNotes" class="form-control form-control-sm" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="saveEditTm()"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Email Modal --}}
+<div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0"><i class="bi bi-envelope me-1"></i>Email Customer</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <div class="mb-2">
+                    <label class="form-label mb-0" style="font-size:.75rem; color:#888;">To</label>
+                    <input type="text" id="emailTo" class="form-control form-control-sm" readonly>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Subject</label>
+                    <input type="text" id="emailSubject" class="form-control form-control-sm" placeholder="Subject...">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Message</label>
+                    <textarea id="emailMessage" class="form-control form-control-sm" rows="5" placeholder="Write your message..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="sendEmail()"><i class="bi bi-send me-1"></i>Send Email</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
 const csrf = document.querySelector('meta[name=csrf-token]').content;
 let currentMeasureId = null;
+let currentMeasureData = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.tm-card');
@@ -143,7 +213,7 @@ function loadMeasure(id) {
 
     fetch(`/admin/tech-measures/${id}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
     .then(r => r.json())
-    .then(data => renderDetail(data))
+    .then(data => { currentMeasureData = data; renderDetail(data); })
     .catch(() => { body.innerHTML = '<div class="alert alert-danger m-4">Failed to load.</div>'; });
 }
 
@@ -158,6 +228,9 @@ function renderDetail(data) {
     title.textContent = m.customer_name || 'Tech Measure';
 
     let actions = '';
+    if (m.status !== 'converted') {
+        actions += `<button class="btn btn-sm btn-outline-primary me-1" onclick="editMeasure(${m.id})" title="Edit"><i class="bi bi-pencil"></i></button>`;
+    }
     if (m.status === 'completed') {
         actions += `<button class="btn btn-sm btn-vip" onclick="convertToQuote(${m.id})"><i class="bi bi-calculator me-1"></i>Convert to Quote</button>`;
     }
@@ -166,27 +239,33 @@ function renderDetail(data) {
     let itemsHtml = '';
     if (items.length) {
         itemsHtml = `<table class="tm-items-tbl"><thead><tr>
-            <th>#</th><th>Room</th><th>Type</th><th>Description</th><th>W × H</th><th>Qty</th><th>Frame</th><th>Glass</th><th>Grid</th><th>Condition</th><th>Notes</th>
+            <th style="width:30px;">#</th><th>Qty</th><th>Width</th><th>Height</th><th>Unit (Configuration)</th><th>Reference</th><th>Notes</th>
         </tr></thead><tbody>`;
         items.forEach((item, idx) => {
             const photoHtml = item.photos?.length ? `<div class="item-photos">${item.photos.map(p => `<img src="${p.url}" class="item-photo" onclick="window.open('${p.url}','_blank')">`).join('')}</div>` : '';
             itemsHtml += `<tr>
                 <td class="text-center text-muted">${idx + 1}</td>
-                <td><strong>${item.room_label || '—'}</strong>${photoHtml}</td>
-                <td>${item.opening_type || '—'}</td>
-                <td>${item.description || '—'}<br><span class="text-muted" style="font-size:.7rem;">${item.series_type || ''}</span></td>
-                <td class="text-nowrap">${item.width || '—'} × ${item.height || '—'}</td>
                 <td class="text-center">${item.qty || 1}</td>
-                <td>${item.frame_type || '—'}</td>
-                <td>${item.glass_type || '—'}${item.tempered ? ' <span class="badge bg-warning text-dark" style="font-size:.55rem;">T</span>' : ''}</td>
-                <td>${item.grid_pattern || '—'}</td>
-                <td style="font-size:.72rem;">${item.existing_condition || '—'}</td>
+                <td class="text-nowrap">${item.width || '—'}</td>
+                <td class="text-nowrap">${item.height || '—'}</td>
+                <td>${item.description || '—'}</td>
+                <td>${item.room_label || '—'}${photoHtml}</td>
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
             </tr>`;
         });
         itemsHtml += '</tbody></table>';
     } else {
         itemsHtml = '<p class="text-muted small">No measurements recorded yet.</p>';
+    }
+
+    // Frame type & grid info (at the bottom, like installer view)
+    let frameGridHtml = '';
+    if (m.frame_type) {
+        frameGridHtml += `<div class="tm-info-card"><div class="label">Frame Type</div><div class="value">${escHtml(m.frame_type)}</div></div>`;
+    }
+    if (m.has_grids) {
+        frameGridHtml += `<div class="tm-info-card"><div class="label">Grid List</div><div class="value">${escHtml(m.grid_list || '—')}</div></div>`;
+        frameGridHtml += `<div class="tm-info-card"><div class="label">Grid Pattern</div><div class="value">${escHtml(m.grid_pattern || '—')}</div></div>`;
     }
 
     let photosHtml = '';
@@ -196,10 +275,23 @@ function renderDetail(data) {
         photosHtml = '<p class="text-muted small">No site photos.</p>';
     }
 
+    // Contact action buttons
+    let contactBtns = '';
+    if (m.customer_phone) {
+        contactBtns += `<a href="tel:${m.customer_phone}" class="btn btn-sm btn-outline-primary me-1" title="Call"><i class="bi bi-telephone me-1"></i>Call</a>`;
+    }
+    if (m.customer_email) {
+        contactBtns += `<button class="btn btn-sm btn-outline-secondary" onclick="openEmailModal()" title="Email"><i class="bi bi-envelope me-1"></i>Email</button>`;
+    }
+
     body.innerHTML = `
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <h5 class="mb-0 fw-bold">${escHtml(m.customer_name || '—')}</h5>
+            ${contactBtns ? `<div class="ms-2">${contactBtns}</div>` : ''}
+        </div>
         <div class="tm-info-grid">
             <div class="tm-info-card"><div class="label">Customer</div><div class="value">${m.customer_name || '—'}</div></div>
-            <div class="tm-info-card"><div class="label">Phone</div><div class="value">${m.customer_phone || '—'}</div></div>
+            <div class="tm-info-card"><div class="label">Phone</div><div class="value">${m.customer_phone ? `<a href="tel:${m.customer_phone}">${m.customer_phone}</a>` : '—'}</div></div>
             <div class="tm-info-card"><div class="label">Email</div><div class="value">${m.customer_email || '—'}</div></div>
             <div class="tm-info-card"><div class="label">Address</div><div class="value">${m.address || '—'}</div></div>
             <div class="tm-info-card"><div class="label">Status</div><div class="value"><span class="badge bg-${m.status === 'in_progress' ? 'primary' : m.status === 'completed' ? 'success' : m.status === 'converted' ? 'secondary' : 'warning'}">${m.status?.replace('_',' ')}</span></div></div>
@@ -209,10 +301,82 @@ function renderDetail(data) {
         </div>
         <h6 class="section-title"><i class="bi bi-rulers"></i> Measurements (${items.length})</h6>
         ${itemsHtml}
+        ${frameGridHtml ? `<h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame & Grids</h6><div class="tm-info-grid">${frameGridHtml}</div>` : ''}
         <h6 class="section-title"><i class="bi bi-image"></i> Site Photos</h6>
         ${photosHtml}
         ${m.notes ? `<h6 class="section-title"><i class="bi bi-journal-text"></i> Notes</h6><div class="card" style="border:none;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div class="card-body py-2 px-3"><p class="small mb-0">${m.notes.replace(/\n/g, '<br>')}</p></div></div>` : ''}
     `;
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+function editMeasure(id) {
+    if (!currentMeasureData) return;
+    const m = currentMeasureData.measure;
+    document.getElementById('editTmCustName').value = m.customer_name || '';
+    document.getElementById('editTmCustEmail').value = m.customer_email || '';
+    document.getElementById('editTmCustPhone').value = m.customer_phone || '';
+    document.getElementById('editTmAddress').value = m.address || '';
+    document.getElementById('editTmNotes').value = m.notes || '';
+    new bootstrap.Modal(document.getElementById('editTmModal')).show();
+}
+
+function saveEditTm() {
+    if (!currentMeasureId) return;
+    fetch(`/admin/tech-measures/${currentMeasureId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({
+            customer_name: document.getElementById('editTmCustName').value,
+            customer_email: document.getElementById('editTmCustEmail').value,
+            customer_phone: document.getElementById('editTmCustPhone').value,
+            address: document.getElementById('editTmAddress').value,
+            notes: document.getElementById('editTmNotes').value,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editTmModal')).hide();
+            loadMeasure(currentMeasureId);
+        } else alert(data.error || 'Failed to save.');
+    })
+    .catch(() => alert('Failed to save.'));
+}
+
+function openEmailModal() {
+    if (!currentMeasureData) return;
+    const m = currentMeasureData.measure;
+    document.getElementById('emailTo').value = m.customer_email || '';
+    document.getElementById('emailSubject').value = `Regarding your tech measure - ${m.customer_name || ''}`;
+    document.getElementById('emailMessage').value = '';
+    new bootstrap.Modal(document.getElementById('emailModal')).show();
+}
+
+function sendEmail() {
+    if (!currentMeasureId) return;
+    const subject = document.getElementById('emailSubject').value.trim();
+    const message = document.getElementById('emailMessage').value.trim();
+    if (!subject || !message) { alert('Please fill in both subject and message.'); return; }
+
+    fetch(`/admin/tech-measures/${currentMeasureId}/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ subject, message })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('emailModal')).hide();
+            alert(data.message);
+        } else alert(data.error || 'Failed to send email.');
+    })
+    .catch(() => alert('Failed to send email.'));
 }
 
 function convertToQuote(measureId) {

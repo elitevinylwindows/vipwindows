@@ -72,6 +72,50 @@ class TechMeasureController extends Controller
     }
 
     /**
+     * Update tech measure details (admin edit).
+     */
+    public function update(Request $request, $id)
+    {
+        $measure = TechMeasure::findOrFail($id);
+
+        $validated = $request->validate([
+            'customer_name'  => 'nullable|string|max:255',
+            'customer_email' => 'nullable|email|max:255',
+            'customer_phone' => 'nullable|string|max:50',
+            'address'        => 'nullable|string|max:500',
+            'notes'          => 'nullable|string',
+        ]);
+
+        $measure->update($validated);
+
+        return response()->json(['success' => true, 'measure' => $measure->fresh()]);
+    }
+
+    /**
+     * Send email to tech measure customer (admin).
+     */
+    public function sendEmail(Request $request, $id)
+    {
+        $measure = TechMeasure::findOrFail($id);
+
+        $validated = $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        if (!$measure->customer_email) {
+            return response()->json(['error' => 'No customer email on file.'], 422);
+        }
+
+        \Illuminate\Support\Facades\Mail::raw($validated['message'], function ($mail) use ($measure, $validated) {
+            $mail->to($measure->customer_email)
+                 ->subject($validated['subject']);
+        });
+
+        return response()->json(['success' => true, 'message' => 'Email sent to ' . $measure->customer_email]);
+    }
+
+    /**
      * Create a tech measure from a calendar event.
      */
     public function createFromEvent(Request $request)

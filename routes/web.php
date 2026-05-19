@@ -201,6 +201,8 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     // Tech Measures (admin view + convert to quote)
     Route::get('/tech-measures', [TechMeasureController::class, 'index'])->name('tech-measures.index');
     Route::get('/tech-measures/{id}', [TechMeasureController::class, 'show'])->name('tech-measures.show');
+    Route::put('/tech-measures/{id}', [TechMeasureController::class, 'update'])->name('tech-measures.update');
+    Route::post('/tech-measures/{id}/send-email', [TechMeasureController::class, 'sendEmail'])->name('tech-measures.sendEmail');
     Route::post('/tech-measures/from-event', [TechMeasureController::class, 'createFromEvent'])->name('tech-measures.fromEvent');
     Route::post('/tech-measures/{id}/convert-to-quote', [TechMeasureController::class, 'convertToQuote'])->name('tech-measures.convertToQuote');
 
