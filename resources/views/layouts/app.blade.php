@@ -199,6 +199,9 @@
             </a>
 
             <div class="nav-label mt-3">Configuration</div>
+            <a href="{{ route('admin.vip-master.index') }}" class="{{ request()->routeIs('admin.vip-master.*') ? 'active' : '' }}">
+                <i class="bi bi-star-fill"></i> VIP Master
+            </a>
             <a href="{{ route('admin.master.hub') }}" class="{{ request()->routeIs('admin.master.*') ? 'active' : '' }}">
                 <i class="bi bi-database-gear"></i> Master Data
             </a>
