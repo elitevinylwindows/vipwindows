@@ -15,9 +15,51 @@ use App\Models\Service;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class InstallerJobController extends Controller
 {
+    /**
+     * Get crew IDs the current installer belongs to.
+     */
+    private function myCrewIds(): array
+    {
+        return DB::table('crew_members')
+            ->where('user_id', Auth::id())
+            ->pluck('crew_id')
+            ->toArray();
+    }
+
+    /**
+     * Scope a job query to include jobs assigned directly OR via crew membership.
+     */
+    private function scopeMyJobs($query)
+    {
+        $crewIds = $this->myCrewIds();
+
+        return $query->where(function ($q) use ($crewIds) {
+            $q->where('assigned_to', Auth::id());
+            if (!empty($crewIds)) {
+                $q->orWhereIn('crew_id', $crewIds);
+            }
+        });
+    }
+
+    /**
+     * Find a job by ID that belongs to this installer (direct or via crew).
+     */
+    private function findMyJob($id)
+    {
+        $crewIds = $this->myCrewIds();
+
+        return Job::where(function ($q) use ($crewIds) {
+            $q->where('assigned_to', Auth::id());
+            if (!empty($crewIds)) {
+                $q->orWhereIn('crew_id', $crewIds);
+            }
+        })->findOrFail($id);
+    }
+
     public function calendar(Request $request)
     {
         $month = $request->get('month', now()->month);
@@ -26,10 +68,16 @@ class InstallerJobController extends Controller
         $startOfMonth = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
         $endOfMonth = $startOfMonth->copy()->endOfMonth();
 
-        // Get all jobs for the month
-        $jobs = Job::where('assigned_to', Auth::id())
-            ->whereNotNull('scheduled_date')
+        // Get all jobs for the month — direct assignment OR crew membership
+        $jobs = Job::whereNotNull('scheduled_date')
             ->whereBetween('scheduled_date', [$startOfMonth, $endOfMonth])
+            ->where(function ($q) {
+                $crewIds = $this->myCrewIds();
+                $q->where('assigned_to', Auth::id());
+                if (!empty($crewIds)) {
+                    $q->orWhereIn('crew_id', $crewIds);
+                }
+            })
             ->orderBy('scheduled_date')
             ->orderBy('scheduled_time')
             ->get();
@@ -72,9 +120,9 @@ class InstallerJobController extends Controller
     {
         $status = $request->get('status', 'all');
 
-        $query = Job::where('assigned_to', Auth::id())
-            ->with(['jobNotes.author'])
+        $query = Job::with(['jobNotes.author', 'service'])
             ->orderByDesc('created_at');
+        $this->scopeMyJobs($query);
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -82,10 +130,15 @@ class InstallerJobController extends Controller
 
         $jobs = $query->paginate(20);
 
-        // Stats scoped to this installer
-        $todayJobs = Job::where('assigned_to', Auth::id())->whereDate('scheduled_date', today())->count();
-        $weekJobs = Job::where('assigned_to', Auth::id())->whereBetween('scheduled_date', [today(), today()->addDays(7)])->count();
-        $inProgress = Job::where('assigned_to', Auth::id())->where('status', 'in_progress')->count();
+        // Stats scoped to this installer (direct + crew)
+        $crewIds = $this->myCrewIds();
+        $myJobScope = function ($q) use ($crewIds) {
+            $q->where('assigned_to', Auth::id());
+            if (!empty($crewIds)) $q->orWhereIn('crew_id', $crewIds);
+        };
+        $todayJobs = Job::where($myJobScope)->whereDate('scheduled_date', today())->count();
+        $weekJobs = Job::where($myJobScope)->whereBetween('scheduled_date', [today(), today()->addDays(7)])->count();
+        $inProgress = Job::where($myJobScope)->where('status', 'in_progress')->count();
 
         $services = Service::where('is_active', true)->orderBy('name')->get();
         $crews = Crew::where('status', 'active')->with('members')->orderBy('name')->get();
@@ -145,8 +198,7 @@ class InstallerJobController extends Controller
 
     public function show($id)
     {
-        $job = Job::where('assigned_to', Auth::id())
-            ->findOrFail($id);
+        $job = $this->findMyJob($id);
 
         $notes = [];
         try {

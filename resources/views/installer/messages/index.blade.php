@@ -620,16 +620,21 @@ function startNewConversation() {
     fetch(`${basePath}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-        body: JSON.stringify({ admin_id: adminId, body })
+        body: JSON.stringify({ admin_id: adminId, body: body })
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) return r.text().then(t => { throw new Error(`HTTP ${r.status}: ${t.substring(0, 300)}`); });
+        return r.json();
+    })
     .then(data => {
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('newMessageModal')).hide();
             window.location.reload();
-        } else { alert('Failed to start conversation.'); }
+        } else {
+            alert('Error: ' + JSON.stringify(data));
+        }
     })
-    .catch(() => alert('Failed to start conversation.'));
+    .catch(e => alert('Failed to start conversation: ' + e.message));
 }
 
 document.getElementById('msgInput').addEventListener('keydown', function(e) {

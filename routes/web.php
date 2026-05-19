@@ -166,6 +166,11 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::delete('/services/{id}', [ServiceController::class, 'destroy'])->name('services.destroy');
     Route::post('/services/{id}/toggle-active', [ServiceController::class, 'toggleActive'])->name('services.toggleActive');
 
+    // Installation Types (sub-types under Installation service)
+    Route::post('/services/install-types', [ServiceController::class, 'storeInstallType'])->name('services.installTypes.store');
+    Route::put('/services/install-types/{id}', [ServiceController::class, 'updateInstallType'])->name('services.installTypes.update');
+    Route::delete('/services/install-types/{id}', [ServiceController::class, 'destroyInstallType'])->name('services.installTypes.destroy');
+
     // Attendance (admin view)
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
 
@@ -184,10 +189,10 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     // Messages (admin ↔ installer)
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     Route::get('/messages/unread-count', [MessageController::class, 'unreadCount'])->name('messages.unreadCount');
+    Route::post('/messages/start', [MessageController::class, 'startConversation'])->name('messages.start');
     Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{id}/send', [MessageController::class, 'send'])->name('messages.send');
     Route::delete('/messages/{id}/message/{messageId}', [MessageController::class, 'deleteMessage'])->name('messages.deleteMessage');
-    Route::post('/messages/start', [MessageController::class, 'startConversation'])->name('messages.start');
 
     // Tech Measures (admin view + convert to quote)
     Route::get('/tech-measures', [TechMeasureController::class, 'index'])->name('tech-measures.index');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InstallationType;
 use App\Models\Service;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
@@ -10,24 +11,10 @@ class ServiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Service::query();
+        $services = Service::orderBy('sort_order')->get();
+        $installTypes = InstallationType::orderBy('sort_order')->orderBy('name')->get();
 
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->input('filter') === 'active') {
-            $query->where('is_active', true);
-        } elseif ($request->input('filter') === 'inactive') {
-            $query->where('is_active', false);
-        }
-
-        $services = $query->orderBy('sort_order')->paginate(20);
-        return view('services.index', compact('services'));
+        return view('services.index', compact('services', 'installTypes'));
     }
 
     public function show($id)
@@ -65,9 +52,7 @@ class ServiceController extends Controller
             'installer_pay_type' => 'nullable|in:per_job,per_hour,per_unit,percentage',
         ]);
 
-        // Auto-generate code from name
         $validated['code'] = strtoupper(\Illuminate\Support\Str::slug($validated['name'], '_'));
-        // Ensure uniqueness
         $base = $validated['code'];
         $i = 1;
         while (Service::where('code', $validated['code'])->exists()) {
@@ -122,14 +107,58 @@ class ServiceController extends Controller
         return redirect()->route('admin.services.index')->with('success', 'Service removed.');
     }
 
-    /**
-     * Toggle active/inactive status via AJAX
-     */
     public function toggleActive($id)
     {
         $service = Service::findOrFail($id);
         $service->update(['is_active' => !$service->is_active]);
 
         return response()->json(['success' => true, 'is_active' => $service->is_active]);
+    }
+
+    // ─── Installation Types CRUD ────────────────────────────────
+
+    public function storeInstallType(Request $request)
+    {
+        $validated = $request->validate([
+            'name'          => 'required|string|max:150',
+            'description'   => 'nullable|string|max:500',
+            'price'         => 'required|numeric|min:0',
+            'installer_pay' => 'required|numeric|min:0',
+            'sort_order'    => 'nullable|integer',
+        ]);
+
+        $validated['is_active'] = true;
+        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+
+        InstallationType::create($validated);
+
+        return redirect()->route('admin.services.index')->with('success', 'Installation type added.');
+    }
+
+    public function updateInstallType(Request $request, $id)
+    {
+        $type = InstallationType::findOrFail($id);
+
+        $validated = $request->validate([
+            'name'          => 'required|string|max:150',
+            'description'   => 'nullable|string|max:500',
+            'price'         => 'required|numeric|min:0',
+            'installer_pay' => 'required|numeric|min:0',
+            'is_active'     => 'nullable',
+            'sort_order'    => 'nullable|integer',
+        ]);
+
+        $validated['is_active'] = $request->has('is_active') ? true : false;
+        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+
+        $type->update($validated);
+
+        return redirect()->route('admin.services.index')->with('success', 'Installation type updated.');
+    }
+
+    public function destroyInstallType($id)
+    {
+        InstallationType::findOrFail($id)->delete();
+        return redirect()->route('admin.services.index')->with('success', 'Installation type removed.');
     }
 }
