@@ -3,265 +3,363 @@
 
 @push('styles')
 <style>
-    .svc-container { display: flex; height: calc(100vh - 56px); overflow: hidden; }
-
-    /* ── Left Rail ─────────────────────────────── */
-    .svc-rail {
-        width: 320px; min-width: 320px;
-        background: var(--vip-primary);
-        color: #fff;
-        display: flex; flex-direction: column;
-        border-right: 1px solid rgba(255,255,255,.06);
-    }
-    .svc-rail-header { padding: 1.25rem 1rem .75rem; }
-    .svc-rail-header h6 { font-size: .75rem; text-transform: uppercase; letter-spacing: 1.2px; color: rgba(255,255,255,.5); margin-bottom: .75rem; }
-    .svc-rail-search {
-        display: flex; gap: .5rem;
-    }
-    .svc-rail-search input {
-        flex: 1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
-        color: #fff; border-radius: .375rem; padding: .4rem .75rem; font-size: .85rem;
-    }
-    .svc-rail-search input::placeholder { color: rgba(255,255,255,.4); }
-    .svc-rail-search input:focus { outline: none; border-color: var(--vip-accent); }
-
-    .svc-rail-tabs {
-        display: flex; gap: 0; padding: 0 1rem; margin-top: .75rem;
-    }
-    .svc-rail-tabs .tab-btn {
-        flex: 1; text-align: center; padding: .4rem .5rem; font-size: .75rem;
-        background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
-        color: rgba(255,255,255,.6); cursor: pointer; transition: all .15s;
-    }
-    .svc-rail-tabs .tab-btn:first-child { border-radius: .3rem 0 0 .3rem; }
-    .svc-rail-tabs .tab-btn:last-child { border-radius: 0 .3rem .3rem 0; }
-    .svc-rail-tabs .tab-btn.active {
-        background: var(--vip-accent); color: #fff; border-color: var(--vip-accent);
-    }
-
-    .svc-rail-list { flex: 1; overflow-y: auto; padding: .5rem; }
+    .svc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
     .svc-card {
-        background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
-        border-radius: .5rem; padding: .75rem 1rem; margin-bottom: .5rem;
-        cursor: pointer; transition: all .15s;
+        background: #fff; border-radius: .75rem; overflow: hidden;
+        box-shadow: 0 1px 6px rgba(0,0,0,.06); transition: transform .15s;
     }
-    .svc-card:hover { background: rgba(255,255,255,.08); border-color: rgba(201,168,76,.3); }
-    .svc-card.active { background: rgba(201,168,76,.12); border-color: var(--vip-accent); }
-    .svc-card .svc-name { font-weight: 600; font-size: .9rem; color: #fff; }
-    .svc-card .svc-code { font-size: .7rem; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .5px; }
-    .svc-card .svc-price { font-size: .85rem; color: var(--vip-accent); font-weight: 600; margin-top: .25rem; }
-    .svc-card .svc-unit { font-size: .7rem; color: rgba(255,255,255,.45); }
-    .svc-card .svc-badge {
-        display: inline-block; font-size: .65rem; padding: .1rem .4rem;
-        border-radius: .2rem; margin-top: .25rem;
+    .svc-card:hover { transform: translateY(-2px); }
+    .svc-card-header {
+        padding: 1rem 1.25rem; display: flex; align-items: center; gap: .75rem;
+        border-bottom: 1px solid rgba(0,0,0,.04);
     }
-    .svc-badge-active { background: rgba(40,167,69,.2); color: #28a745; }
-    .svc-badge-inactive { background: rgba(220,53,69,.2); color: #dc3545; }
+    .svc-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .svc-card-header h6 { margin: 0; font-size: 1rem; font-weight: 700; }
+    .svc-card-header .badge { font-size: .65rem; }
+    .svc-card-body { padding: 1.25rem; }
+    .svc-field { margin-bottom: .75rem; }
+    .svc-field label { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.45); display: block; margin-bottom: 2px; }
+    .svc-field .val { font-size: 1rem; font-weight: 600; color: #111; }
+    .svc-field .val.gold { color: var(--vip-accent); }
+    .svc-field .val.red { color: #dc3545; }
+    .svc-field .val.green { color: #198754; }
 
-    .svc-rail-footer {
-        padding: .75rem 1rem; border-top: 1px solid rgba(255,255,255,.08);
-        font-size: .75rem; color: rgba(255,255,255,.4);
-        display: flex; justify-content: space-between; align-items: center;
+    /* Install types table */
+    .install-types-section { margin-top: 2rem; }
+    .it-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .it-table thead th {
+        font-size: .7rem; text-transform: uppercase; letter-spacing: .5px;
+        color: rgba(0,0,0,.5); padding: .6rem 1rem; border-bottom: 2px solid rgba(0,0,0,.08);
+        white-space: nowrap;
     }
-
-    /* ── Main Panel ────────────────────────────── */
-    .svc-main { flex: 1; overflow-y: auto; background: var(--vip-light); }
-    .svc-main-toolbar {
-        background: #fff; border-bottom: 1px solid rgba(0,0,0,.06);
-        padding: .75rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+    .it-table tbody td {
+        padding: .75rem 1rem; font-size: .9rem; border-bottom: 1px solid rgba(0,0,0,.04);
+        vertical-align: middle;
     }
-    .svc-main-toolbar h5 { font-size: 1rem; font-weight: 700; margin: 0; }
-    .svc-detail-body { padding: 1.5rem; }
-
-    .svc-empty-state {
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        height: 60vh; color: rgba(0,0,0,.35);
+    .it-table tbody tr:hover { background: rgba(201,168,76,.03); }
+    .profit-bar {
+        height: 6px; border-radius: 3px; background: #eee; overflow: hidden; width: 60px; display: inline-block; vertical-align: middle; margin-left: .5rem;
     }
-    .svc-empty-state i { font-size: 3rem; margin-bottom: 1rem; }
-
-    /* Info cards grid */
-    .svc-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .svc-info-card {
-        background: #fff; border-radius: .5rem; padding: 1.25rem;
-        box-shadow: 0 1px 4px rgba(0,0,0,.06);
-    }
-    .svc-info-card .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.45); margin-bottom: .25rem; }
-    .svc-info-card .value { font-size: 1rem; font-weight: 600; color: #111; word-break: break-all; }
-
-    /* Installers table */
-    .svc-installers-card {
-        background: #fff; border-radius: .5rem; padding: 1.25rem;
-        box-shadow: 0 1px 4px rgba(0,0,0,.06);
-    }
-    .svc-installers-card h6 { font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.5); margin-bottom: .75rem; }
-    .svc-inst-table { width: 100%; border-collapse: collapse; }
-    .svc-inst-table th { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.4); padding: .5rem .75rem; border-bottom: 1px solid rgba(0,0,0,.08); }
-    .svc-inst-table td { padding: .6rem .75rem; font-size: .85rem; border-bottom: 1px solid rgba(0,0,0,.04); }
-
-    @media (max-width: 991.98px) {
-        .svc-container { flex-direction: column; height: auto; }
-        .svc-rail { width: 100%; min-width: 100%; max-height: 45vh; }
-    }
+    .profit-bar-fill { height: 100%; background: #198754; border-radius: 3px; }
 </style>
 @endpush
 
 @section('content')
-<div class="svc-container">
-    {{-- Left Rail --}}
-    <div class="svc-rail">
-        <div class="svc-rail-header">
-            <h6>Services</h6>
-            <div class="svc-rail-search">
-                <input type="text" id="svcSearch" placeholder="Search services..." value="{{ request('search') }}">
-                <button class="btn btn-sm btn-vip" data-bs-toggle="modal" data-bs-target="#addServiceModal" title="Add Service">
-                    <i class="bi bi-plus-lg"></i>
-                </button>
-            </div>
-            <div class="svc-rail-tabs">
-                <div class="tab-btn {{ !request('filter') ? 'active' : '' }}" data-filter="">All</div>
-                <div class="tab-btn {{ request('filter') === 'active' ? 'active' : '' }}" data-filter="active">Active</div>
-                <div class="tab-btn {{ request('filter') === 'inactive' ? 'active' : '' }}" data-filter="inactive">Inactive</div>
-            </div>
-        </div>
-
-        <div class="svc-rail-list">
-            @forelse($services as $service)
-                <div class="svc-card" data-id="{{ $service->id }}">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="d-flex align-items-center gap-2">
-                            <span style="width:10px;height:10px;border-radius:50%;background:{{ $service->color ?? '#0d6efd' }};flex-shrink:0;"></span>
-                            <div>
-                                <div class="svc-name">{{ $service->name }}</div>
-                            </div>
-                        </div>
-                        <span class="svc-badge {{ $service->is_active ? 'svc-badge-active' : 'svc-badge-inactive' }}">
-                            {{ $service->is_active ? 'Active' : 'Inactive' }}
-                        </span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-end mt-1">
-                        <div class="svc-price">${{ number_format($service->base_price, 2) }}</div>
-                        <div class="svc-unit">{{ str_replace('_', ' ', $service->unit) }}</div>
-                    </div>
-                </div>
-            @empty
-                <div class="text-center py-4" style="color:rgba(255,255,255,.4);">
-                    <i class="bi bi-wrench" style="font-size:2rem;"></i>
-                    <p class="mt-2 mb-0">No services found</p>
-                </div>
-            @endforelse
-        </div>
-
-        <div class="svc-rail-footer">
-            <span>{{ $services->total() }} service{{ $services->total() !== 1 ? 's' : '' }}</span>
-            <span>Active: {{ $services->where('is_active', true)->count() }}</span>
+<div class="container-fluid py-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-wrench me-2"></i>Services</h4>
+            <p class="text-muted small mb-0">4 core services. Tech Measure, Service, and Repair are billed hourly. Installation is billed per unit with defined install types below.</p>
         </div>
     </div>
 
-    {{-- Main Panel --}}
-    <div class="svc-main">
-        <div class="svc-main-toolbar">
-            <h5 id="svcDetailTitle">Service Details</h5>
-            <div id="svcToolbarActions"></div>
-        </div>
-        <div class="svc-detail-body" id="svcDetailBody">
-            <div class="svc-empty-state">
-                <i class="bi bi-wrench"></i>
-                <p>Select a service to view details</p>
+    {{-- Service Cards Grid --}}
+    <div class="svc-grid mb-4">
+        @foreach($services as $service)
+            <div class="svc-card">
+                <div class="svc-card-header">
+                    <span class="svc-dot" style="background:{{ $service->color ?? '#0d6efd' }}"></span>
+                    <h6>{{ $service->name }}</h6>
+                    <span class="badge {{ $service->is_active ? 'bg-success' : 'bg-secondary' }} ms-auto">
+                        {{ $service->is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                </div>
+                <div class="svc-card-body">
+                    @if($service->description)
+                        <p class="text-muted small mb-3">{{ $service->description }}</p>
+                    @endif
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="svc-field">
+                                <label>Billing</label>
+                                <div class="val">{{ ucwords(str_replace('_', ' ', $service->unit)) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="svc-field">
+                                <label>Hourly Rate</label>
+                                <div class="val gold">${{ number_format($service->base_price, 2) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="svc-field">
+                                <label>Installer Pay</label>
+                                <div class="val red">
+                                    @if($service->installer_pay_type === 'percentage')
+                                        {{ number_format($service->installer_pay, 1) }}%
+                                    @else
+                                        ${{ number_format($service->installer_pay, 2) }}
+                                    @endif
+                                    <span class="text-muted" style="font-size:.7rem; font-weight:400;">{{ str_replace('_', ' ', $service->installer_pay_type) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="svc-field">
+                                <label>Profit / hr</label>
+                                @php
+                                    $profit = $service->installer_pay_type === 'percentage'
+                                        ? $service->base_price - ($service->base_price * $service->installer_pay / 100)
+                                        : $service->base_price - $service->installer_pay;
+                                @endphp
+                                <div class="val green">${{ number_format($profit, 2) }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-2">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="editService({{ $service->id }})">
+                            <i class="bi bi-pencil me-1"></i> Edit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    {{-- Installation Types Section --}}
+    <div class="install-types-section">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-grid-3x3-gap me-2 text-success"></i>Installation Types</h5>
+                    <p class="text-muted small mb-0 mt-1">Define each type of installation, what you charge per unit, what the installer gets paid, and your profit margin.</p>
+                </div>
+                <button class="btn btn-vip" data-bs-toggle="modal" data-bs-target="#addInstallTypeModal">
+                    <i class="bi bi-plus-circle me-1"></i> Add Type
+                </button>
+            </div>
+            <div class="card-body p-0">
+                @if($installTypes->isEmpty())
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-grid-3x3-gap fs-1 d-block mb-2"></i>
+                        No installation types defined yet. Add your first one.
+                    </div>
+                @else
+                    <div class="table-responsive">
+                        <table class="it-table">
+                            <thead>
+                                <tr>
+                                    <th>Install Type</th>
+                                    <th>Description</th>
+                                    <th class="text-end">Price / Unit</th>
+                                    <th class="text-end">Installer Pay / Unit</th>
+                                    <th class="text-end">Profit / Unit</th>
+                                    <th class="text-end">Margin</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($installTypes as $type)
+                                    @php
+                                        $typeProfit = $type->profit();
+                                        $typeMargin = $type->marginPercent();
+                                    @endphp
+                                    <tr>
+                                        <td class="fw-semibold">{{ $type->name }}</td>
+                                        <td class="text-muted small">{{ $type->description ?? '—' }}</td>
+                                        <td class="text-end fw-semibold" style="color:var(--vip-accent);">${{ number_format($type->price, 2) }}</td>
+                                        <td class="text-end fw-semibold text-danger">${{ number_format($type->installer_pay, 2) }}</td>
+                                        <td class="text-end fw-semibold text-success">${{ number_format($typeProfit, 2) }}</td>
+                                        <td class="text-end">
+                                            <span class="fw-semibold {{ $typeMargin >= 30 ? 'text-success' : ($typeMargin >= 15 ? 'text-warning' : 'text-danger') }}">
+                                                {{ $typeMargin }}%
+                                            </span>
+                                            <div class="profit-bar">
+                                                <div class="profit-bar-fill" style="width:{{ min($typeMargin, 100) }}%;background:{{ $typeMargin >= 30 ? '#198754' : ($typeMargin >= 15 ? '#ffc107' : '#dc3545') }};"></div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge {{ $type->is_active ? 'bg-success' : 'bg-secondary' }}">
+                                                {{ $type->is_active ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="editInstallType({{ $type->id }}, '{{ addslashes($type->name) }}', '{{ addslashes($type->description) }}', {{ $type->price }}, {{ $type->installer_pay }}, {{ $type->is_active ? 'true' : 'false' }}, {{ $type->sort_order }})">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <form method="POST" action="{{ route('admin.services.installTypes.destroy', $type->id) }}" class="d-inline" onsubmit="return confirm('Delete this install type?')">
+                                                @csrf @method('DELETE')
+                                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <td colspan="2" class="fw-bold small text-muted">AVERAGES ({{ $installTypes->count() }} types)</td>
+                                    <td class="text-end fw-bold" style="color:var(--vip-accent);">${{ number_format($installTypes->avg('price'), 2) }}</td>
+                                    <td class="text-end fw-bold text-danger">${{ number_format($installTypes->avg('installer_pay'), 2) }}</td>
+                                    <td class="text-end fw-bold text-success">${{ number_format($installTypes->avg('price') - $installTypes->avg('installer_pay'), 2) }}</td>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
-{{-- Add Service Modal --}}
-<div class="modal fade" id="addServiceModal" tabindex="-1">
+{{-- Add Installation Type Modal --}}
+<div class="modal fade" id="addInstallTypeModal" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST" action="{{ route('admin.services.store') }}">
+        <form method="POST" action="{{ route('admin.services.installTypes.store') }}">
             @csrf
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Add Service</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle me-1"></i> Add Installation Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Type Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required placeholder="e.g. Window Install, Door Install, Screen Install">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Optional description..."></textarea>
+                    </div>
                     <div class="row g-3">
-                        <div class="col-12"><label class="form-label">Service Name *</label><input type="text" name="name" class="form-control" required></div>
-                        <div class="col-12"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="2"></textarea></div>
-                        <div class="col-4"><label class="form-label">Base Price *</label><input type="number" name="base_price" class="form-control" step="0.01" min="0" required></div>
-                        <div class="col-4"><label class="form-label">Cost Price</label><input type="number" name="cost_price" class="form-control" step="0.01" min="0" value="0"></div>
-                        <div class="col-4"><label class="form-label">Unit *</label>
-                            <select name="unit" class="form-select">
-                                <option value="per_job">Per Job</option>
-                                <option value="per_hour">Per Hour</option>
-                                <option value="per_unit">Per Unit</option>
-                            </select>
+                        <div class="col-6">
+                            <label class="form-label">Price per Unit (Customer) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="price" class="form-control" step="0.01" min="0" required id="addItPrice" oninput="calcAddProfit()">
+                            </div>
                         </div>
-                        <div class="col-12"><hr class="my-1"><label class="form-label fw-bold text-muted" style="font-size:.75rem;">INSTALLER PAY</label></div>
-                        <div class="col-6"><label class="form-label">Installer Pay Rate</label><input type="number" name="installer_pay" class="form-control" step="0.01" min="0" placeholder="e.g. 60.00"></div>
-                        <div class="col-6"><label class="form-label">Pay Type</label>
-                            <select name="installer_pay_type" class="form-select">
-                                <option value="per_unit">Per Unit</option>
-                                <option value="per_job">Per Job</option>
-                                <option value="per_hour">Per Hour</option>
-                                <option value="percentage">% of Base Price</option>
-                            </select>
-                        </div>
-                        <div class="col-4"><label class="form-label">Min Price</label><input type="number" name="min_price" class="form-control" step="0.01" min="0"></div>
-                        <div class="col-4"><label class="form-label">Max Price</label><input type="number" name="max_price" class="form-control" step="0.01" min="0"></div>
-                        <div class="col-4"><label class="form-label">Sort Order</label><input type="number" name="sort_order" class="form-control" value="0"></div>
-                        <div class="col-4">
-                            <label class="form-label">Calendar Color</label>
-                            <input type="color" name="color" class="form-control form-control-color" value="#0d6efd" title="Color shown on calendar">
-                        </div>
-                        <div class="col-8 d-flex align-items-end">
-                            <div class="form-check">
-                                <input type="checkbox" name="is_active" value="1" class="form-check-input" id="addSvcActive" checked>
-                                <label class="form-check-label" for="addSvcActive">Active</label>
+                        <div class="col-6">
+                            <label class="form-label">Installer Pay per Unit <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="installer_pay" class="form-control" step="0.01" min="0" required id="addItPay" oninput="calcAddProfit()">
                             </div>
                         </div>
                     </div>
+                    <div class="mt-3 p-3 rounded" style="background:#f0f9f0; border:1px solid rgba(25,135,84,.15);" id="addItProfitPreview">
+                        <div class="d-flex justify-content-between">
+                            <span class="small text-muted">Profit per unit:</span>
+                            <span class="fw-bold text-success" id="addItProfitVal">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span class="small text-muted">Margin:</span>
+                            <span class="fw-bold" id="addItMarginVal">0%</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label">Sort Order</label>
+                        <input type="number" name="sort_order" class="form-control" value="0">
+                    </div>
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-vip">Create Service</button></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-vip"><i class="bi bi-plus-circle me-1"></i> Add Type</button>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
-{{-- Edit Service Modal --}}
+{{-- Edit Installation Type Modal --}}
+<div class="modal fade" id="editInstallTypeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" id="editItForm">
+            @csrf @method('PUT')
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil me-1"></i> Edit Installation Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Type Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" id="editItName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" id="editItDesc" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label">Price per Unit (Customer) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="price" id="editItPrice" class="form-control" step="0.01" min="0" required oninput="calcEditProfit()">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Installer Pay per Unit <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="installer_pay" id="editItPay" class="form-control" step="0.01" min="0" required oninput="calcEditProfit()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 rounded" style="background:#f0f9f0; border:1px solid rgba(25,135,84,.15);">
+                        <div class="d-flex justify-content-between">
+                            <span class="small text-muted">Profit per unit:</span>
+                            <span class="fw-bold text-success" id="editItProfitVal">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span class="small text-muted">Margin:</span>
+                            <span class="fw-bold" id="editItMarginVal">0%</span>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-6">
+                            <label class="form-label">Sort Order</label>
+                            <input type="number" name="sort_order" id="editItSort" class="form-control">
+                        </div>
+                        <div class="col-6 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_active" value="1" class="form-check-input" id="editItActive">
+                                <label class="form-check-label" for="editItActive">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-vip">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Edit Service Modal (for the 4 core services) --}}
 <div class="modal fade" id="editServiceModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" id="editServiceForm">
-            @csrf
-            @method('PUT')
+            @csrf @method('PUT')
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title">Edit Service</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-12"><label class="form-label">Service Name *</label><input type="text" name="name" id="editSvcName" class="form-control" required></div>
-                        <div class="col-12"><label class="form-label">Description</label><textarea name="description" id="editSvcDesc" class="form-control" rows="2"></textarea></div>
-                        <div class="col-4"><label class="form-label">Base Price *</label><input type="number" name="base_price" id="editSvcBasePrice" class="form-control" step="0.01" min="0" required></div>
-                        <div class="col-4"><label class="form-label">Cost Price</label><input type="number" name="cost_price" id="editSvcCostPrice" class="form-control" step="0.01" min="0"></div>
-                        <div class="col-4"><label class="form-label">Unit *</label>
-                            <select name="unit" id="editSvcUnit" class="form-select">
-                                <option value="per_job">Per Job</option>
-                                <option value="per_hour">Per Hour</option>
-                                <option value="per_unit">Per Unit</option>
-                            </select>
-                        </div>
-                        <div class="col-12"><hr class="my-1"><label class="form-label fw-bold text-muted" style="font-size:.75rem;">INSTALLER PAY</label></div>
-                        <div class="col-6"><label class="form-label">Installer Pay Rate</label><input type="number" name="installer_pay" id="editSvcInstallerPay" class="form-control" step="0.01" min="0"></div>
-                        <div class="col-6"><label class="form-label">Pay Type</label>
-                            <select name="installer_pay_type" id="editSvcInstallerPayType" class="form-select">
-                                <option value="per_unit">Per Unit</option>
-                                <option value="per_job">Per Job</option>
-                                <option value="per_hour">Per Hour</option>
-                                <option value="percentage">% of Base Price</option>
-                            </select>
-                        </div>
-                        <div class="col-4"><label class="form-label">Min Price</label><input type="number" name="min_price" id="editSvcMinPrice" class="form-control" step="0.01" min="0"></div>
-                        <div class="col-4"><label class="form-label">Max Price</label><input type="number" name="max_price" id="editSvcMaxPrice" class="form-control" step="0.01" min="0"></div>
-                        <div class="col-4"><label class="form-label">Sort Order</label><input type="number" name="sort_order" id="editSvcSortOrder" class="form-control"></div>
+                        <div class="col-8"><label class="form-label">Service Name</label><input type="text" name="name" id="editSvcName" class="form-control" required></div>
                         <div class="col-4">
-                            <label class="form-label">Calendar Color</label>
-                            <input type="color" name="color" id="editSvcColor" class="form-control form-control-color" value="#0d6efd" title="Color shown on calendar">
+                            <label class="form-label">Color</label>
+                            <input type="color" name="color" id="editSvcColor" class="form-control form-control-color" value="#0d6efd">
                         </div>
-                        <div class="col-8 d-flex align-items-end">
+                        <div class="col-12"><label class="form-label">Description</label><textarea name="description" id="editSvcDesc" class="form-control" rows="2"></textarea></div>
+                        <div class="col-4"><label class="form-label">Base Price / Hr *</label><input type="number" name="base_price" id="editSvcBasePrice" class="form-control" step="0.01" min="0" required></div>
+                        <div class="col-4"><label class="form-label">Installer Pay / Hr</label><input type="number" name="installer_pay" id="editSvcInstallerPay" class="form-control" step="0.01" min="0"></div>
+                        <div class="col-4">
+                            <label class="form-label">Unit</label>
+                            <select name="unit" id="editSvcUnit" class="form-select">
+                                <option value="per_hour">Per Hour</option>
+                                <option value="per_job">Per Job</option>
+                                <option value="per_unit">Per Unit</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="installer_pay_type" id="editSvcInstallerPayType" value="per_hour">
+                        <input type="hidden" name="cost_price" value="0">
+                        <input type="hidden" name="sort_order" id="editSvcSortOrder" value="0">
+                        <div class="col-12 d-flex align-items-end">
                             <div class="form-check">
                                 <input type="checkbox" name="is_active" value="1" class="form-check-input" id="editSvcActive">
                                 <label class="form-check-label" for="editSvcActive">Active</label>
@@ -278,154 +376,60 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const cards = document.querySelectorAll('.svc-card');
-    const detailBody = document.getElementById('svcDetailBody');
-    const detailTitle = document.getElementById('svcDetailTitle');
-    const toolbarActions = document.getElementById('svcToolbarActions');
-    let activeId = null;
-
-    // Tab filters
-    document.querySelectorAll('.svc-rail-tabs .tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const filter = this.dataset.filter;
-            const url = new URL(window.location);
-            if (filter) url.searchParams.set('filter', filter);
-            else url.searchParams.delete('filter');
-            window.location = url;
+// Edit service (core 4)
+function editService(id) {
+    fetch(`/admin/services/${id}`, { headers: { 'Accept': 'application/json' }})
+        .then(r => r.json())
+        .then(data => {
+            const svc = data.service;
+            document.getElementById('editServiceForm').action = `/admin/services/${svc.id}`;
+            document.getElementById('editSvcName').value = svc.name;
+            document.getElementById('editSvcDesc').value = svc.description || '';
+            document.getElementById('editSvcBasePrice').value = svc.base_price;
+            document.getElementById('editSvcUnit').value = svc.unit;
+            document.getElementById('editSvcColor').value = svc.color || '#0d6efd';
+            document.getElementById('editSvcInstallerPay').value = svc.installer_pay || '';
+            document.getElementById('editSvcInstallerPayType').value = svc.installer_pay_type || 'per_hour';
+            document.getElementById('editSvcSortOrder').value = svc.sort_order || 0;
+            document.getElementById('editSvcActive').checked = svc.is_active;
+            new bootstrap.Modal(document.getElementById('editServiceModal')).show();
         });
-    });
+}
 
-    // Search
-    let searchTimer;
-    document.getElementById('svcSearch').addEventListener('input', function() {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-            const url = new URL(window.location);
-            if (this.value) url.searchParams.set('search', this.value);
-            else url.searchParams.delete('search');
-            window.location = url;
-        }, 500);
-    });
+// Edit installation type
+function editInstallType(id, name, desc, price, pay, active, sort) {
+    document.getElementById('editItForm').action = `/admin/services/install-types/${id}`;
+    document.getElementById('editItName').value = name;
+    document.getElementById('editItDesc').value = desc || '';
+    document.getElementById('editItPrice').value = price;
+    document.getElementById('editItPay').value = pay;
+    document.getElementById('editItActive').checked = active;
+    document.getElementById('editItSort').value = sort;
+    calcEditProfit();
+    new bootstrap.Modal(document.getElementById('editInstallTypeModal')).show();
+}
 
-    // Load detail
-    cards.forEach(card => {
-        card.addEventListener('click', function() {
-            cards.forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            activeId = this.dataset.id;
-            loadDetail(activeId);
-        });
-    });
+// Profit calculators
+function calcAddProfit() {
+    const price = parseFloat(document.getElementById('addItPrice').value) || 0;
+    const pay = parseFloat(document.getElementById('addItPay').value) || 0;
+    const profit = price - pay;
+    const margin = price > 0 ? ((profit / price) * 100).toFixed(1) : '0.0';
+    document.getElementById('addItProfitVal').textContent = '$' + profit.toFixed(2);
+    const mEl = document.getElementById('addItMarginVal');
+    mEl.textContent = margin + '%';
+    mEl.className = 'fw-bold ' + (margin >= 30 ? 'text-success' : margin >= 15 ? 'text-warning' : 'text-danger');
+}
 
-    function loadDetail(id) {
-        detailBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-secondary"></div></div>';
-
-        fetch(`/admin/services/${id}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }})
-            .then(r => r.json())
-            .then(data => {
-                const svc = data.service;
-                const installers = data.installers;
-                detailTitle.textContent = svc.name;
-
-                const unitLabel = svc.unit.replace(/_/g, ' ');
-                const margin = svc.base_price > 0 ? (((svc.base_price - svc.cost_price) / svc.base_price) * 100).toFixed(1) : '0.0';
-                const instPay = parseFloat(svc.installer_pay || 0);
-                const instPayType = (svc.installer_pay_type || 'per_unit').replace(/_/g, ' ');
-                const instPayDisplay = svc.installer_pay_type === 'percentage' ? instPay.toFixed(1) + '%' : '$' + instPay.toFixed(2);
-                const profitPerUnit = svc.installer_pay_type === 'percentage'
-                    ? svc.base_price - (svc.base_price * instPay / 100)
-                    : svc.base_price - instPay;
-
-                toolbarActions.innerHTML = `
-                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="editService(${svc.id})"><i class="bi bi-pencil"></i> Edit</button>
-                    <form method="POST" action="/admin/services/${svc.id}" style="display:inline" onsubmit="return confirm('Delete this service?')">
-                        <input type="hidden" name="_token" value="${document.querySelector('meta[name=csrf-token]').content}">
-                        <input type="hidden" name="_method" value="DELETE">
-                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                    </form>
-                `;
-
-                let instHtml = '';
-                if (installers.length > 0) {
-                    instHtml = `<table class="svc-inst-table">
-                        <thead><tr><th>Installer</th><th>Company</th><th>Custom Price</th></tr></thead>
-                        <tbody>${installers.map(i => `<tr>
-                            <td>${i.name}</td>
-                            <td>${i.company_name || '—'}</td>
-                            <td>${i.custom_price ? '$' + parseFloat(i.custom_price).toFixed(2) : '<span style="color:rgba(0,0,0,.35)">Uses base price</span>'}</td>
-                        </tr>`).join('')}</tbody>
-                    </table>`;
-                } else {
-                    instHtml = '<p style="color:rgba(0,0,0,.4); font-size:.85rem;">No installers assigned to this service yet.</p>';
-                }
-
-                detailBody.innerHTML = `
-                    <div class="svc-info-grid">
-                        <div class="svc-info-card">
-                            <div class="label">Base Price (Customer Charge)</div>
-                            <div class="value" style="color:var(--vip-accent);">$${parseFloat(svc.base_price).toFixed(2)} <small style="font-weight:400;color:rgba(0,0,0,.4)">${unitLabel}</small></div>
-                        </div>
-                        <div class="svc-info-card">
-                            <div class="label">Installer Pay</div>
-                            <div class="value" style="color:#dc3545;">${instPayDisplay} <small style="font-weight:400;color:rgba(0,0,0,.4)">${instPayType}</small></div>
-                        </div>
-                        <div class="svc-info-card">
-                            <div class="label">Profit per ${unitLabel}</div>
-                            <div class="value" style="color:#198754;">$${profitPerUnit.toFixed(2)}</div>
-                        </div>
-                        <div class="svc-info-card">
-                            <div class="label">Cost Price</div>
-                            <div class="value">$${parseFloat(svc.cost_price).toFixed(2)}</div>
-                        </div>
-                        <div class="svc-info-card">
-                            <div class="label">Margin</div>
-                            <div class="value">${margin}%</div>
-                        </div>
-                        <div class="svc-info-card">
-                            <div class="label">Calendar Color</div>
-                            <div class="value d-flex align-items-center gap-2"><span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:${svc.color || '#0d6efd'};"></span> ${svc.color || '#0d6efd'}</div>
-                        </div>
-                        ${svc.min_price ? `<div class="svc-info-card"><div class="label">Min Price</div><div class="value">$${parseFloat(svc.min_price).toFixed(2)}</div></div>` : ''}
-                        ${svc.max_price ? `<div class="svc-info-card"><div class="label">Max Price</div><div class="value">$${parseFloat(svc.max_price).toFixed(2)}</div></div>` : ''}
-                    </div>
-                    ${svc.description ? `<div class="svc-info-card mb-4"><div class="label">Description</div><div class="value" style="font-weight:400; font-size:.9rem;">${svc.description}</div></div>` : ''}
-                    <div class="svc-installers-card">
-                        <h6><i class="bi bi-person-badge me-1"></i> Assigned Installers (${installers.length})</h6>
-                        ${instHtml}
-                    </div>
-                `;
-            })
-            .catch(() => {
-                detailBody.innerHTML = '<div class="alert alert-danger m-4">Failed to load service details.</div>';
-            });
-    }
-
-    // Edit service
-    window.editService = function(id) {
-        fetch(`/admin/services/${id}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }})
-            .then(r => r.json())
-            .then(data => {
-                const svc = data.service;
-                document.getElementById('editServiceForm').action = `/admin/services/${svc.id}`;
-                document.getElementById('editSvcName').value = svc.name;
-                document.getElementById('editSvcDesc').value = svc.description || '';
-                document.getElementById('editSvcBasePrice').value = svc.base_price;
-                document.getElementById('editSvcCostPrice').value = svc.cost_price;
-                document.getElementById('editSvcUnit').value = svc.unit;
-                document.getElementById('editSvcMinPrice').value = svc.min_price || '';
-                document.getElementById('editSvcMaxPrice').value = svc.max_price || '';
-                document.getElementById('editSvcSortOrder').value = svc.sort_order || 0;
-                document.getElementById('editSvcColor').value = svc.color || '#0d6efd';
-                document.getElementById('editSvcInstallerPay').value = svc.installer_pay || '';
-                document.getElementById('editSvcInstallerPayType').value = svc.installer_pay_type || 'per_unit';
-                document.getElementById('editSvcActive').checked = svc.is_active;
-                new bootstrap.Modal(document.getElementById('editServiceModal')).show();
-            });
-    };
-
-    // Auto-select first
-    if (cards.length > 0) cards[0].click();
-});
+function calcEditProfit() {
+    const price = parseFloat(document.getElementById('editItPrice').value) || 0;
+    const pay = parseFloat(document.getElementById('editItPay').value) || 0;
+    const profit = price - pay;
+    const margin = price > 0 ? ((profit / price) * 100).toFixed(1) : '0.0';
+    document.getElementById('editItProfitVal').textContent = '$' + profit.toFixed(2);
+    const mEl = document.getElementById('editItMarginVal');
+    mEl.textContent = margin + '%';
+    mEl.className = 'fw-bold ' + (margin >= 30 ? 'text-success' : margin >= 15 ? 'text-warning' : 'text-danger');
+}
 </script>
 @endpush
