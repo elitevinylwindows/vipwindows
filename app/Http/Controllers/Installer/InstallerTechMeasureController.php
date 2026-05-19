@@ -238,4 +238,26 @@ class InstallerTechMeasureController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Update grid settings for a tech measure.
+     */
+    public function updateGrids(Request $request, $id)
+    {
+        $measure = TechMeasure::findOrFail($id);
+
+        $validated = $request->validate([
+            'has_grids' => 'nullable|boolean',
+            'grid_list' => 'nullable|string|max:100',
+            'grid_pattern' => 'nullable|string|max:100',
+        ]);
+
+        $measure->update([
+            'has_grids' => $validated['has_grids'] ?? false,
+            'grid_list' => $validated['grid_list'] ?? null,
+            'grid_pattern' => $validated['grid_pattern'] ?? null,
+        ]);
+
+        return response()->json(['success' => true]);
+    }
 }
