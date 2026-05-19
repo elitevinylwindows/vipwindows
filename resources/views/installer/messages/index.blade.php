@@ -425,7 +425,7 @@ function renderBubble(m) {
     );
 
     if (isVoice && m.attachment_url) {
-        content += renderVoicePlayer(m.attachment_url, m.id);
+        content += renderVoicePlayer(m.attachment_url, m.id, m.attachment_type);
     } else if (m.is_image && m.attachment_url) {
         content += `<div class="msg-attachment"><img src="${m.attachment_url}" onclick="openLightbox('${m.attachment_url}')" alt="Image"></div>`;
     } else if (m.attachment_url) {
@@ -453,11 +453,23 @@ function renderBubble(m) {
     </div>`;
 }
 
-function renderVoicePlayer(url, id) {
+function renderVoicePlayer(url, id, mimeType) {
     const bars = Array.from({length: 30}, () => {
         const h = Math.floor(Math.random() * 16) + 4;
         return `<div class="voice-bar" style="height:${h}px;"></div>`;
     }).join('');
+
+    // Determine audio type for source element
+    let typeAttr = '';
+    if (mimeType) {
+        typeAttr = ` type="${mimeType}"`;
+    } else if (url.includes('.webm')) {
+        typeAttr = ' type="audio/webm"';
+    } else if (url.includes('.ogg')) {
+        typeAttr = ' type="audio/ogg"';
+    } else if (url.includes('.mp4') || url.includes('.m4a')) {
+        typeAttr = ' type="audio/mp4"';
+    }
 
     return `<div class="voice-player" id="vp_${id}">
         <button class="play-btn" onclick="playVoice(this, '${url}', ${id})" data-playing="false">
@@ -468,7 +480,9 @@ function renderVoicePlayer(url, id) {
             <div class="voice-progress" id="vprog_${id}" style="position:absolute; top:0; left:0; bottom:0; width:0%; background:rgba(201,168,76,.25); border-radius:4px; pointer-events:none; transition: width 0.1s;"></div>
         </div>
         <span class="voice-duration" id="vdur_${id}">--:--</span>
-        <audio id="vaud_${id}" preload="metadata" src="${url}" style="display:none;"></audio>
+        <audio id="vaud_${id}" preload="metadata" style="display:none;">
+            <source src="${url}"${typeAttr}>
+        </audio>
     </div>`;
 }
 
@@ -508,8 +522,15 @@ function initVoicePlayers() {
         });
 
         audio.addEventListener('error', () => {
-            if (durSpan) durSpan.textContent = 'Error';
             console.error('Voice audio error for message', id, audio.error);
+            // Replace player with a fallback download link
+            const player = document.getElementById('vp_' + id);
+            if (player) {
+                const src = audio.querySelector('source')?.src || audio.src;
+                player.innerHTML = `<a href="${src}" target="_blank" style="font-size:.8rem; display:flex; align-items:center; gap:.4rem; text-decoration:none;">
+                    <i class="bi bi-play-circle" style="font-size:1.2rem;"></i> Play voice note
+                </a>`;
+            }
         });
     });
 }
