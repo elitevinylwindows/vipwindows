@@ -245,6 +245,61 @@ class CalendarController extends Controller
     }
 
     /**
+     * Reschedule a calendar event with reason, notify customer.
+     */
+    public function rescheduleEvent(Request $request, $id)
+    {
+        $event = CalendarEvent::findOrFail($id);
+
+        $validated = $request->validate([
+            'new_date' => 'required|date',
+            'new_time' => 'nullable|string|max:20',
+            'reason'   => 'nullable|string|max:2000',
+        ]);
+
+        $oldDate = $event->event_date?->format('Y-m-d');
+        $oldTime = $event->event_time;
+
+        $event->update([
+            'rescheduled_from_date' => $oldDate,
+            'rescheduled_from_time' => $oldTime,
+            'event_date'            => $validated['new_date'],
+            'event_time'            => $validated['new_time'] ?? $oldTime,
+            'reschedule_reason'     => $validated['reason'] ?? null,
+            'rescheduled_at'        => now(),
+            'event_status'          => 'rescheduled',
+        ]);
+
+        // Notify customer of reschedule
+        if ($event->customer_email) {
+            try {
+                Mail::to($event->customer_email)->send(new ScheduleNotification([
+                    'title'         => $event->title . ' — Rescheduled',
+                    'event_date'    => $validated['new_date'],
+                    'start_time'    => $validated['new_time'] ?? $oldTime,
+                    'end_time'      => $event->end_time,
+                    'address'       => $event->address,
+                    'description'   => $validated['reason']
+                        ? 'Your appointment has been rescheduled. Reason: ' . $validated['reason']
+                        : 'Your appointment has been rescheduled to a new date.',
+                    'customer_name' => $event->customer_name ?? 'Customer',
+                    'service_name'  => $event->service?->name,
+                    'type'          => 'event',
+                ]));
+            } catch (\Exception $e) {
+                \Log::warning('Admin reschedule notification failed: ' . $e->getMessage());
+            }
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Event rescheduled.']);
+        }
+
+        return redirect()->route('admin.calendar.index', ['month' => \Carbon\Carbon::parse($validated['new_date'])->format('Y-m')])
+            ->with('success', 'Event rescheduled.' . ($event->customer_email ? ' Customer notified.' : ''));
+    }
+
+    /**
      * Delete a calendar event.
      */
     public function deleteEvent($id)

@@ -236,7 +236,7 @@
                         foreach($dayEventList as $ev) {
                             // Always use live service color when a service is assigned; fallback to stored color or gold
                             $evColor = ($ev->service && $ev->service->color) ? $ev->service->color : ($ev->color ?: '#c9a84c');
-                            $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'crew_id' => $ev->crew_id, 'crew_name' => $ev->crew?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone, 'installation_types' => $ev->installation_types]);
+                            $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'crew_id' => $ev->crew_id, 'crew_name' => $ev->crew?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone, 'installation_types' => $ev->installation_types, 'event_status' => $ev->event_status ?? 'scheduled', 'is_rescheduled' => (bool) $ev->rescheduled_at, 'reschedule_reason' => $ev->reschedule_reason, 'rescheduled_from_date' => $ev->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $ev->rescheduled_from_time]);
                         }
                     @endphp
                     <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}">
@@ -919,60 +919,24 @@ function submitAdminReschedule() {
     const eventId = document.getElementById('adminRescheduleId').value;
     const newDate = document.getElementById('adminRescheduleDate').value;
     const newTime = document.getElementById('adminRescheduleTime').value;
+    const reason = document.getElementById('adminRescheduleReason').value.trim();
 
     if (!newDate) { alert('Please select a date.'); return; }
 
-    // Fetch current event, then update with new date/time
-    fetch(`/admin/calendar/event/${eventId}`, {
-        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    fetch(`/admin/calendar/event/${eventId}/reschedule`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_date: newDate, new_time: newTime, reason: reason }),
     })
-    .then(r => r.json())
-    .then(ev => {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/calendar/event/${eventId}`;
-        form.style.display = 'none';
-
-        const fields = {
-            '_token': csrfToken,
-            '_method': 'PUT',
-            'title': ev.title || '',
-            'event_date': newDate,
-            'event_time': newTime || ev.event_time || '',
-            'end_time': ev.end_time || '',
-            'end_date': ev.end_date ? ev.end_date.substring(0,10) : '',
-            'address': ev.address || '',
-            'customer_name': ev.customer_name || '',
-            'customer_email': ev.customer_email || '',
-            'customer_phone': ev.customer_phone || '',
-            'service_id': ev.service_id || '',
-            'crew_id': ev.crew_id || '',
-            'description': ev.description || '',
-        };
-
-        Object.entries(fields).forEach(([k, v]) => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = k;
-            input.value = v;
-            form.appendChild(input);
-        });
-
-        // Installation types
-        if (ev.installation_types && ev.installation_types.length) {
-            ev.installation_types.forEach(t => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'installation_types[]';
-                input.value = t;
-                form.appendChild(input);
-            });
-        }
-
-        document.body.appendChild(form);
-        form.submit();
+    .then(r => {
+        if (!r.ok) return r.json().then(d => { throw new Error(d.error || d.message || `HTTP ${r.status}`); });
+        return r.json();
     })
-    .catch(() => alert('Failed to reschedule.'));
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('adminRescheduleModal'))?.hide();
+        location.reload();
+    })
+    .catch(e => alert('Failed to reschedule: ' + e.message));
 }
 </script>
 
