@@ -416,11 +416,19 @@ function renderBubble(m) {
 
     if (m.body) content += escapeHtml(m.body);
 
-    if (m.message_type === 'voice' && m.attachment_url) {
+    // Detect voice note (explicit type OR fallback for old messages with NULL message_type)
+    const isVoice = m.attachment_url && (
+        m.message_type === 'voice' ||
+        (m.attachment_url && (m.attachment_url.includes('/voice') || m.attachment_url.includes('voice_note'))) ||
+        (m.attachment_name && m.attachment_name.toLowerCase().includes('voice')) ||
+        (m.attachment_type && m.attachment_type.startsWith('audio/'))
+    );
+
+    if (isVoice && m.attachment_url) {
         content += renderVoicePlayer(m.attachment_url, m.id);
-    } else if (m.message_type === 'file' && m.is_image && m.attachment_url) {
+    } else if (m.is_image && m.attachment_url) {
         content += `<div class="msg-attachment"><img src="${m.attachment_url}" onclick="openLightbox('${m.attachment_url}')" alt="Image"></div>`;
-    } else if (m.message_type === 'file' && m.attachment_url) {
+    } else if (m.attachment_url) {
         content += `<div class="msg-attachment">
             <a href="${m.attachment_url}" target="_blank" class="msg-attachment-file" download>
                 <i class="bi bi-file-earmark"></i>
