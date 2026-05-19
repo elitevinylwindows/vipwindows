@@ -217,7 +217,7 @@
                             <i class="bi bi-plus-lg me-1"></i> Add Line Item
                         </button>
                         <div class="text-end mt-2">
-                            <strong style="font-size:.85rem;">Total: $<span id="jobGrandTotal">0.00</span></strong>
+                            <strong style="font-size:.85rem;">Installation Total: $<span id="jobGrandTotal">0.00</span></strong>
                         </div>
                     </div>
                 </div>
@@ -1000,17 +1000,23 @@ function submitConvertToJob() {
         headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
         body: formData
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) return r.text().then(t => { throw new Error(t); });
+        return r.json();
+    })
     .then(data => {
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('convertJobModal')).hide();
-            alert('Job created successfully!');
+            alert(data.message || 'Job created successfully!');
             loadMeasure(convertMeasureId);
         } else {
             alert(data.error || 'Failed to convert.');
         }
     })
-    .catch(() => alert('Failed to convert.'))
+    .catch(err => {
+        console.error('Convert error:', err);
+        alert('Failed to convert. Check console for details.');
+    })
     .finally(() => {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-tools me-1"></i> Convert to Job';

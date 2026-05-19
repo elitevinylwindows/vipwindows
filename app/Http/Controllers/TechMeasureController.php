@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\CalendarEvent;
 use App\Models\Crew;
+use App\Models\Job;
+use App\Models\JobItem;
+use App\Models\Service;
 use App\Models\TechMeasure;
 use App\Models\TechMeasureItem;
 use App\Models\TechMeasurePhoto;
@@ -303,24 +306,89 @@ class TechMeasureController extends Controller
         $measurementsTotal = collect($measurementPrices)->sum('price');
         $grandTotal = $lineItemsTotal + $measurementsTotal;
 
-        // Store conversion data on the measure
+        // Generate job number
+        $lastJob = Job::withTrashed()->orderByDesc('id')->first();
+        $nextNum = $lastJob ? (int) substr($lastJob->job_number, 4) + 1 : 1;
+        $jobNumber = 'JOB-' . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
+
+        // Get the Installation service for the job
+        $installService = Service::where('code', 'installation')->first();
+
+        // Create the Job record
+        $job = Job::create([
+            'job_number'      => $jobNumber,
+            'service_id'      => $installService?->id,
+            'customer_name'   => $measure->customer_name,
+            'customer_email'  => $measure->customer_email,
+            'customer_phone'  => $measure->customer_phone,
+            'install_address' => $measure->address,
+            'install_city'    => $measure->city,
+            'install_state'   => $measure->state,
+            'install_zip'     => $measure->zip,
+            'description'     => 'Converted from tech measure. ' . ($measure->notes ?? ''),
+            'status'          => 'pending',
+            'priority'        => 'normal',
+            'assignment_type' => $measure->crew_id ? 'crew' : 'installer',
+            'assigned_to'     => $measure->assigned_to,
+            'crew_id'         => $measure->crew_id,
+            'notes'           => $measure->notes,
+            'created_by'      => Auth::guard('vip')->id(),
+        ]);
+
+        // Create job line items from the service line items
+        $sortOrder = 0;
+        foreach ($lineItems as $item) {
+            if (empty($item['service_id']) || empty($item['qty'])) continue;
+
+            $service = Service::find($item['service_id']);
+            if (!$service) continue;
+
+            // Calculate installer pay
+            $unitPay = 0;
+            switch ($service->installer_pay_type) {
+                case 'percentage':
+                    $unitPay = $service->base_price * ($service->installer_pay / 100);
+                    break;
+                case 'per_job':
+                    $unitPay = $service->installer_pay;
+                    break;
+                default:
+                    $unitPay = $service->installer_pay ?? 0;
+            }
+
+            JobItem::create([
+                'job_id'      => $job->id,
+                'service_id'  => $service->id,
+                'description' => $item['service_name'] ?? $service->name,
+                'item_type'   => 'service',
+                'qty'         => $item['qty'],
+                'unit_pay'    => $unitPay,
+                'total_pay'   => $unitPay * $item['qty'],
+                'sort_order'  => $sortOrder++,
+            ]);
+        }
+
+        // Store conversion data on the measure and link to the new job
         $measure->update([
-            'status' => 'converted',
+            'status'       => 'converted',
             'converted_at' => now(),
             'converted_by' => Auth::guard('vip')->id(),
-            'job_data' => json_encode([
-                'line_items' => $lineItems,
+            'job_id'       => $job->id,
+            'job_data'     => json_encode([
+                'line_items'         => $lineItems,
                 'measurement_prices' => $measurementPrices,
-                'line_items_total' => $lineItemsTotal,
+                'line_items_total'   => $lineItemsTotal,
                 'measurements_total' => $measurementsTotal,
-                'grand_total' => $grandTotal,
-                'pdf_path' => $pdfPath,
+                'grand_total'        => $grandTotal,
+                'pdf_path'           => $pdfPath,
             ]),
         ]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Tech measure converted to job.',
+            'success'    => true,
+            'message'    => "Job {$jobNumber} created successfully.",
+            'job_id'     => $job->id,
+            'job_number' => $jobNumber,
         ]);
     }
 }
