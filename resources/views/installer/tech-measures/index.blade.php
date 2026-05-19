@@ -392,8 +392,8 @@ function renderMeasureDetail(data) {
     if (items.length) {
         itemsHtml = `<table class="tm-items-tbl">
             <thead><tr>
-                <th style="width:30px;">#</th>
-                <th>Qty</th>
+                <th style="width:30px;" class="text-center">#</th>
+                <th class="text-center">Qty</th>
                 <th>Width</th>
                 <th>Height</th>
                 <th>Unit (Configuration)</th>
