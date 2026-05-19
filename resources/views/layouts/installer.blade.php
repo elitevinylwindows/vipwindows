@@ -130,16 +130,10 @@
     {{-- Sidebar --}}
     <aside class="admin-sidebar" id="adminSidebar">
         <div class="sidebar-brand">
-            @if(Auth::user()->company_logo_light)
-                <a href="{{ route('installer.dashboard') }}">
-                    <img src="{{ asset('uploads/installer-logos/' . Auth::user()->company_logo_light) }}" alt="{{ Auth::user()->company_name }}" style="height:50px; max-width:180px; object-fit:contain;">
-                </a>
-                <div class="mt-1" style="font-size: .75rem; color: #fff; letter-spacing: .5px;">{{ __('installer.powered_by') }} <span style="color: var(--vip-accent); font-weight: 600;">VIP Windows</span></div>
-            @else
-                <a href="{{ route('home') }}" target="_blank">
-                    <img src="/images/logo.png" alt="VIP Windows" style="height:70px;">
-                </a>
-            @endif
+            {{-- Always use VIP admin logo for now --}}
+            <a href="{{ route('home') }}" target="_blank">
+                <img src="/images/logo.png" alt="VIP Windows" style="height:70px;">
+            </a>
             <div class="portal-badge">{{ __('installer.installer_portal') }}</div>
         </div>
 
@@ -157,12 +151,11 @@
             <a href="{{ route('installer.tech-measures.index') }}" class="{{ request()->routeIs('installer.tech-measures.*') ? 'active' : '' }}">
                 <i class="bi bi-rulers"></i> Tech Measures
             </a>
+            <a href="{{ route('installer.service-jobs.index') }}" class="{{ request()->routeIs('installer.service-jobs.*') ? 'active' : '' }}">
+                <i class="bi bi-wrench"></i> Services
+            </a>
             <a href="{{ route('installer.invoices.index') }}" class="{{ request()->routeIs('installer.invoices.*') ? 'active' : '' }}">
                 <i class="bi bi-receipt"></i> {{ __('installer.my_invoices') }}
-            </a>
-
-            <a href="{{ route('installer.profile') }}#services" class="{{ request()->is('installer/services*') ? 'active' : '' }}" onclick="event.preventDefault(); window.location='{{ route('installer.profile') }}'; setTimeout(()=>{ document.querySelector('[data-section=services]')?.click(); },200);">
-                <i class="bi bi-tools"></i> My Services
             </a>
 
             <a href="{{ route('installer.attendance.index') }}" class="{{ request()->routeIs('installer.attendance.*') ? 'active' : '' }}">

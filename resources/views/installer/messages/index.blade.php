@@ -464,7 +464,9 @@ function playVoice(btn, url) {
     document.querySelectorAll('.play-btn').forEach(b => { b.dataset.playing = 'false'; b.innerHTML = '<i class="bi bi-play-fill"></i>'; });
     if (isPlaying) return;
 
-    const audio = new Audio(url);
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.src = url;
     audio.className = 'voice-audio';
     audio.style.display = 'none';
     document.body.appendChild(audio);
@@ -481,7 +483,21 @@ function playVoice(btn, url) {
         btn.innerHTML = '<i class="bi bi-play-fill"></i>';
         audio.remove();
     });
-    audio.play().catch(() => {});
+    audio.addEventListener('error', () => {
+        btn.dataset.playing = 'false';
+        btn.innerHTML = '<i class="bi bi-play-fill"></i>';
+        durSpan.textContent = 'Error';
+        audio.remove();
+        // Fallback: try opening the file directly so the browser's native player handles it
+        window.open(url, '_blank');
+    });
+    audio.play().catch(err => {
+        console.error('Voice playback failed:', err);
+        btn.dataset.playing = 'false';
+        btn.innerHTML = '<i class="bi bi-play-fill"></i>';
+        // Fallback: open in new tab
+        window.open(url, '_blank');
+    });
 }
 
 function refreshMessages(id) {
@@ -557,7 +573,14 @@ async function toggleRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         audioChunks = [];
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+
+        // Pick a supported audio format (webm preferred, fallback to ogg, then mp4, then default)
+        let mimeType = '';
+        for (const mt of ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/wav']) {
+            if (MediaRecorder.isTypeSupported(mt)) { mimeType = mt; break; }
+        }
+        const options = mimeType ? { mimeType } : {};
+        mediaRecorder = new MediaRecorder(stream, options);
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         mediaRecorder.onstop = () => { stream.getTracks().forEach(t => t.stop()); };
         mediaRecorder.start();
@@ -594,9 +617,11 @@ function stopAndSendRecording() {
         document.getElementById('composeToolbar').style.display = 'flex';
         document.getElementById('btnMic').style.color = '';
 
-        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const actualMime = mediaRecorder.mimeType || 'audio/webm';
+        const ext = actualMime.includes('mp4') ? 'mp4' : actualMime.includes('ogg') ? 'ogg' : actualMime.includes('wav') ? 'wav' : 'webm';
+        const blob = new Blob(audioChunks, { type: actualMime });
         const formData = new FormData();
-        formData.append('voice_note', blob, 'voice_note.webm');
+        formData.append('voice_note', blob, `voice_note.${ext}`);
         formData.append('body', '');
 
         fetch(`${basePath}/${currentConvId}/send`, {
