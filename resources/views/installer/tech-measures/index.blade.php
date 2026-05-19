@@ -216,6 +216,54 @@
         </div>
     </div>
 </div>
+
+{{-- Edit Opening Item Modal --}}
+<div class="modal fade" id="editItemModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background:var(--vip-primary); color:#fff; border:1px solid rgba(255,255,255,.1);">
+            <div class="modal-header border-0 py-2">
+                <h6 class="modal-title mb-0"><i class="bi bi-pencil me-1"></i>Edit Opening</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <input type="hidden" id="editItemMeasureId">
+                <input type="hidden" id="editItemId">
+                <div class="row g-2">
+                    <div class="col-2">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Qty</label>
+                        <input type="number" id="editItemQty" class="form-control form-control-sm bg-dark text-white border-secondary" min="1">
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Width</label>
+                        <input type="text" id="editItemWidth" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Height</label>
+                        <input type="text" id="editItemHeight" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Unit (Configuration)</label>
+                        <select id="editItemConfig" class="form-select form-select-sm bg-dark text-white border-secondary">
+                            <option value="">— Select —</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Reference</label>
+                        <input type="text" id="editItemRoom" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Notes</label>
+                        <input type="text" id="editItemNotes" class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 py-2">
+                <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="saveEditItem()"><i class="bi bi-check-lg me-1"></i>Save</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -366,8 +414,9 @@ function renderMeasureDetail(data) {
                 <td>${item.description || '—'}</td>
                 <td>${item.room_label || '—'}${photoHtml}</td>
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
-                <td class="text-center">
+                <td class="text-center text-nowrap">
                     <button class="btn btn-sm text-primary p-0 me-1" onclick="uploadItemPhoto(${m.id}, ${item.id})" title="Add Photo"><i class="bi bi-camera" style="font-size:.75rem;"></i></button>
+                    <button class="btn btn-sm text-secondary p-0 me-1" onclick="editItem(${m.id}, ${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')})" title="Edit"><i class="bi bi-pencil" style="font-size:.7rem;"></i></button>
                     <button class="btn btn-sm text-danger p-0" onclick="removeItem(${m.id}, ${item.id})" title="Remove"><i class="bi bi-x-lg" style="font-size:.65rem;"></i></button>
                 </td>
             </tr>`;
@@ -561,6 +610,57 @@ function addItem(measureId) {
         else alert(data.error || 'Failed to add item.');
     })
     .catch(() => alert('Failed to add item.'));
+}
+
+function editItem(measureId, itemId, item) {
+    document.getElementById('editItemMeasureId').value = measureId;
+    document.getElementById('editItemId').value = itemId;
+    document.getElementById('editItemQty').value = item.qty || 1;
+    document.getElementById('editItemWidth').value = item.width || '';
+    document.getElementById('editItemHeight').value = item.height || '';
+    document.getElementById('editItemRoom').value = item.room_label || '';
+    document.getElementById('editItemNotes').value = item.notes || '';
+
+    // Populate unit dropdown with options
+    const sel = document.getElementById('editItemConfig');
+    sel.innerHTML = '<option value="">— Select —</option>';
+    unitOptions.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.name;
+        opt.textContent = o.name;
+        if (o.name === item.description) opt.selected = true;
+        sel.appendChild(opt);
+    });
+
+    new bootstrap.Modal(document.getElementById('editItemModal')).show();
+}
+
+function saveEditItem() {
+    const measureId = document.getElementById('editItemMeasureId').value;
+    const itemId = document.getElementById('editItemId').value;
+    const config = document.getElementById('editItemConfig').value;
+
+    fetch(`/installer/tech-measures/${measureId}/item/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({
+            qty: parseInt(document.getElementById('editItemQty').value) || 1,
+            width: document.getElementById('editItemWidth').value.trim() || null,
+            height: document.getElementById('editItemHeight').value.trim() || null,
+            description: config || null,
+            series_type: config,
+            room_label: document.getElementById('editItemRoom').value.trim(),
+            notes: document.getElementById('editItemNotes').value.trim(),
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editItemModal')).hide();
+            loadMeasure(measureId);
+        } else alert(data.error || 'Failed to update.');
+    })
+    .catch(() => alert('Failed to update.'));
 }
 
 function saveFrameType(measureId) {
