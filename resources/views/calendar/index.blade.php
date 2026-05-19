@@ -820,7 +820,7 @@ function openCalItem(item) {
         let footerHtml = '';
         if (item.customer_email) {
             footerHtml += `<button class="btn btn-sm btn-outline-warning" onclick="sendReminder(${item.id})"><i class="bi bi-bell me-1"></i>Send Reminder</button> `;
-            footerHtml += `<button class="btn btn-sm btn-outline-info" onclick="sendEmail(${item.id})"><i class="bi bi-envelope me-1"></i>Email</button> `;
+            footerHtml += `<button class="btn btn-sm btn-outline-info" onclick="sendEmail(${item.id})"><i class="bi bi-envelope me-1"></i>Send Confirmation</button> `;
         }
         if (item.customer_phone) {
             footerHtml += `<a href="tel:${item.customer_phone}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-telephone me-1"></i>Call</a> `;
@@ -906,7 +906,7 @@ function sendReminder(eventId) {
 
 function sendEmail(eventId) {
     if (!confirm('Send the schedule confirmation email to the client?')) return;
-    sendAppEmail(eventId, event.target.closest('button'), 'Email', 'envelope');
+    sendAppEmail(eventId, event.target.closest('button'), 'Send Confirmation', 'envelope');
 }
 
 function openEditEvent(eventId) {
