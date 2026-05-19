@@ -356,24 +356,27 @@
 @push('scripts')
 <script>
 // ── Job data for popup ──
-const jobsData = @json($jobs->map(function($j) {
-    return [
-        'id' => $j->id,
-        'job_number' => $j->job_number,
-        'customer_name' => $j->customer_name,
-        'customer_phone' => $j->customer_phone,
-        'customer_email' => $j->customer_email,
-        'install_address' => $j->install_address,
-        'install_city' => $j->install_city,
-        'install_state' => $j->install_state,
-        'install_zip' => $j->install_zip,
-        'scheduled_date' => $j->scheduled_date?->format('l, M d, Y'),
-        'scheduled_time' => $j->scheduled_time,
-        'status' => $j->status,
-        'service_name' => $j->service?->name ?? '—',
-        'description' => $j->description,
-    ];
-})->keyBy('id'));
+@php
+    $jobsJson = $jobs->map(function($j) {
+        return [
+            'id' => $j->id,
+            'job_number' => $j->job_number,
+            'customer_name' => $j->customer_name,
+            'customer_phone' => $j->customer_phone,
+            'customer_email' => $j->customer_email,
+            'install_address' => $j->install_address,
+            'install_city' => $j->install_city,
+            'install_state' => $j->install_state,
+            'install_zip' => $j->install_zip,
+            'scheduled_date' => $j->scheduled_date?->format('l, M d, Y'),
+            'scheduled_time' => $j->scheduled_time,
+            'status' => $j->status,
+            'service_name' => $j->service?->name ?? '—',
+            'description' => $j->description,
+        ];
+    })->keyBy('id');
+@endphp
+const jobsData = @json($jobsJson);
 
 function showJobPopup(jobId) {
     const job = jobsData[jobId];
