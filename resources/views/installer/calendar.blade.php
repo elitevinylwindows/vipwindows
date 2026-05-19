@@ -407,16 +407,7 @@
             <div class="modal-body">
                 <input type="hidden" id="rescheduleType" value="">
                 <input type="hidden" id="rescheduleId" value="">
-                <div class="row g-3 mb-3">
-                    <div class="col-6">
-                        <label class="form-label small fw-semibold">New Date</label>
-                        <input type="date" class="form-control" id="rescheduleDate">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label small fw-semibold">New Time</label>
-                        <input type="time" class="form-control" id="rescheduleTime">
-                    </div>
-                </div>
+                <p class="text-muted small mb-3">Submit a reschedule request with a reason. The admin will assign a new date and time.</p>
                 <div class="mb-0">
                     <label class="form-label small fw-semibold">Reason for Rescheduling <span class="text-danger">*</span></label>
                     <textarea class="form-control" id="rescheduleReason" rows="3" placeholder="e.g. Customer not available, weather delay, materials not ready..."></textarea>
@@ -593,7 +584,7 @@ function showJobPopup(jobId) {
     if (job.customer_email) {
         actionRow += `<button class="btn btn-outline-warning btn-sm flex-fill" onclick="sendJobReminder(${jobId})"><i class="bi bi-bell me-1"></i>Reminder</button>`;
     }
-    actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('job', ${jobId}, '${job.scheduled_date_raw || ''}', '${job.scheduled_time || ''}')"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
+    actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('job', ${jobId})"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
 
     document.getElementById('jobPopupFooter').innerHTML = `
         <div class="w-100">
@@ -685,7 +676,7 @@ function showEventPopup(eventId) {
     if (ev.customer_email) {
         actionRow += `<button class="btn btn-outline-warning btn-sm flex-fill" onclick="sendEventReminder(${eventId})"><i class="bi bi-bell me-1"></i>Reminder</button>`;
     }
-    actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('event', ${eventId}, '${ev.event_date_raw || ''}', '${ev.event_time || ''}')"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
+    actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('event', ${eventId})"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
 
     document.getElementById('eventPopupFooter').innerHTML = `
         <div class="w-100">
@@ -745,14 +736,12 @@ function sendEventReminder(eventId) {
 }
 
 // ── Reschedule ──
-function openReschedule(type, id, currentDate, currentTime) {
+function openReschedule(type, id) {
     // Close the current popup
     bootstrap.Modal.getInstance(document.getElementById(type === 'event' ? 'eventPopupModal' : 'jobPopupModal'))?.hide();
 
     document.getElementById('rescheduleType').value = type;
     document.getElementById('rescheduleId').value = id;
-    document.getElementById('rescheduleDate').value = currentDate || '';
-    document.getElementById('rescheduleTime').value = currentTime || '';
     document.getElementById('rescheduleReason').value = '';
 
     setTimeout(() => {
@@ -763,11 +752,8 @@ function openReschedule(type, id, currentDate, currentTime) {
 function submitReschedule() {
     const type = document.getElementById('rescheduleType').value;
     const id = document.getElementById('rescheduleId').value;
-    const newDate = document.getElementById('rescheduleDate').value;
-    const newTime = document.getElementById('rescheduleTime').value;
     const reason = document.getElementById('rescheduleReason').value.trim();
 
-    if (!newDate) { alert('Please select a date.'); return; }
     if (!reason) { alert('Please provide a reason for rescheduling.'); return; }
 
     const url = type === 'event'
@@ -777,7 +763,7 @@ function submitReschedule() {
     fetch(url, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ new_date: newDate, new_time: newTime, reason: reason }),
+        body: JSON.stringify({ reason: reason }),
     })
     .then(r => {
         if (!r.ok) return r.json().then(d => { throw new Error(d.error || d.message || `HTTP ${r.status}`); });

@@ -231,7 +231,7 @@
                         $maxShow = 3;
 
                         $allItems = collect();
-                        foreach($dayJobList as $j) { $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => Str::limit($j->customer_name ?: $j->job_number, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . ($j->customer_name ?? ''), 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status, 'service_name' => $j->service?->name]); }
+                        foreach($dayJobList as $j) { $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => Str::limit($j->customer_name ?: $j->job_number, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . ($j->customer_name ?? ''), 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status, 'service_name' => $j->service?->name, 'is_rescheduled' => (bool) $j->rescheduled_at, 'reschedule_reason' => $j->reschedule_reason, 'rescheduled_from_date' => $j->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $j->rescheduled_from_time]); }
                         foreach($dayOrderList as $o) { $allItems->push(['type' => 'order', 'id' => $o->id, 'label' => Str::limit($o->customer_name, 10), 'full_label' => $o->customer_name, 'time' => null, 'color' => ($serviceColors[$o->service_type] ?? '#007bff'), 'address' => '', 'status' => $o->status, 'service_name' => $o->service_type]); }
                         foreach($dayEventList as $ev) {
                             // Always use live service color when a service is assigned; fallback to stored color or gold
@@ -245,9 +245,24 @@
                             @foreach($allItems->take($maxShow) as $idx => $item)
                                 <span class="cell-chip" style="background:{{ $item['color'] }}20; color:{{ $item['color'] }}; cursor:pointer;"
                                       onclick='openCalItem(@json($item))'>
-                                    @if($item['type'] === 'job')<i class="bi bi-wrench" style="font-size:.5rem;"></i>
-                                    @elseif($item['type'] === 'order')<i class="bi bi-tools" style="font-size:.5rem;"></i>
-                                    @else<i class="bi bi-calendar-event" style="font-size:.5rem;"></i>
+                                    @if($item['type'] === 'job')
+                                        @if($item['status'] === 'completed')
+                                            <i class="bi bi-check-circle-fill text-success" style="font-size:.5rem;"></i>
+                                        @elseif($item['type'] === 'job' && isset($item['is_rescheduled']) && $item['is_rescheduled'])
+                                            <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:.5rem;"></i>
+                                        @else
+                                            <i class="bi bi-wrench" style="font-size:.5rem;"></i>
+                                        @endif
+                                    @elseif($item['type'] === 'order')
+                                        <i class="bi bi-tools" style="font-size:.5rem;"></i>
+                                    @else
+                                        @if(($item['event_status'] ?? 'scheduled') === 'completed')
+                                            <i class="bi bi-check-circle-fill text-success" style="font-size:.5rem;"></i>
+                                        @elseif(($item['is_rescheduled'] ?? false))
+                                            <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:.5rem;"></i>
+                                        @else
+                                            <i class="bi bi-calendar-event" style="font-size:.5rem;"></i>
+                                        @endif
                                     @endif
                                     {{ $item['label'] }}
                                 </span>
@@ -753,6 +768,13 @@ function openCalItem(item) {
     if (item.type === 'event') {
         title.innerHTML = `<i class="bi bi-calendar-event me-1" style="color:${item.color}"></i> ${item.full_label}`;
         let details = '';
+        // Reschedule banner
+        if (item.is_rescheduled) {
+            details += `<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Rescheduled</strong>${item.reschedule_reason ? ': ' + item.reschedule_reason : ''}
+                ${item.rescheduled_from_date ? '<br><small class="text-muted"><i class="bi bi-calendar me-1"></i>Previously scheduled: ' + item.rescheduled_from_date + (item.rescheduled_from_time ? ' @ ' + item.rescheduled_from_time : '') + '</small>' : ''}
+            </div>`;
+        }
         // Service badge
         if (item.service_name) details += `<p class="mb-1"><span class="badge" style="background:${item.color}; color:#fff; font-size:.75rem;"><i class="bi bi-tag me-1"></i>${item.service_name}</span></p>`;
         // Contact info
@@ -791,6 +813,13 @@ function openCalItem(item) {
     } else if (item.type === 'job') {
         title.innerHTML = `<i class="bi bi-wrench me-1" style="color:${item.color}"></i> ${item.full_label}`;
         let details = '';
+        // Reschedule banner for jobs
+        if (item.is_rescheduled) {
+            details += `<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Rescheduled</strong>${item.reschedule_reason ? ': ' + item.reschedule_reason : ''}
+                ${item.rescheduled_from_date ? '<br><small class="text-muted"><i class="bi bi-calendar me-1"></i>Previously scheduled: ' + item.rescheduled_from_date + (item.rescheduled_from_time ? ' @ ' + item.rescheduled_from_time : '') + '</small>' : ''}
+            </div>`;
+        }
         if (item.service_name) details += `<p class="mb-1"><span class="badge" style="background:${item.color}; color:#fff; font-size:.75rem;"><i class="bi bi-tag me-1"></i>${item.service_name}</span></p>`;
         if (item.time) details += `<p class="mb-1 small"><i class="bi bi-clock me-1"></i><strong>Time:</strong> ${item.time}</p>`;
         if (item.address) details += `<p class="mb-1 small"><i class="bi bi-geo-alt me-1"></i><strong>Address:</strong> ${item.address}</p>`;
