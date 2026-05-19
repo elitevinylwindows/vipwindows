@@ -67,7 +67,7 @@
                 <div class="tab-btn {{ $status === 'pending' ? 'active' : '' }}" data-status="pending">Pending</div>
                 <div class="tab-btn {{ $status === 'in_progress' ? 'active' : '' }}" data-status="in_progress">Active</div>
                 <div class="tab-btn {{ $status === 'completed' ? 'active' : '' }}" data-status="completed">Done</div>
-                <div class="tab-btn {{ $status === 'converted' ? 'active' : '' }}" data-status="converted">Quoted</div>
+                <div class="tab-btn {{ $status === 'converted' ? 'active' : '' }}" data-status="converted">Converted</div>
             </div>
         </div>
         <div class="tm-rail-list">
@@ -186,6 +186,90 @@
     </div>
 </div>
 
+{{-- Convert to Job Modal --}}
+<div class="modal fade" id="convertJobModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header py-2" style="background:linear-gradient(135deg, var(--vip-accent), #a0832a); color:#fff;">
+                <h6 class="modal-title mb-0"><i class="bi bi-tools me-1"></i> Convert to Job</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                {{-- Section 1: Service Line Items --}}
+                <h6 style="font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.5rem;">
+                    <i class="bi bi-list-check me-1"></i> Service Line Items
+                </h6>
+                <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                    <div class="card-body p-2">
+                        <table class="table table-sm table-borderless mb-2" id="jobLineItemsTable">
+                            <thead>
+                                <tr style="font-size:.68rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.4);">
+                                    <th style="width:60px;">Qty</th>
+                                    <th>Service</th>
+                                    <th style="width:120px;">Unit Price</th>
+                                    <th style="width:120px;">Line Total</th>
+                                    <th style="width:40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobLineItemsBody"></tbody>
+                        </table>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="addJobLineItem()">
+                            <i class="bi bi-plus-lg me-1"></i> Add Line Item
+                        </button>
+                        <div class="text-end mt-2">
+                            <strong style="font-size:.85rem;">Total: $<span id="jobGrandTotal">0.00</span></strong>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Section 2: Measurements with Price --}}
+                <h6 style="font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.5rem;">
+                    <i class="bi bi-rulers me-1"></i> Measurements
+                </h6>
+                <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                    <div class="card-body p-2">
+                        <table class="table table-sm table-borderless mb-0">
+                            <thead>
+                                <tr style="font-size:.68rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.4);">
+                                    <th style="width:30px;">#</th>
+                                    <th style="width:40px;">Qty</th>
+                                    <th>Width</th>
+                                    <th>Height</th>
+                                    <th>Unit (Config)</th>
+                                    <th>Reference</th>
+                                    <th>Notes</th>
+                                    <th style="width:120px;">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobMeasurementsBody"></tbody>
+                        </table>
+                        <div class="text-end mt-2">
+                            <strong style="font-size:.85rem;">Measurements Total: $<span id="jobMeasurementsTotal">0.00</span></strong>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Section 3: PDF Attachment --}}
+                <h6 style="font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.5rem;">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Attach PDF <span class="text-danger">*</span>
+                </h6>
+                <div class="card" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                    <div class="card-body p-2">
+                        <input type="file" id="jobPdfFile" accept=".pdf" class="form-control form-control-sm" required>
+                        <div class="form-text">Upload the tech measure PDF or related documentation. This is required.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="submitConvertToJob()">
+                    <i class="bi bi-tools me-1"></i> Convert to Job
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Email Modal --}}
 <div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -281,7 +365,7 @@ function renderDetail(data) {
         actions += `<button class="btn btn-sm btn-outline-primary me-1" onclick="downloadPdf(${m.id})" title="Download PDF"><i class="bi bi-download"></i></button>`;
     }
     if (m.status === 'completed') {
-        actions += `<button class="btn btn-sm btn-vip" onclick="convertToQuote(${m.id})"><i class="bi bi-calculator me-1"></i>Convert to Quote</button>`;
+        actions += `<button class="btn btn-sm btn-vip" onclick="convertToQuote(${m.id})"><i class="bi bi-tools me-1"></i>Convert to Job</button>`;
     }
     toolbar.innerHTML = actions;
 
@@ -563,6 +647,7 @@ const unitOptions = @json($unitOptions);
 const frameTypeOptions = @json($frameTypeOptions);
 const gridOptions = @json($gridOptions);
 const patternOptions = @json($patternOptions);
+const installationTypes = @json($installationTypes);
 
 function addItem(measureId) {
     const qty = parseInt(document.getElementById('addQty')?.value || 1);
@@ -777,22 +862,159 @@ function downloadPdf(measureId) {
     window.open(`/installer/tech-measures/${measureId}/pdf`, '_blank');
 }
 
+let convertMeasureId = null;
+let jobLineItemCounter = 0;
+
 function convertToQuote(measureId) {
-    if (!confirm('Convert this tech measure into a quote? Items will be copied.')) return;
-    fetch(`/admin/tech-measures/${measureId}/convert-to-quote`, {
+    if (!currentMeasureData) return;
+    convertMeasureId = measureId;
+    jobLineItemCounter = 0;
+
+    // Populate measurements section
+    const items = currentMeasureData.items || [];
+    const tbody = document.getElementById('jobMeasurementsBody');
+    tbody.innerHTML = '';
+    items.forEach((item, idx) => {
+        tbody.innerHTML += `<tr>
+            <td class="text-center text-muted">${idx + 1}</td>
+            <td class="text-center">${item.qty || 1}</td>
+            <td class="text-nowrap">${escHtml(item.width) || '—'}</td>
+            <td class="text-nowrap">${escHtml(item.height) || '—'}</td>
+            <td>${escHtml(item.description) || '—'}</td>
+            <td>${escHtml(item.room_label) || '—'}</td>
+            <td style="font-size:.75rem;">${escHtml(item.notes) || ''}</td>
+            <td><input type="number" class="form-control form-control-sm job-measure-price" data-item-id="${item.id}" step="0.01" min="0" placeholder="0.00" oninput="recalcJobTotals()"></td>
+        </tr>`;
+    });
+
+    // Clear line items and add one default row
+    document.getElementById('jobLineItemsBody').innerHTML = '';
+    addJobLineItem();
+
+    // Clear PDF
+    document.getElementById('jobPdfFile').value = '';
+
+    recalcJobTotals();
+    new bootstrap.Modal(document.getElementById('convertJobModal')).show();
+}
+
+function addJobLineItem() {
+    jobLineItemCounter++;
+    const id = jobLineItemCounter;
+    const serviceOpts = installationTypes.map(t => `<option value="${t.id}" data-price="${t.price}">${escHtml(t.name)}</option>`).join('');
+
+    const row = document.createElement('tr');
+    row.id = 'jobLine_' + id;
+    row.innerHTML = `
+        <td><input type="number" class="form-control form-control-sm job-line-qty" data-line="${id}" value="1" min="1" oninput="updateLineTotal(${id})"></td>
+        <td><select class="form-select form-select-sm job-line-service" data-line="${id}" onchange="onServiceChange(${id})">
+            <option value="">— Select Service —</option>
+            ${serviceOpts}
+        </select></td>
+        <td><input type="number" class="form-control form-control-sm job-line-price" data-line="${id}" step="0.01" min="0" placeholder="0.00" oninput="updateLineTotal(${id})"></td>
+        <td class="text-end fw-semibold" style="font-size:.85rem; padding-top:.6rem;" id="lineTotal_${id}">$0.00</td>
+        <td class="text-center"><button class="btn btn-sm text-danger p-0" onclick="removeJobLineItem(${id})"><i class="bi bi-x-lg" style="font-size:.65rem;"></i></button></td>
+    `;
+    document.getElementById('jobLineItemsBody').appendChild(row);
+}
+
+function removeJobLineItem(id) {
+    const row = document.getElementById('jobLine_' + id);
+    if (row) row.remove();
+    recalcJobTotals();
+}
+
+function onServiceChange(lineId) {
+    const sel = document.querySelector(`.job-line-service[data-line="${lineId}"]`);
+    const opt = sel.options[sel.selectedIndex];
+    const price = opt?.dataset?.price || 0;
+    document.querySelector(`.job-line-price[data-line="${lineId}"]`).value = parseFloat(price).toFixed(2);
+    updateLineTotal(lineId);
+}
+
+function updateLineTotal(lineId) {
+    const qty = parseInt(document.querySelector(`.job-line-qty[data-line="${lineId}"]`)?.value) || 0;
+    const price = parseFloat(document.querySelector(`.job-line-price[data-line="${lineId}"]`)?.value) || 0;
+    const total = qty * price;
+    document.getElementById('lineTotal_' + lineId).textContent = '$' + total.toFixed(2);
+    recalcJobTotals();
+}
+
+function recalcJobTotals() {
+    // Line items total
+    let lineTotal = 0;
+    document.querySelectorAll('[id^="lineTotal_"]').forEach(el => {
+        lineTotal += parseFloat(el.textContent.replace('$', '')) || 0;
+    });
+
+    // Measurements total
+    let measTotal = 0;
+    document.querySelectorAll('.job-measure-price').forEach(inp => {
+        measTotal += parseFloat(inp.value) || 0;
+    });
+
+    document.getElementById('jobMeasurementsTotal').textContent = measTotal.toFixed(2);
+    document.getElementById('jobGrandTotal').textContent = (lineTotal + measTotal).toFixed(2);
+}
+
+function submitConvertToJob() {
+    // Validate PDF
+    const pdfInput = document.getElementById('jobPdfFile');
+    if (!pdfInput.files.length) {
+        alert('Please attach a PDF document. This is required.');
+        pdfInput.focus();
+        return;
+    }
+
+    // Collect line items
+    const lineItems = [];
+    document.querySelectorAll('#jobLineItemsBody tr').forEach(row => {
+        const lineId = row.id.replace('jobLine_', '');
+        const qty = parseInt(row.querySelector('.job-line-qty')?.value) || 0;
+        const serviceSelect = row.querySelector('.job-line-service');
+        const serviceId = serviceSelect?.value;
+        const serviceName = serviceSelect?.options[serviceSelect.selectedIndex]?.text || '';
+        const unitPrice = parseFloat(row.querySelector('.job-line-price')?.value) || 0;
+        if (serviceId && qty > 0) {
+            lineItems.push({ qty, service_id: serviceId, service_name: serviceName, unit_price: unitPrice, total: qty * unitPrice });
+        }
+    });
+
+    // Collect measurement prices
+    const measurementPrices = [];
+    document.querySelectorAll('.job-measure-price').forEach(inp => {
+        measurementPrices.push({ item_id: inp.dataset.itemId, price: parseFloat(inp.value) || 0 });
+    });
+
+    const formData = new FormData();
+    formData.append('pdf', pdfInput.files[0]);
+    formData.append('line_items', JSON.stringify(lineItems));
+    formData.append('measurement_prices', JSON.stringify(measurementPrices));
+
+    const btn = document.querySelector('#convertJobModal .btn-vip');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Converting...';
+
+    fetch(`/admin/tech-measures/${convertMeasureId}/convert-to-quote`, {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: formData
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            alert('Quote created! Redirecting...');
-            window.location.href = `/admin/quotes/${data.quote_id}`;
+            bootstrap.Modal.getInstance(document.getElementById('convertJobModal')).hide();
+            alert('Job created successfully!');
+            loadMeasure(convertMeasureId);
         } else {
             alert(data.error || 'Failed to convert.');
         }
     })
-    .catch(() => alert('Failed to convert.'));
+    .catch(() => alert('Failed to convert.'))
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-tools me-1"></i> Convert to Job';
+    });
 }
 </script>
 @endpush

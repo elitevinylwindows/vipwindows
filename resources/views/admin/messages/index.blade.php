@@ -537,8 +537,8 @@ function initVoicePlayers() {
             const player = document.getElementById('vp_' + id);
             if (player) {
                 const src = audio.querySelector('source')?.src || audio.src;
-                player.innerHTML = `<a href="${src}" target="_blank" style="font-size:.8rem; display:flex; align-items:center; gap:.4rem; text-decoration:none;">
-                    <i class="bi bi-play-circle" style="font-size:1.2rem;"></i> Play voice note
+                player.innerHTML = `<a href="${src}" download="voice_note" style="font-size:.8rem; display:flex; align-items:center; gap:.4rem; text-decoration:none;">
+                    <i class="bi bi-download" style="font-size:1.2rem;"></i> Download voice note
                 </a>`;
             }
         });

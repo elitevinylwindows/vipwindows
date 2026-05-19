@@ -29,11 +29,15 @@ class TechMeasure extends Model
         'grid_list',
         'grid_pattern',
         'created_by',
+        'converted_at',
+        'converted_by',
+        'job_data',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'converted_at' => 'datetime',
         'has_grids' => 'boolean',
     ];
 

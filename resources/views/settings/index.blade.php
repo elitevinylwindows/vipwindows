@@ -151,6 +151,54 @@
             </div>
         </div>
 
+        {{-- QuickBooks Integration --}}
+        <div class="card mb-4">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-receipt me-1"></i> QuickBooks Integration</h6></div>
+            <div class="card-body">
+                <div class="alert alert-info small mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Connect your QuickBooks Online account to sync invoices, customers, and payments.
+                    You'll need your QuickBooks app credentials from the <a href="https://developer.intuit.com" target="_blank">Intuit Developer Portal</a>.
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Client ID</label>
+                        <input type="text" name="qb_client_id" class="form-control" value="{{ $settings['qb_client_id'] ?? '' }}" placeholder="Your QuickBooks Client ID">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Client Secret</label>
+                        <input type="password" name="qb_client_secret" class="form-control" value="{{ $settings['qb_client_secret'] ?? '' }}" placeholder="Your QuickBooks Client Secret">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Redirect URI</label>
+                        <input type="text" name="qb_redirect_uri" class="form-control" value="{{ $settings['qb_redirect_uri'] ?? url('/admin/settings/quickbooks/callback') }}" readonly>
+                        <div class="form-text">Add this URL to your QuickBooks app's Redirect URIs.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Environment</label>
+                        <select name="qb_environment" class="form-select">
+                            <option value="sandbox" {{ ($settings['qb_environment'] ?? '') === 'sandbox' ? 'selected' : '' }}>Sandbox (Testing)</option>
+                            <option value="production" {{ ($settings['qb_environment'] ?? '') === 'production' ? 'selected' : '' }}>Production (Live)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="hidden" name="qb_sync_invoices" value="0">
+                    <input type="checkbox" name="qb_sync_invoices" value="1" class="form-check-input" {{ ($settings['qb_sync_invoices'] ?? false) ? 'checked' : '' }}>
+                    <label class="form-check-label">Auto-sync invoices to QuickBooks</label>
+                    <div class="form-text">Automatically create/update invoices in QuickBooks when invoices are created or modified.</div>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="hidden" name="qb_sync_customers" value="0">
+                    <input type="checkbox" name="qb_sync_customers" value="1" class="form-check-input" {{ ($settings['qb_sync_customers'] ?? false) ? 'checked' : '' }}>
+                    <label class="form-check-label">Auto-sync customers to QuickBooks</label>
+                    <div class="form-text">Automatically create customers in QuickBooks when new customers are added.</div>
+                </div>
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-vip btn-lg"><i class="bi bi-check-circle me-1"></i> Save All Settings</button>
     </form>
 </div>

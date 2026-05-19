@@ -8,6 +8,7 @@ use App\Models\TechMeasure;
 use App\Models\TechMeasureItem;
 use App\Models\TechMeasurePhoto;
 use App\Models\VipMasterOption;
+use App\Models\InstallationType;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,7 +44,9 @@ class TechMeasureController extends Controller
         $gridOptions = VipMasterOption::optionsFor('grid');
         $patternOptions = VipMasterOption::optionsFor('pattern');
 
-        return view('admin.tech-measures.index', compact('measures', 'status', 'techs', 'crews', 'unitOptions', 'frameTypeOptions', 'gridOptions', 'patternOptions'));
+        $installationTypes = InstallationType::where('is_active', true)->orderBy('sort_order')->get();
+
+        return view('admin.tech-measures.index', compact('measures', 'status', 'techs', 'crews', 'unitOptions', 'frameTypeOptions', 'gridOptions', 'patternOptions', 'installationTypes'));
     }
 
     /**
@@ -273,9 +276,9 @@ class TechMeasureController extends Controller
     }
 
     /**
-     * Convert a completed tech measure to a quote.
+     * Convert a completed tech measure to a job.
      */
-    public function convertToQuote($id)
+    public function convertToQuote(Request $request, $id)
     {
         $measure = TechMeasure::with('items')->findOrFail($id);
 
@@ -283,60 +286,41 @@ class TechMeasureController extends Controller
             return response()->json(['error' => 'No measurement items to convert.'], 422);
         }
 
-        // Create quote from measurement items
-        $quote = \App\Models\VipQuote::create([
-            'quote_number' => 'VQ-' . str_pad(\App\Models\VipQuote::max('id') + 1, 5, '0', STR_PAD_LEFT),
-            'customer_name' => $measure->customer_name,
-            'customer_email' => $measure->customer_email,
-            'customer_phone' => $measure->customer_phone,
-            'address' => $measure->fullAddress(),
-            'status' => 'draft',
-            'created_by' => Auth::guard('vip')->id(),
+        // Validate PDF attachment
+        $request->validate([
+            'pdf' => 'required|file|mimes:pdf|max:20480',
         ]);
 
-        foreach ($measure->items as $item) {
-            \App\Models\VipQuoteItem::create([
-                'quote_id' => $quote->id,
-                'description' => $item->description,
-                'series_id' => $item->series_id,
-                'series_type' => $item->series_type,
-                'width' => $item->width,
-                'height' => $item->height,
-                'qty' => $item->qty,
-                'glass' => $item->glass,
-                'grid' => $item->grid,
-                'color_config' => $item->color_config,
-                'color_exterior' => $item->color_exterior,
-                'color_exterior_custom' => $item->color_exterior_custom,
-                'color_interior' => $item->color_interior,
-                'color_interior_custom' => $item->color_interior_custom,
-                'frame_type' => $item->frame_type,
-                'glass_type' => $item->glass_type,
-                'tempered' => $item->tempered,
-                'tempered_fields' => $item->tempered_fields,
-                'grid_pattern' => $item->grid_pattern,
-                'grid_profile' => $item->grid_profile,
-                'grid_detail' => $item->grid_detail,
-                'retrofit_bottom_only' => $item->retrofit_bottom_only,
-                'no_logo_lock' => $item->no_logo_lock,
-                'double_lock' => $item->double_lock,
-                'custom_lock_position' => $item->custom_lock_position,
-                'custom_vent_latch' => $item->custom_vent_latch,
-                'knocked_down' => $item->knocked_down,
-                'shape_definition_id' => $item->shape_definition_id,
-                'shape_params' => $item->shape_params,
-                'shape_code' => $item->shape_code,
-                'panel_dimensions' => $item->panel_dimensions,
-                'internal_note' => $item->notes,
-            ]);
-        }
+        // Store the PDF
+        $pdfPath = $request->file('pdf')->store('tech-measures/' . $id . '/job-docs', 'public');
 
-        $measure->update(['status' => 'converted']);
+        // Parse line items and measurement prices
+        $lineItems = json_decode($request->input('line_items', '[]'), true) ?: [];
+        $measurementPrices = json_decode($request->input('measurement_prices', '[]'), true) ?: [];
+
+        // Calculate totals
+        $lineItemsTotal = collect($lineItems)->sum('total');
+        $measurementsTotal = collect($measurementPrices)->sum('price');
+        $grandTotal = $lineItemsTotal + $measurementsTotal;
+
+        // Store conversion data on the measure
+        $measure->update([
+            'status' => 'converted',
+            'converted_at' => now(),
+            'converted_by' => Auth::guard('vip')->id(),
+            'job_data' => json_encode([
+                'line_items' => $lineItems,
+                'measurement_prices' => $measurementPrices,
+                'line_items_total' => $lineItemsTotal,
+                'measurements_total' => $measurementsTotal,
+                'grand_total' => $grandTotal,
+                'pdf_path' => $pdfPath,
+            ]),
+        ]);
 
         return response()->json([
             'success' => true,
-            'quote_id' => $quote->id,
-            'message' => 'Quote created from tech measure.',
+            'message' => 'Tech measure converted to job.',
         ]);
     }
 }
