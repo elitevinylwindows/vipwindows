@@ -49,6 +49,7 @@ use App\Http\Controllers\Installer\InstallerAttendanceController;
 use App\Http\Controllers\Installer\InstallerServiceController;
 use App\Http\Controllers\Installer\InstallerMessageController;
 use App\Http\Controllers\Installer\InstallerTechMeasureController;
+use App\Http\Controllers\Installer\InstallerServiceJobController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\TeamMemberController;
@@ -497,6 +498,13 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::post('/tech-measures/{id}/notes', [InstallerTechMeasureController::class, 'updateNotes'])->name('tech-measures.updateNotes');
     Route::post('/tech-measures/{id}/grids', [InstallerTechMeasureController::class, 'updateGrids'])->name('tech-measures.updateGrids');
     Route::get('/tech-measures/{id}/pdf', [InstallerTechMeasureController::class, 'downloadPdf'])->name('tech-measures.downloadPdf');
+
+    // Service Jobs (calendar-based service events)
+    Route::get('/service-jobs', [InstallerServiceJobController::class, 'index'])->name('service-jobs.index');
+    Route::get('/service-jobs/{id}', [InstallerServiceJobController::class, 'show'])->name('service-jobs.show');
+    Route::post('/service-jobs/{id}/clock-in', [InstallerServiceJobController::class, 'clockIn'])->name('service-jobs.clockIn');
+    Route::post('/service-jobs/{id}/clock-out', [InstallerServiceJobController::class, 'clockOut'])->name('service-jobs.clockOut');
+    Route::post('/service-jobs/{id}/complete', [InstallerServiceJobController::class, 'complete'])->name('service-jobs.complete');
 
     // VIP Master options API (for dropdowns)
     Route::get('/vip-master-options/{category}', [VipMasterController::class, 'options'])->name('vip-master-options');

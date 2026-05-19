@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
 use App\Models\CalendarEvent;
+use App\Models\JobTimeLog;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class InstallerServiceJobController extends Controller
 {
