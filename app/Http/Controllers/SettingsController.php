@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmailTemplate;
+use App\Models\Service;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 
@@ -10,6 +12,14 @@ class SettingsController extends Controller
     public function index()
     {
         $settings = Setting::pluck('value', 'key')->toArray();
+
+        // Load hourly services (Tech Measure, Service, Repair — not Installation)
+        $hourlyServices = Service::where('installer_pay_type', 'per_hour')
+            ->orWhere(function ($q) {
+                $q->whereIn('code', ['tech_measure', 'service', 'repair']);
+            })
+            ->orderBy('sort_order')
+            ->get();
 
         // Defaults
         $defaults = [
@@ -49,7 +59,11 @@ class SettingsController extends Controller
 
         $settings = array_merge($defaults, $settings);
 
-        return view('settings.index', compact('settings'));
+        // Load email templates
+        $templates = EmailTemplate::orderBy('id')->get();
+        $placeholders = EmailTemplate::placeholders();
+
+        return view('settings.index', compact('settings', 'hourlyServices', 'templates', 'placeholders'));
     }
 
     public function update(Request $request)
@@ -64,5 +78,21 @@ class SettingsController extends Controller
         }
 
         return redirect()->route('admin.settings.index')->with('success', 'Settings saved successfully.');
+    }
+
+    /**
+     * Update a service's hourly pay rate (AJAX).
+     */
+    public function updateRate(Request $request, $id)
+    {
+        $service = Service::findOrFail($id);
+
+        $validated = $request->validate([
+            'installer_pay' => 'required|numeric|min:0',
+        ]);
+
+        $service->update(['installer_pay' => $validated['installer_pay']]);
+
+        return response()->json(['success' => true, 'message' => 'Rate updated.']);
     }
 }

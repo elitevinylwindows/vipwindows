@@ -277,6 +277,7 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::put('/settings/rate/{id}', [SettingsController::class, 'updateRate'])->name('settings.updateRate');
 
     // Service Rates
     Route::get('/settings/rates', [ServiceRateController::class, 'index'])->name('settings.rates');

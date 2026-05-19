@@ -43,7 +43,7 @@ class EmailTemplateController extends Controller
             'is_active' => $request->boolean('is_active'),
         ]);
 
-        return redirect()->route('admin.email-templates.index')
+        return redirect()->to(route('admin.settings.index') . '#email-templates')
             ->with('success', "Template \"{$template->name}\" updated.");
     }
 
