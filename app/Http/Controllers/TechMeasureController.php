@@ -320,25 +320,33 @@ class TechMeasureController extends Controller
         // Get the Installation service for the job
         $installService = Service::where('code', 'installation')->first();
 
+        // Determine status based on scheduling
+        $scheduledDate = $request->input('scheduled_date');
+        $jobStatus = $scheduledDate ? 'scheduled' : 'pending';
+
         // Create the Job record
         $job = Job::create([
-            'job_number'      => $jobNumber,
-            'service_id'      => $installService?->id,
-            'customer_name'   => $measure->customer_name,
-            'customer_email'  => $measure->customer_email,
-            'customer_phone'  => $measure->customer_phone,
-            'install_address' => $measure->address,
-            'install_city'    => $measure->city,
-            'install_state'   => $measure->state,
-            'install_zip'     => $measure->zip,
-            'description'     => 'Converted from tech measure. ' . ($measure->notes ?? ''),
-            'status'          => 'pending',
-            'priority'        => 'normal',
-            'assignment_type' => $measure->crew_id ? 'crew' : 'installer',
-            'assigned_to'     => $measure->assigned_to,
-            'crew_id'         => $measure->crew_id,
-            'notes'           => $measure->notes,
-            'created_by'      => Auth::guard('vip')->id(),
+            'job_number'         => $jobNumber,
+            'service_id'         => $installService?->id,
+            'customer_name'      => $measure->customer_name,
+            'customer_email'     => $measure->customer_email,
+            'customer_phone'     => $measure->customer_phone,
+            'install_address'    => $measure->address,
+            'install_city'       => $measure->city,
+            'install_state'      => $measure->state,
+            'install_zip'        => $measure->zip,
+            'description'        => 'Converted from tech measure. ' . ($measure->notes ?? ''),
+            'status'             => $jobStatus,
+            'priority'           => 'normal',
+            'assignment_type'    => $measure->crew_id ? 'crew' : 'installer',
+            'assigned_to'        => $measure->assigned_to,
+            'crew_id'            => $measure->crew_id,
+            'scheduled_date'     => $scheduledDate ?: null,
+            'scheduled_time'     => $request->input('scheduled_time') ?: null,
+            'end_date'           => $request->input('end_date') ?: null,
+            'estimated_duration' => $request->input('estimated_duration') ?: null,
+            'notes'              => $measure->notes,
+            'created_by'         => Auth::guard('vip')->id(),
         ]);
 
         // Create job line items from the service line items
@@ -374,6 +382,81 @@ class TechMeasureController extends Controller
             ]);
         }
 
+        // --- Create Invoice ---
+        $lastInvoice = Invoice::withTrashed()->orderByDesc('id')->first();
+        $nextInvNum = $lastInvoice ? (int) substr($lastInvoice->invoice_number, 4) + 1 : 1;
+        $invoiceNumber = 'INV-' . str_pad($nextInvNum, 5, '0', STR_PAD_LEFT);
+
+        $taxRate = (float) (Setting::where('key', 'sales_tax_rate')->value('value') ?? 10.75);
+        $subtotal = $grandTotal;
+        $taxAmount = round($subtotal * ($taxRate / 100), 2);
+        $invoiceTotal = $subtotal + $taxAmount;
+
+        $customerAddress = trim(implode(', ', array_filter([
+            $measure->address, $measure->city, $measure->state, $measure->zip,
+        ])));
+
+        $invoice = Invoice::create([
+            'invoice_number'  => $invoiceNumber,
+            'customer_name'   => $measure->customer_name,
+            'customer_email'  => $measure->customer_email,
+            'customer_phone'  => $measure->customer_phone,
+            'customer_address'=> $customerAddress ?: null,
+            'billing_address' => $customerAddress ?: null,
+            'status'          => 'draft',
+            'subtotal'        => $subtotal,
+            'tax_rate'        => $taxRate,
+            'tax_amount'      => $taxAmount,
+            'total'           => $invoiceTotal,
+            'amount_paid'     => 0,
+            'balance_due'     => $invoiceTotal,
+            'notes'           => "Created from tech measure conversion — Job {$jobNumber}",
+            'created_by'      => Auth::guard('vip')->id(),
+        ]);
+
+        // Add service line items to invoice
+        $invSortOrder = 0;
+        foreach ($lineItems as $item) {
+            if (empty($item['service_id']) || empty($item['qty'])) continue;
+            $unitPrice = $item['unit_price'] ?? 0;
+            $itemTotal = ($item['qty'] ?? 1) * $unitPrice;
+
+            InvoiceItem::create([
+                'invoice_id'  => $invoice->id,
+                'description' => $item['service_name'] ?? 'Service',
+                'qty'         => $item['qty'],
+                'unit_price'  => $unitPrice,
+                'total'       => $itemTotal,
+                'sort_order'  => $invSortOrder++,
+            ]);
+        }
+
+        // Add measurement items with prices to invoice
+        foreach ($measure->items as $idx => $mItem) {
+            $mPrice = collect($measurementPrices)->firstWhere('item_id', $mItem->id);
+            $price = $mPrice ? ($mPrice['price'] ?? 0) : 0;
+            if ($price <= 0) continue;
+
+            $desc = trim(implode(' | ', array_filter([
+                ($mItem->qty > 1 ? $mItem->qty . 'x' : ''),
+                $mItem->width ? $mItem->width . ' × ' . ($mItem->height ?? '') : '',
+                $mItem->description,
+                $mItem->room_label,
+            ])));
+
+            InvoiceItem::create([
+                'invoice_id'  => $invoice->id,
+                'description' => $desc ?: "Measurement item #{$idx}",
+                'qty'         => $mItem->qty ?: 1,
+                'unit_price'  => $price / ($mItem->qty ?: 1),
+                'total'       => $price,
+                'sort_order'  => $invSortOrder++,
+            ]);
+        }
+
+        // Link invoice to job
+        $job->update(['invoice_id' => $invoice->id]);
+
         // Store conversion data on the measure and link to the new job
         $measure->update([
             'status'       => 'converted',
@@ -387,6 +470,8 @@ class TechMeasureController extends Controller
                 'measurements_total' => $measurementsTotal,
                 'grand_total'        => $grandTotal,
                 'pdf_path'           => $pdfPath,
+                'invoice_id'         => $invoice->id,
+                'invoice_number'     => $invoiceNumber,
             ]),
         ]);
 
@@ -398,7 +483,7 @@ class TechMeasureController extends Controller
                     'customer_name'   => $job->customer_name ?? 'Customer',
                     'job_number'      => $job->job_number,
                     'scheduled_date'  => $job->scheduled_date ? $job->scheduled_date->format('l, F j, Y') : 'To be scheduled',
-                    'scheduled_time'  => $job->scheduled_time ?? 'To be confirmed',
+                    'scheduled_time'  => $job->scheduled_time ?: 'To be confirmed',
                     'install_address' => trim(implode(', ', array_filter([
                         $job->install_address, $job->install_city, $job->install_state, $job->install_zip,
                     ]))) ?: 'TBD',
@@ -437,7 +522,7 @@ class TechMeasureController extends Controller
             }
         }
 
-        $message = "Job {$jobNumber} created successfully.";
+        $message = "Job {$jobNumber} & Invoice {$invoiceNumber} created successfully.";
         if ($emailSent) {
             $message .= " Notification sent to {$job->customer_email}.";
         } elseif (empty($job->customer_email)) {
@@ -445,11 +530,13 @@ class TechMeasureController extends Controller
         }
 
         return response()->json([
-            'success'    => true,
-            'message'    => $message,
-            'job_id'     => $job->id,
-            'job_number' => $jobNumber,
-            'email_sent' => $emailSent,
+            'success'        => true,
+            'message'        => $message,
+            'job_id'         => $job->id,
+            'job_number'     => $jobNumber,
+            'invoice_id'     => $invoice->id,
+            'invoice_number' => $invoiceNumber,
+            'email_sent'     => $emailSent,
         ]);
     }
 }

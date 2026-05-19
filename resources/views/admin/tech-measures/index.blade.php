@@ -249,7 +249,34 @@
                     </div>
                 </div>
 
-                {{-- Section 3: PDF Attachment --}}
+                {{-- Section 3: Schedule --}}
+                <h6 style="font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.5rem;">
+                    <i class="bi bi-calendar-event me-1"></i> Schedule
+                </h6>
+                <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                    <div class="card-body p-2">
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Start Date</label>
+                                <input type="date" id="jobStartDate" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Start Time</label>
+                                <input type="time" id="jobStartTime" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label style="font-size:.65rem; color:#999; text-transform:uppercase;">End Date</label>
+                                <input type="date" id="jobEndDate" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Est. Duration</label>
+                                <input type="text" id="jobDuration" class="form-control form-control-sm" placeholder="e.g. 2 days">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Section 4: PDF Attachment --}}
                 <h6 style="font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.5rem;">
                     <i class="bi bi-file-earmark-pdf me-1"></i> Attach PDF <span class="text-danger">*</span>
                 </h6>
@@ -891,8 +918,12 @@ function convertToQuote(measureId) {
     document.getElementById('jobLineItemsBody').innerHTML = '';
     addJobLineItem();
 
-    // Clear PDF
+    // Clear PDF and schedule fields
     document.getElementById('jobPdfFile').value = '';
+    document.getElementById('jobStartDate').value = '';
+    document.getElementById('jobStartTime').value = '';
+    document.getElementById('jobEndDate').value = '';
+    document.getElementById('jobDuration').value = '';
 
     recalcJobTotals();
     new bootstrap.Modal(document.getElementById('convertJobModal')).show();
@@ -990,6 +1021,16 @@ function submitConvertToJob() {
     formData.append('pdf', pdfInput.files[0]);
     formData.append('line_items', JSON.stringify(lineItems));
     formData.append('measurement_prices', JSON.stringify(measurementPrices));
+
+    // Schedule fields
+    const startDate = document.getElementById('jobStartDate').value;
+    const startTime = document.getElementById('jobStartTime').value;
+    const endDate = document.getElementById('jobEndDate').value;
+    const duration = document.getElementById('jobDuration').value.trim();
+    if (startDate) formData.append('scheduled_date', startDate);
+    if (startTime) formData.append('scheduled_time', startTime);
+    if (endDate) formData.append('end_date', endDate);
+    if (duration) formData.append('estimated_duration', duration);
 
     const btn = document.querySelector('#convertJobModal .btn-vip');
     btn.disabled = true;

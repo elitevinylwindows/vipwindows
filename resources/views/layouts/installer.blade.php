@@ -154,9 +154,7 @@
             <a href="{{ route('installer.service-jobs.index') }}" class="{{ request()->routeIs('installer.service-jobs.*') ? 'active' : '' }}">
                 <i class="bi bi-wrench"></i> Services
             </a>
-            <a href="{{ route('installer.invoices.index') }}" class="{{ request()->routeIs('installer.invoices.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i> {{ __('installer.my_invoices') }}
-            </a>
+            {{-- Invoices removed from installer portal --}}
 
             <a href="{{ route('installer.attendance.index') }}" class="{{ request()->routeIs('installer.attendance.*') ? 'active' : '' }}">
                 <i class="bi bi-clock-history"></i> Attendance
