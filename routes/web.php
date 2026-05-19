@@ -427,6 +427,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::post('/jobs/{id}/clock-out', [InstallerJobController::class, 'clockOut'])->name('jobs.clockOut');
     Route::get('/jobs/{id}/time-logs', [InstallerJobController::class, 'timeLogs'])->name('jobs.timeLogs');
     Route::post('/jobs/{id}/upload-image', [InstallerJobController::class, 'uploadImage'])->name('jobs.uploadImage');
+    Route::post('/jobs/{id}/send-reminder', [InstallerJobController::class, 'sendReminder'])->name('jobs.sendReminder');
 
     // Invoices
     Route::get('/invoices', [InstallerInvoiceController::class, 'index'])->name('invoices.index');
