@@ -552,6 +552,35 @@ class InstallerJobController extends Controller
     }
 
     /**
+     * Send a reminder email to the customer for a job.
+     */
+    public function sendReminder($id)
+    {
+        $job = $this->findMyJob($id);
+
+        if (!$job->customer_email) {
+            return response()->json(['error' => 'No customer email on this job.'], 422);
+        }
+
+        try {
+            Mail::to($job->customer_email)->send(new ScheduleNotification([
+                'title'         => $job->job_number . ' — ' . ($job->service?->name ?? 'Service'),
+                'event_date'    => $job->scheduled_date?->format('Y-m-d'),
+                'start_time'    => $job->scheduled_time,
+                'address'       => collect([$job->install_address, $job->install_city, $job->install_state, $job->install_zip])->filter()->implode(', '),
+                'description'   => $job->description,
+                'customer_name' => $job->customer_name ?? 'Customer',
+                'service_name'  => $job->service?->name,
+                'type'          => 'job',
+            ]));
+
+            return response()->json(['success' => true, 'message' => 'Reminder sent to ' . $job->customer_email]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to send: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Upload a single image for a job.
      */
     public function uploadImage(Request $request, $id)

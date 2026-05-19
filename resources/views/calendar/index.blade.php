@@ -745,6 +745,7 @@ function openCalItem(item) {
         if (item.customer_phone) {
             footerHtml += `<a href="tel:${item.customer_phone}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-telephone me-1"></i>Call</a> `;
         }
+        footerHtml += `<button class="btn btn-sm btn-outline-info" onclick="openAdminReschedule(${item.id}, '${(item.date || '').substring(0,10)}', '${item.time || ''}')"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button> `;
         footerHtml += `<button class="btn btn-sm btn-outline-primary" onclick="openEditEvent(${item.id})"><i class="bi bi-pencil me-1"></i>Edit</button> `;
         footerHtml += `<form method="POST" action="/admin/calendar/event/${item.id}" class="d-inline" onsubmit="return confirm('Delete this event?')">
                 <input type="hidden" name="_token" value="${csrfToken}">
