@@ -534,14 +534,12 @@ function addItem(measureId) {
     const room = document.getElementById('addRoom')?.value?.trim();
     const notes = document.getElementById('addNotes')?.value?.trim();
 
-    const desc = config || 'Opening';
-
     fetch(`/installer/tech-measures/${measureId}/item`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
         body: JSON.stringify({
             room_label: room,
-            description: desc,
+            description: config || null,
             series_type: config,
             width: width || null,
             height: height || null,
@@ -552,11 +550,10 @@ function addItem(measureId) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Clear inputs for next entry
+            // Clear inputs for next entry (keep Unit selection)
             document.getElementById('addQty').value = 1;
             document.getElementById('addWidth').value = '';
             document.getElementById('addHeight').value = '';
-            document.getElementById('addConfig').value = '';
             document.getElementById('addRoom').value = '';
             document.getElementById('addNotes').value = '';
             loadMeasure(measureId);
