@@ -548,20 +548,28 @@ function showJobPopup(jobId) {
         </div>` : ''}
     `;
 
-    // Footer buttons — Start Route + Arrived + Call + Send Reminder + Reschedule
+    // Footer buttons — progressive flow: Start Route → Arrived → Start Job
     let footerHtml = '';
     let routeRow = '';
     let actionRow = '';
 
-    // Route / Arrived row
-    if (job.status === 'in_progress' && fullAddress) {
+    const jobStatus = job.status;
+
+    if (jobStatus === 'in_progress') {
+        // Already started — show Start Job / View Job button + Arrived
         routeRow = `
-            <button class="btn btn-danger flex-fill"
-                    onclick="onArrived(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
-                <i class="bi bi-pin-map-fill me-1"></i> Arrived at Location
-            </button>
+            <a href="${detailUrl}" class="btn btn-success flex-fill">
+                <i class="bi bi-play-circle me-1"></i> ${detailLabel}
+            </a>
+        `;
+    } else if (jobStatus === 'completed') {
+        routeRow = `
+            <a href="${detailUrl}" class="btn btn-outline-success flex-fill">
+                <i class="bi bi-check-circle me-1"></i> View Completed Job
+            </a>
         `;
     } else {
+        // Pending or scheduled — show full Start Route → Arrived → Start Job flow
         if (fullAddress) {
             routeRow += `
                 <a href="${mapsUrl}" target="_blank" id="startRouteBtn_${jobId}" class="btn btn-vip flex-fill" onclick="onRouteStarted(${jobId})">
@@ -571,8 +579,14 @@ function showJobPopup(jobId) {
         }
         routeRow += `
             <button class="btn btn-danger flex-fill" id="arrivedBtn_${jobId}" style="${fullAddress ? 'display:none;' : ''}"
-                    onclick="onArrived(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
+                    onclick="onArrivedAtLocation(${jobId})">
                 <i class="bi bi-pin-map-fill me-1"></i> Arrived at Location
+            </button>
+        `;
+        routeRow += `
+            <button class="btn btn-success flex-fill" id="startJobBtn_${jobId}" style="display:none;"
+                    onclick="onStartJob(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
+                <i class="bi bi-play-circle me-1"></i> Start Job
             </button>
         `;
     }
@@ -597,16 +611,6 @@ function showJobPopup(jobId) {
 }
 
 function onRouteStarted(jobId) {
-    // Clock in to the job (starts attendance tracking)
-    fetch(`/installer/jobs/${jobId}/clock-in`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-        },
-    }).catch(() => {}); // fire-and-forget, don't block navigation
-
     // After clicking Start Route (which opens Google Maps), show Arrived button
     setTimeout(() => {
         const routeBtn = document.getElementById('startRouteBtn_' + jobId);
@@ -616,13 +620,44 @@ function onRouteStarted(jobId) {
     }, 500);
 }
 
-function onArrived(jobId, isTechMeasure) {
-    // Redirect to the correct page
-    if (isTechMeasure) {
-        window.location.href = '/installer/tech-measures';
-    } else {
-        window.location.href = '/installer/jobs/' + jobId;
-    }
+function onArrivedAtLocation(jobId) {
+    // Hide Arrived, show Start Job
+    const arrivedBtn = document.getElementById('arrivedBtn_' + jobId);
+    const startJobBtn = document.getElementById('startJobBtn_' + jobId);
+    if (arrivedBtn) arrivedBtn.style.display = 'none';
+    if (startJobBtn) startJobBtn.style.display = '';
+}
+
+function onStartJob(jobId, isTechMeasure) {
+    // Clock in to the job (starts attendance tracking for crew)
+    fetch(`/installer/jobs/${jobId}/clock-in`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        // Update local data so reopening popup shows correct state
+        if (jobsData[jobId]) jobsData[jobId].status = 'in_progress';
+
+        // Redirect to job detail page
+        if (isTechMeasure) {
+            window.location.href = '/installer/tech-measures?job=' + jobId;
+        } else {
+            window.location.href = '/installer/jobs/' + jobId;
+        }
+    })
+    .catch(() => {
+        // Still redirect even if clock-in fails
+        if (isTechMeasure) {
+            window.location.href = '/installer/tech-measures?job=' + jobId;
+        } else {
+            window.location.href = '/installer/jobs/' + jobId;
+        }
+    });
 }
 
 // ── Event Popup ──
