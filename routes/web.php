@@ -496,6 +496,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::delete('/tech-measures/{id}/photo/{photoId}', [InstallerTechMeasureController::class, 'deletePhoto'])->name('tech-measures.deletePhoto');
     Route::post('/tech-measures/{id}/notes', [InstallerTechMeasureController::class, 'updateNotes'])->name('tech-measures.updateNotes');
     Route::post('/tech-measures/{id}/grids', [InstallerTechMeasureController::class, 'updateGrids'])->name('tech-measures.updateGrids');
+    Route::get('/tech-measures/{id}/pdf', [InstallerTechMeasureController::class, 'downloadPdf'])->name('tech-measures.downloadPdf');
 
     // VIP Master options API (for dropdowns)
     Route::get('/vip-master-options/{category}', [VipMasterController::class, 'options'])->name('vip-master-options');

@@ -183,7 +183,7 @@
 
             {{-- Upcoming Jobs --}}
             @php
-                $upcomingJobs = $jobs->where('scheduled_date', '>=', $today)->where('status', '!=', 'completed')->sortBy('scheduled_date')->take(10);
+                $upcomingJobs = $jobs->where('scheduled_date', '>=', $today)->where('status', '!=', 'completed')->whereNull('rescheduled_at')->sortBy('scheduled_date')->take(10);
             @endphp
             @if($upcomingJobs->count())
                 <div class="cal-day-section">
@@ -201,9 +201,13 @@
                 </div>
             @endif
 
-            {{-- Upcoming Events (admin-scheduled) --}}
+            {{-- Upcoming Events (admin-scheduled) — exclude rescheduled --}}
             @php
-                $upcomingEvents = $calendarEvents->where('event_date', '>=', $today)->sortBy('event_date')->take(10);
+                $upcomingEvents = $calendarEvents->where('event_date', '>=', $today)
+                    ->whereNull('rescheduled_at')
+                    ->where('event_status', '!=', 'rescheduled')
+                    ->sortBy('event_date')
+                    ->take(10);
             @endphp
             @if($upcomingEvents->count())
                 <div class="cal-day-section">

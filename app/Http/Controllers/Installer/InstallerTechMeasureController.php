@@ -277,4 +277,25 @@ class InstallerTechMeasureController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Download / print a PDF-ready view for a tech measure.
+     */
+    public function downloadPdf($id)
+    {
+        $measure = TechMeasure::with(['items', 'calendarEvent.service'])->findOrFail($id);
+        $items = $measure->items()->orderBy('sort_order')->get();
+
+        // Determine service title from calendar event
+        $serviceTitle = 'Tech Measure';
+        if ($measure->calendarEvent) {
+            if ($measure->calendarEvent->service) {
+                $serviceTitle = $measure->calendarEvent->service->name;
+            } elseif ($measure->calendarEvent->title) {
+                $serviceTitle = $measure->calendarEvent->title;
+            }
+        }
+
+        return view('installer.tech-measures.pdf', compact('measure', 'items', 'serviceTitle'));
+    }
 }

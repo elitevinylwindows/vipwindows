@@ -126,6 +126,7 @@
         ->whereNotNull('scheduled_date')
         ->where('scheduled_date', '>=', $today)
         ->whereIn('status', ['pending', 'scheduled', 'in_progress'])
+        ->whereNull('rescheduled_at')
         ->orderBy('scheduled_date')
         ->take(8)->get();
 @endphp

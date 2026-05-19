@@ -367,7 +367,7 @@ function renderMeasureDetail(data) {
 
     // Edit & Delete (like Jobs)
     if (m.status !== 'converted') {
-        actions += `<button class="btn btn-sm btn-outline-primary" onclick="openEditTm()" title="Edit"><i class="bi bi-pencil"></i></button> `;
+        actions += `<button class="btn btn-sm btn-outline-primary" onclick="downloadPdf(${m.id})" title="Download PDF"><i class="bi bi-download"></i></button> `;
         actions += `<button class="btn btn-sm btn-outline-danger" onclick="deleteMeasure(${m.id})" title="Delete"><i class="bi bi-trash"></i></button>`;
     }
 
@@ -737,6 +737,10 @@ function completeMeasure(measureId) {
     .then(r => r.json())
     .then(data => { if (data.success) loadMeasure(measureId); })
     .catch(() => alert('Failed to complete.'));
+}
+
+function downloadPdf(measureId) {
+    window.open(`/installer/tech-measures/${measureId}/pdf`, '_blank');
 }
 
 function uploadItemPhoto(measureId, itemId) {
