@@ -567,11 +567,12 @@ function showJobPopup(jobId) {
     } else if (job.status === 'in_progress') {
         footerHtml += `<a href="${detailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> ${detailLabel}</a>`;
     } else {
-        // Show all 3 steps as buttons — always visible
+        // Single progressive button: Start Route → Arrived → Start Job
         if (fullAddress) {
-            footerHtml += `<a href="${mapsUrl}" target="_blank" class="btn btn-vip w-100"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</a>`;
+            footerHtml += `<button class="btn btn-vip w-100" id="jobProgressBtn_${jobId}" onclick="advanceJobStep(${jobId}, '${mapsUrl}', '${detailUrl}')"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
+        } else {
+            footerHtml += `<a href="${detailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> Start Job</a>`;
         }
-        footerHtml += `<a href="${detailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> Arrived — Start Job</a>`;
     }
 
     // Action buttons row
@@ -649,12 +650,10 @@ function showEventPopup(eventId) {
 
     if (ev.address) {
         const evMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(ev.address);
-        routeRow += `<a href="${evMapsUrl}" target="_blank" class="btn btn-vip flex-fill"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</a>`;
-    }
-
-    // Arrived at Location button (goes to tech measures or just a visual confirmation)
-    if (eventDetailUrl) {
-        routeRow += `<a href="${eventDetailUrl}" class="btn btn-danger flex-fill"><i class="bi bi-geo-fill me-1"></i> Arrived at Location</a>`;
+        // Single progressive button: Start Route → Arrived at Location → Start Measure
+        routeRow += `<button class="btn btn-vip w-100" id="evtProgressBtn_${eventId}" onclick="advanceEventStep(${eventId}, '${evMapsUrl}', '${eventDetailUrl || ''}')"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
+    } else if (eventDetailUrl) {
+        routeRow += `<a href="${eventDetailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> Start Measure</a>`;
     }
 
     if (ev.customer_phone) {
@@ -673,6 +672,65 @@ function showEventPopup(eventId) {
     `;
 
     new bootstrap.Modal(document.getElementById('eventPopupModal')).show();
+}
+
+// ── Progressive Button Steps ──
+// Job: Start Route → Arrived at Location → Start Job
+const jobSteps = {};
+function advanceJobStep(jobId, mapsUrl, detailUrl) {
+    const btn = document.getElementById(`jobProgressBtn_${jobId}`);
+    if (!btn) return;
+    const step = jobSteps[jobId] || 0;
+
+    if (step === 0) {
+        // Step 1: Open Google Maps for route
+        window.open(mapsUrl, '_blank');
+        // Advance to "Arrived at Location"
+        jobSteps[jobId] = 1;
+        btn.className = 'btn btn-warning w-100';
+        btn.innerHTML = '<i class="bi bi-geo-fill me-1"></i> Arrived at Location';
+    } else if (step === 1) {
+        // Step 2: Mark as arrived, advance to "Start Job"
+        jobSteps[jobId] = 2;
+        btn.className = 'btn btn-success w-100';
+        btn.innerHTML = '<i class="bi bi-play-circle me-1"></i> Start Job';
+    } else {
+        // Step 3: Go to job detail page
+        window.location.href = detailUrl;
+    }
+}
+
+// Event: Start Route → Arrived at Location → Start Measure
+const evtSteps = {};
+function advanceEventStep(eventId, mapsUrl, detailUrl) {
+    const btn = document.getElementById(`evtProgressBtn_${eventId}`);
+    if (!btn) return;
+    const step = evtSteps[eventId] || 0;
+
+    if (step === 0) {
+        // Step 1: Open Google Maps for route
+        window.open(mapsUrl, '_blank');
+        // Advance to "Arrived at Location"
+        evtSteps[eventId] = 1;
+        btn.className = 'btn btn-warning w-100';
+        btn.innerHTML = '<i class="bi bi-geo-fill me-1"></i> Arrived at Location';
+    } else if (step === 1) {
+        // Step 2: Mark as arrived
+        if (detailUrl) {
+            // Advance to "Start Measure"
+            evtSteps[eventId] = 2;
+            btn.className = 'btn btn-success w-100';
+            btn.innerHTML = '<i class="bi bi-play-circle me-1"></i> Start Measure';
+        } else {
+            // No detail page — just mark as arrived with visual confirmation
+            btn.className = 'btn btn-success w-100';
+            btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Arrived';
+            btn.disabled = true;
+        }
+    } else {
+        // Step 3: Go to tech measures page
+        window.location.href = detailUrl;
+    }
 }
 
 // ── Send Reminder (Job) ──
