@@ -610,14 +610,16 @@ function showJobPopup(jobId) {
     if (job.status === 'completed') {
         footerHtml += `<a href="${detailUrl}" class="btn btn-outline-success w-100"><i class="bi bi-check-circle me-1"></i> View Completed Job</a>`;
     } else if (job.status === 'in_progress') {
-        footerHtml += `<a href="${detailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> ${detailLabel}</a>`;
-    } else {
-        // Single progressive button: Start Route → Arrived → Start Job
+        footerHtml += `<a href="${detailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> In Progress — View ${detailLabel}</a>`;
+    } else if (job.status === 'scheduled' || job.status === 'pending') {
+        // Not started — show progressive Start Route button
         if (fullAddress) {
             footerHtml += `<button class="btn btn-vip w-100" id="jobProgressBtn_${jobId}" onclick="advanceJobStep(${jobId}, '${mapsUrl}', '${detailUrl}')"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
         } else {
             footerHtml += `<a href="${detailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> Start Job</a>`;
         }
+    } else {
+        footerHtml += `<a href="${detailUrl}" class="btn btn-primary w-100"><i class="bi bi-eye me-1"></i> View ${detailLabel}</a>`;
     }
 
     // Action buttons row
@@ -637,14 +639,34 @@ function showJobPopup(jobId) {
 }
 
 // ── Event Popup ──
+let popupTimerInterval = null;
+
 function showEventPopup(eventId) {
     const ev = eventsData[eventId];
     if (!ev) return;
 
+    // Clear any previous timer
+    if (popupTimerInterval) { clearInterval(popupTimerInterval); popupTimerInterval = null; }
+
     document.getElementById('eventPopupTitle').innerHTML = `<i class="bi bi-calendar-event me-1" style="color:${ev.color}"></i> ${ev.title}`;
+
+    // Clock-in timer display
+    let clockHtml = '';
+    if (ev.is_clocked_in && ev.active_since) {
+        clockHtml = `<div class="alert alert-primary py-2 px-3 mb-3 d-flex align-items-center justify-content-between" style="font-size:.85rem;">
+            <span><i class="bi bi-clock-fill me-1"></i> <strong>Clocked In</strong></span>
+            <span class="badge bg-primary" id="popupElapsedTime" style="font-size:.8rem;">--:--</span>
+        </div>`;
+    } else if (ev.event_status === 'completed' && ev.total_time_minutes > 0) {
+        const hrs = Math.floor(ev.total_time_minutes / 60), mins = ev.total_time_minutes % 60;
+        clockHtml = `<div class="alert alert-success py-2 px-3 mb-3" style="font-size:.85rem;">
+            <i class="bi bi-check-circle-fill me-1"></i> <strong>Completed</strong> — Total: ${hrs}h ${mins}m
+        </div>`;
+    }
 
     let bodyHtml = `
         ${ev.is_rescheduled ? `<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;"><i class="bi bi-send-check me-1"></i> <strong>Reschedule Request Sent to Admin</strong>${ev.reschedule_reason ? ': ' + ev.reschedule_reason : ''}</div>` : ''}
+        ${clockHtml}
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
                 <h6 class="fw-bold mb-1">${ev.customer_name || 'No Customer'}</h6>
@@ -672,7 +694,23 @@ function showEventPopup(eventId) {
 
     document.getElementById('eventPopupBody').innerHTML = bodyHtml;
 
-    // Footer: Start Route + Call, Send Reminder, Reschedule
+    // Start elapsed timer if clocked in
+    if (ev.is_clocked_in && ev.active_since) {
+        const startDate = new Date(ev.active_since);
+        function updatePopupTimer() {
+            const now = new Date();
+            const diff = Math.floor((now - startDate) / 1000);
+            const hrs = Math.floor(diff / 3600);
+            const mins = Math.floor((diff % 3600) / 60);
+            const secs = diff % 60;
+            const el = document.getElementById('popupElapsedTime');
+            if (el) el.textContent = `${hrs}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+        }
+        updatePopupTimer();
+        popupTimerInterval = setInterval(updatePopupTimer, 1000);
+    }
+
+    // Footer: buttons based on ACTUAL status
     let routeRow = '';
     let actionRow = '';
 
@@ -692,15 +730,32 @@ function showEventPopup(eventId) {
     // Determine if this is a tech measure event
     const isTechMeasureEvent = (ev.service_name || '').toLowerCase().includes('measure') || (ev.title || '').toLowerCase().includes('measure');
     const eventDetailUrl = isTechMeasureEvent ? `/installer/tech-measures` : null;
-
     const techMeasureId = ev.tech_measure_id || null;
+    const tmStatus = ev.tech_measure_status;
 
-    if (ev.address) {
-        const evMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(ev.address);
-        // Single progressive button: Start Route → Arrived at Location → Start Measure
-        routeRow += `<button class="btn btn-vip w-100" id="evtProgressBtn_${eventId}" onclick="advanceEventStep(${eventId}, '${evMapsUrl}', '${eventDetailUrl || ''}', ${techMeasureId || 'null'})"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
-    } else if (eventDetailUrl) {
-        routeRow += `<a href="${eventDetailUrl}" class="btn btn-success w-100" onclick="startTechMeasure(${techMeasureId})"><i class="bi bi-play-circle me-1"></i> Start Measure</a>`;
+    // Check actual status to decide which button to show
+    if (ev.event_status === 'completed') {
+        // Completed — show view button
+        if (eventDetailUrl) {
+            routeRow += `<a href="${eventDetailUrl}" class="btn btn-outline-success w-100"><i class="bi bi-check-circle me-1"></i> Completed — View Measure</a>`;
+        } else {
+            routeRow += `<div class="btn btn-outline-success w-100 disabled"><i class="bi bi-check-circle me-1"></i> Completed</div>`;
+        }
+    } else if (tmStatus === 'in_progress' || ev.is_clocked_in) {
+        // In progress or clocked in — show "In Progress — View Measure"
+        if (eventDetailUrl) {
+            routeRow += `<a href="${eventDetailUrl}" class="btn btn-success w-100"><i class="bi bi-play-circle me-1"></i> In Progress — View Measure</a>`;
+        } else {
+            routeRow += `<div class="btn btn-success w-100 disabled"><i class="bi bi-play-circle me-1"></i> In Progress</div>`;
+        }
+    } else {
+        // Not started — show progressive Start Route button
+        if (ev.address) {
+            const evMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(ev.address);
+            routeRow += `<button class="btn btn-vip w-100" id="evtProgressBtn_${eventId}" onclick="advanceEventStep(${eventId}, '${evMapsUrl}', '${eventDetailUrl || ''}', ${techMeasureId || 'null'})"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
+        } else if (eventDetailUrl) {
+            routeRow += `<a href="${eventDetailUrl}" class="btn btn-success w-100" onclick="startTechMeasure(${techMeasureId})"><i class="bi bi-play-circle me-1"></i> Start Measure</a>`;
+        }
     }
 
     if (ev.customer_phone) {
@@ -709,7 +764,9 @@ function showEventPopup(eventId) {
     if (ev.customer_email) {
         actionRow += `<button class="btn btn-outline-warning btn-sm flex-fill" onclick="sendEventReminder(${eventId})"><i class="bi bi-bell me-1"></i>Reminder</button>`;
     }
-    actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('event', ${eventId})"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
+    if (ev.event_status !== 'completed') {
+        actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('event', ${eventId})"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
+    }
 
     document.getElementById('eventPopupFooter').innerHTML = `
         <div class="w-100 d-flex flex-column gap-2">
@@ -720,6 +777,11 @@ function showEventPopup(eventId) {
 
     new bootstrap.Modal(document.getElementById('eventPopupModal')).show();
 }
+
+// Clean up timer when event popup modal closes
+document.getElementById('eventPopupModal').addEventListener('hidden.bs.modal', function() {
+    if (popupTimerInterval) { clearInterval(popupTimerInterval); popupTimerInterval = null; }
+});
 
 // ── Progressive Button Steps ──
 // Job: Start Route → Arrived at Location → In Progress (go to job)
