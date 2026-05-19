@@ -30,7 +30,7 @@ class TechMeasureController extends Controller
         $measures = $query->paginate(50);
 
         $techs = VipUser::whereIn('role', ['installer', 'technician'])
-            ->where('is_active', true)
+            ->where('status', 'active')
             ->orderBy('name')
             ->get();
 

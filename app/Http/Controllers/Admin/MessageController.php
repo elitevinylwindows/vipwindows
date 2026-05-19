@@ -22,7 +22,7 @@ class MessageController extends Controller
             ->get();
 
         $installers = VipUser::where('role', 'installer')
-            ->where('is_active', true)
+            ->where('status', 'active')
             ->orderBy('name')
             ->get();
 

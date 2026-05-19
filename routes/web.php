@@ -459,10 +459,8 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/bookings', [InstallerAvailabilityController::class, 'bookings'])->name('bookings');
     Route::put('/bookings/{id}', [InstallerAvailabilityController::class, 'updateBooking'])->name('bookings.update');
 
-    // Attendance
+    // Attendance (job-based — clock in/out happens via Start Route and Complete Job)
     Route::get('/attendance', [InstallerAttendanceController::class, 'index'])->name('attendance.index');
-    Route::post('/attendance/clock-in', [InstallerAttendanceController::class, 'clockIn'])->name('attendance.clockIn');
-    Route::post('/attendance/clock-out', [InstallerAttendanceController::class, 'clockOut'])->name('attendance.clockOut');
 
     // Messages (installer ↔ admin)
     Route::get('/messages', [InstallerMessageController::class, 'index'])->name('messages.index');

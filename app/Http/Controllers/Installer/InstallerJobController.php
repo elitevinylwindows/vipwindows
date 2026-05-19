@@ -142,7 +142,7 @@ class InstallerJobController extends Controller
 
         $services = Service::where('is_active', true)->orderBy('name')->get();
         $crews = Crew::where('status', 'active')->with('members')->orderBy('name')->get();
-        $installers = VipUser::whereIn('role', ['installer', 'technician'])->where('is_active', true)->orderBy('name')->get();
+        $installers = VipUser::whereIn('role', ['installer', 'technician'])->where('status', 'active')->orderBy('name')->get();
 
         return view('installer.jobs.index', compact('jobs', 'status', 'todayJobs', 'weekJobs', 'inProgress', 'services', 'crews', 'installers'));
     }
@@ -433,17 +433,46 @@ class InstallerJobController extends Controller
             return response()->json(['error' => 'You are already clocked in to this job.'], 422);
         }
 
+        $now = now();
+
+        // Clock in the current user
         $log = JobTimeLog::create([
             'job_id'   => $job->id,
             'user_id'  => Auth::id(),
-            'clock_in' => now(),
+            'clock_in' => $now,
         ]);
+
+        // If job is assigned to a crew, clock in ALL crew members too
+        if ($job->crew_id) {
+            $crewMemberIds = DB::table('crew_members')
+                ->where('crew_id', $job->crew_id)
+                ->pluck('user_id')
+                ->toArray();
+
+            foreach ($crewMemberIds as $memberId) {
+                if ($memberId == Auth::id()) continue; // already clocked in above
+
+                // Only clock in if they don't already have an active log on this job
+                $memberActive = $job->timeLogs()
+                    ->where('user_id', $memberId)
+                    ->whereNull('clock_out')
+                    ->exists();
+
+                if (!$memberActive) {
+                    JobTimeLog::create([
+                        'job_id'   => $job->id,
+                        'user_id'  => $memberId,
+                        'clock_in' => $now,
+                    ]);
+                }
+            }
+        }
 
         // Auto-set job to in_progress if not already
         if (in_array($job->status, ['pending', 'scheduled'])) {
             $job->update([
                 'status' => 'in_progress',
-                'actual_start' => $job->actual_start ?? now(),
+                'actual_start' => $job->actual_start ?? $now,
             ]);
         }
 
