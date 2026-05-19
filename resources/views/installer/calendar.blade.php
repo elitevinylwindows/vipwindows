@@ -569,23 +569,29 @@ function showJobPopup(jobId) {
             </a>
         `;
     } else {
-        // Pending or scheduled — show full Start Route → Arrived → Start Job flow
-        const routeState = jobsData[jobId]._routeState || 'idle'; // idle → routed → arrived
-        if (fullAddress && routeState === 'idle') {
-            routeRow += `
-                <button class="btn btn-vip flex-fill" id="startRouteBtn_${jobId}" onclick="onRouteStarted(${jobId}, '${mapsUrl}')">
-                    <i class="bi bi-geo-alt-fill me-1"></i> Start Route
-                </button>
-            `;
-        }
+        // Pending or scheduled — show all 3 buttons, toggle visibility via state
+        const routeState = (jobsData[jobId] && jobsData[jobId]._routeState) ? jobsData[jobId]._routeState : 'idle';
+
+        // Store mapsUrl on the data object so onclick can read it without quoting issues
+        if (jobsData[jobId]) jobsData[jobId]._mapsUrl = mapsUrl;
+
         routeRow += `
-            <button class="btn btn-danger flex-fill" id="arrivedBtn_${jobId}" style="${routeState === 'routed' ? '' : 'display:none;'}"
+            <button class="btn btn-vip flex-fill" id="startRouteBtn_${jobId}"
+                    style="${routeState !== 'idle' || !fullAddress ? 'display:none;' : ''}"
+                    onclick="onRouteStarted(${jobId})">
+                <i class="bi bi-geo-alt-fill me-1"></i> Start Route
+            </button>
+        `;
+        routeRow += `
+            <button class="btn btn-danger flex-fill" id="arrivedBtn_${jobId}"
+                    style="${routeState === 'routed' ? '' : 'display:none;'}"
                     onclick="onArrivedAtLocation(${jobId})">
                 <i class="bi bi-pin-map-fill me-1"></i> Arrived at Location
             </button>
         `;
         routeRow += `
-            <button class="btn btn-success flex-fill" id="startJobBtn_${jobId}" style="${routeState === 'arrived' ? '' : 'display:none;'}"
+            <button class="btn btn-success flex-fill" id="startJobBtn_${jobId}"
+                    style="${routeState === 'arrived' ? '' : 'display:none;'}"
                     onclick="onStartJob(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
                 <i class="bi bi-play-circle me-1"></i> Start Job
             </button>
@@ -611,16 +617,25 @@ function showJobPopup(jobId) {
     new bootstrap.Modal(document.getElementById('jobPopupModal')).show();
 }
 
-function onRouteStarted(jobId, mapsUrl) {
-    // Open Google Maps in new tab
-    window.open(mapsUrl, '_blank');
-
-    // Immediately swap buttons and track state
+function onRouteStarted(jobId) {
+    // Track state FIRST so the buttons swap immediately
     jobsData[jobId]._routeState = 'routed';
     const routeBtn = document.getElementById('startRouteBtn_' + jobId);
     const arrivedBtn = document.getElementById('arrivedBtn_' + jobId);
     if (routeBtn) routeBtn.style.display = 'none';
     if (arrivedBtn) arrivedBtn.style.display = '';
+
+    // Open Google Maps — use a temporary <a> tag for reliable iPad/mobile support
+    const mapsUrl = jobsData[jobId]._mapsUrl;
+    if (mapsUrl) {
+        const a = document.createElement('a');
+        a.href = mapsUrl;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
 }
 
 function onArrivedAtLocation(jobId) {
