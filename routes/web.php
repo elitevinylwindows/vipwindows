@@ -52,6 +52,7 @@ use App\Http\Controllers\Installer\InstallerTechMeasureController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\TeamMemberController;
+use App\Http\Controllers\Admin\VipMasterController;
 use App\Http\Controllers\TechMeasureController;
 use App\Http\Controllers\CrewController;
 use App\Http\Controllers\PublicBookingController;
@@ -382,6 +383,15 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/master/frames', [FrameController::class, 'store'])->name('master.frames.store');
     Route::put('/master/frames/{id}', [FrameController::class, 'update'])->name('master.frames.update');
     Route::delete('/master/frames/{id}', [FrameController::class, 'destroy'])->name('master.frames.destroy');
+
+    // ── VIP Master ──────────────────────────────────────────
+    Route::get('/vip-master', [VipMasterController::class, 'index'])->name('vip-master.index');
+    Route::get('/vip-master/{category}', [VipMasterController::class, 'list'])->name('vip-master.list');
+    Route::post('/vip-master/{category}', [VipMasterController::class, 'store'])->name('vip-master.store');
+    Route::put('/vip-master/{category}/{id}', [VipMasterController::class, 'update'])->name('vip-master.update');
+    Route::post('/vip-master/{category}/{id}/toggle', [VipMasterController::class, 'toggle'])->name('vip-master.toggle');
+    Route::delete('/vip-master/{category}/{id}', [VipMasterController::class, 'destroy'])->name('vip-master.destroy');
+    Route::post('/vip-master/{category}/reorder', [VipMasterController::class, 'reorder'])->name('vip-master.reorder');
 });
 
 // ─── Installer portal ────────────────────────────────────────
@@ -486,6 +496,9 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::delete('/tech-measures/{id}/photo/{photoId}', [InstallerTechMeasureController::class, 'deletePhoto'])->name('tech-measures.deletePhoto');
     Route::post('/tech-measures/{id}/notes', [InstallerTechMeasureController::class, 'updateNotes'])->name('tech-measures.updateNotes');
     Route::post('/tech-measures/{id}/grids', [InstallerTechMeasureController::class, 'updateGrids'])->name('tech-measures.updateGrids');
+
+    // VIP Master options API (for dropdowns)
+    Route::get('/vip-master-options/{category}', [VipMasterController::class, 'options'])->name('vip-master-options');
 
     // Profile
     Route::get('/profile', [InstallerProfileController::class, 'index'])->name('profile');
