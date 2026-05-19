@@ -408,7 +408,11 @@ function renderMeasureDetail(data) {
                 : '';
             itemsHtml += `<tr>
                 <td class="text-center text-muted">${idx + 1}</td>
-                <td class="text-center">${item.qty || 1}</td>
+                <td class="text-center text-nowrap">
+                    <button class="btn btn-sm p-0 text-muted" onclick="changeQty(${m.id}, ${item.id}, -1)" style="font-size:.7rem; line-height:1;"><i class="bi bi-dash-circle"></i></button>
+                    <span class="mx-1 fw-semibold" id="qty_${item.id}">${item.qty || 1}</span>
+                    <button class="btn btn-sm p-0 text-muted" onclick="changeQty(${m.id}, ${item.id}, 1)" style="font-size:.7rem; line-height:1;"><i class="bi bi-plus-circle"></i></button>
+                </td>
                 <td class="text-nowrap">${item.width || '—'}</td>
                 <td class="text-nowrap">${item.height || '—'}</td>
                 <td>${item.description || '—'}</td>
@@ -610,6 +614,25 @@ function addItem(measureId) {
         else alert(data.error || 'Failed to add item.');
     })
     .catch(() => alert('Failed to add item.'));
+}
+
+function changeQty(measureId, itemId, delta) {
+    const span = document.getElementById('qty_' + itemId);
+    if (!span) return;
+    let qty = parseInt(span.textContent) + delta;
+    if (qty < 1) qty = 1;
+    span.textContent = qty;
+
+    fetch(`/installer/tech-measures/${measureId}/item/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ qty })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) { alert('Failed to update qty.'); loadMeasure(measureId); }
+    })
+    .catch(() => { alert('Failed to update qty.'); loadMeasure(measureId); });
 }
 
 function editItemFromData(measureId, itemId) {
