@@ -38,6 +38,12 @@ class SettingsController extends Controller
             'qb_environment'        => 'sandbox',
             'qb_sync_invoices'      => '0',
             'qb_sync_customers'     => '0',
+            'license_number'        => '',
+            'sales_tax_rate'        => '10.75',
+            'cc_fee_visa'           => '2',
+            'cc_fee_amex'           => '2.5',
+            'estimate_terms'        => 'Due on receipt',
+            'estimate_footer'       => 'If the above prices, specifications and conditions are satisfactory and hereby accepted, the company requires signatures when orders are placed. By signing, customer has agreed Not to cancel the order or put a stop payment on orders that have been paid by Visa, M/C, check and/or cash. Estimate valid only 30 days.',
         ];
 
         $settings = array_merge($defaults, $settings);

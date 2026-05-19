@@ -41,6 +41,35 @@
                     <label class="form-label">Address</label>
                     <input type="text" name="company_address" class="form-control" value="{{ $settings['company_address'] }}">
                 </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Contractor License #</label>
+                        <input type="text" name="license_number" class="form-control" value="{{ $settings['license_number'] }}" placeholder="e.g. Lic#1008123">
+                        <div class="form-text">Shown on all estimates sent to customers.</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Sales Tax Rate (%)</label>
+                        <input type="text" name="sales_tax_rate" class="form-control" value="{{ $settings['sales_tax_rate'] }}" placeholder="10.75">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Default Estimate Terms</label>
+                        <input type="text" name="estimate_terms" class="form-control" value="{{ $settings['estimate_terms'] }}" placeholder="Due on receipt">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Visa/MC Fee (%)</label>
+                        <input type="text" name="cc_fee_visa" class="form-control" value="{{ $settings['cc_fee_visa'] }}" placeholder="2">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Amex/Discover Fee (%)</label>
+                        <input type="text" name="cc_fee_amex" class="form-control" value="{{ $settings['cc_fee_amex'] }}" placeholder="2.5">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Estimate Footer Text</label>
+                    <textarea name="estimate_footer" class="form-control" rows="3">{{ $settings['estimate_footer'] }}</textarea>
+                </div>
             </div>
         </div>
 
