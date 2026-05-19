@@ -793,7 +793,7 @@ function openCalItem(item) {
         // Reschedule banner
         if (item.is_rescheduled) {
             details += `<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;">
-                <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Rescheduled</strong>${item.reschedule_reason ? ': ' + item.reschedule_reason : ''}
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Reschedule Request</strong>${item.reschedule_reason ? ': ' + item.reschedule_reason : ''}
                 ${item.rescheduled_from_date ? '<br><small class="text-muted"><i class="bi bi-calendar me-1"></i>Previously scheduled: ' + item.rescheduled_from_date + (item.rescheduled_from_time ? ' @ ' + item.rescheduled_from_time : '') + '</small>' : ''}
             </div>`;
         }
@@ -824,7 +824,7 @@ function openCalItem(item) {
         if (item.customer_phone) {
             footerHtml += `<a href="tel:${item.customer_phone}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-telephone me-1"></i>Call</a> `;
         }
-        footerHtml += `<button class="btn btn-sm btn-outline-info" onclick="openAdminReschedule(${item.id}, '', '${item.time || ''}')"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button> `;
+        footerHtml += `<button class="btn btn-sm btn-outline-info" onclick='openAdminReschedule(${item.id}, "", "${item.time || ''}", ${JSON.stringify(item).replace(/'/g, "\\'")})'><i class="bi bi-calendar2-week me-1"></i>Reschedule</button> `;
         footerHtml += `<button class="btn btn-sm btn-outline-primary" onclick="openEditEvent(${item.id})"><i class="bi bi-pencil me-1"></i>Edit</button> `;
         footerHtml += `<form method="POST" action="/admin/calendar/event/${item.id}" class="d-inline" onsubmit="return confirm('Delete this event?')">
                 <input type="hidden" name="_token" value="${csrfToken}">
@@ -945,31 +945,64 @@ function openEditEvent(eventId) {
 }
 
 // ── Admin Reschedule ──
-function openAdminReschedule(eventId, currentDate, currentTime) {
-    bootstrap.Modal.getInstance(document.getElementById('viewItemModal'))?.hide();
-    document.getElementById('adminRescheduleId').value = eventId;
-    document.getElementById('adminRescheduleTime').value = currentTime || '';
+let _adminRescheduleItem = null;
 
-    // Fetch event to get current date
+function openAdminReschedule(eventId, currentDate, currentTime, item) {
+    bootstrap.Modal.getInstance(document.getElementById('viewItemModal'))?.hide();
+    _adminRescheduleItem = item || null;
+    document.getElementById('adminRescheduleId').value = eventId;
+    document.getElementById('adminRescheduleReason').value = '';
+    document.getElementById('adminRescheduleEndTime').value = '';
+
+    // Show/hide installer reason banner
+    const reasonBanner = document.getElementById('adminRescheduleInstallerReason');
+    const reasonText = document.getElementById('adminRescheduleInstallerReasonText');
+    if (item && item.is_rescheduled && item.reschedule_reason) {
+        reasonText.textContent = item.reschedule_reason;
+        reasonBanner.style.display = '';
+    } else {
+        reasonBanner.style.display = 'none';
+    }
+
+    // Show/hide previous schedule info
+    const prevInfo = document.getElementById('adminReschedulePrevInfo');
+    const prevDate = document.getElementById('adminReschedulePrevDate');
+    if (item && item.rescheduled_from_date) {
+        let prevText = item.rescheduled_from_date;
+        if (item.rescheduled_from_time) prevText += ' @ ' + item.rescheduled_from_time;
+        prevDate.textContent = prevText;
+        prevInfo.style.display = '';
+    } else {
+        prevInfo.style.display = 'none';
+    }
+
+    // Show/hide notify button based on customer email
+    const notifyBtn = document.getElementById('adminRescheduleNotifyBtn');
+    notifyBtn.style.display = (item && item.customer_email) ? '' : 'none';
+
+    // Fetch event to pre-fill date/time
     fetch(`/admin/calendar/event/${eventId}`, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(r => r.json())
     .then(ev => {
         document.getElementById('adminRescheduleDate').value = ev.event_date ? ev.event_date.substring(0,10) : (currentDate || '');
-        if (!currentTime && ev.event_time) document.getElementById('adminRescheduleTime').value = ev.event_time;
+        document.getElementById('adminRescheduleTime').value = ev.event_time || currentTime || '';
+        document.getElementById('adminRescheduleEndTime').value = ev.end_time || '';
         setTimeout(() => new bootstrap.Modal(document.getElementById('adminRescheduleModal')).show(), 300);
     })
     .catch(() => {
         document.getElementById('adminRescheduleDate').value = currentDate || '';
+        document.getElementById('adminRescheduleTime').value = currentTime || '';
         setTimeout(() => new bootstrap.Modal(document.getElementById('adminRescheduleModal')).show(), 300);
     });
 }
 
-function submitAdminReschedule() {
+function submitAdminReschedule(notifyCustomer) {
     const eventId = document.getElementById('adminRescheduleId').value;
     const newDate = document.getElementById('adminRescheduleDate').value;
     const newTime = document.getElementById('adminRescheduleTime').value;
+    const newEndTime = document.getElementById('adminRescheduleEndTime').value;
     const reason = document.getElementById('adminRescheduleReason').value.trim();
 
     if (!newDate) { alert('Please select a date.'); return; }
@@ -977,7 +1010,13 @@ function submitAdminReschedule() {
     fetch(`/admin/calendar/event/${eventId}/reschedule`, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ new_date: newDate, new_time: newTime, reason: reason }),
+        body: JSON.stringify({
+            new_date: newDate,
+            new_time: newTime,
+            new_end_time: newEndTime,
+            reason: reason,
+            notify_customer: notifyCustomer ? 1 : 0,
+        }),
     })
     .then(r => {
         if (!r.ok) return r.json().then(d => { throw new Error(d.error || d.message || `HTTP ${r.status}`); });
@@ -985,6 +1024,9 @@ function submitAdminReschedule() {
     })
     .then(data => {
         bootstrap.Modal.getInstance(document.getElementById('adminRescheduleModal'))?.hide();
+        if (notifyCustomer && data.email_sent) {
+            alert('Event rescheduled and customer notified.');
+        }
         location.reload();
     })
     .catch(e => alert('Failed to reschedule: ' + e.message));
