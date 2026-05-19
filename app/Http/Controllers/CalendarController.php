@@ -249,54 +249,92 @@ class CalendarController extends Controller
      */
     public function rescheduleEvent(Request $request, $id)
     {
-        $event = CalendarEvent::findOrFail($id);
+        $oldEvent = CalendarEvent::findOrFail($id);
 
         $validated = $request->validate([
-            'new_date' => 'required|date',
-            'new_time' => 'nullable|string|max:20',
-            'reason'   => 'nullable|string|max:2000',
+            'new_date'        => 'required|date',
+            'new_time'        => 'nullable|string|max:20',
+            'new_end_time'    => 'nullable|string|max:20',
+            'reason'          => 'nullable|string|max:2000',
+            'notify_customer' => 'nullable',
         ]);
 
-        $oldDate = $event->event_date?->format('Y-m-d');
-        $oldTime = $event->event_time;
+        $installerReason = $oldEvent->reschedule_reason;
+        $adminReason = $validated['reason'] ?? null;
+        $combinedReason = $installerReason;
+        if ($adminReason) {
+            $combinedReason = $combinedReason ? $installerReason . ' | Admin: ' . $adminReason : $adminReason;
+        }
 
-        $event->update([
-            'rescheduled_from_date' => $oldDate,
-            'rescheduled_from_time' => $oldTime,
-            'event_date'            => $validated['new_date'],
-            'event_time'            => $validated['new_time'] ?? $oldTime,
-            'reschedule_reason'     => $validated['reason'] ?? null,
-            'rescheduled_at'        => now(),
-            'event_status'          => 'rescheduled',
+        // Mark old event as rescheduled — leave it on the original day
+        $oldEvent->update([
+            'event_status'      => 'rescheduled',
+            'reschedule_reason' => $combinedReason,
+            'rescheduled_at'    => now(),
         ]);
 
-        // Notify customer of reschedule
-        if ($event->customer_email) {
+        // Create a brand new event on the new date, linked to the old one
+        $newEvent = CalendarEvent::create([
+            'title'              => $oldEvent->title,
+            'description'        => $oldEvent->description,
+            'event_date'         => $validated['new_date'],
+            'event_time'         => $validated['new_time'] ?? $oldEvent->event_time,
+            'end_time'           => $validated['new_end_time'] ?? $oldEvent->end_time,
+            'end_date'           => $oldEvent->end_date,
+            'color'              => $oldEvent->color,
+            'service_id'         => $oldEvent->service_id,
+            'crew_id'            => $oldEvent->crew_id,
+            'created_by'         => $oldEvent->created_by,
+            'address'            => $oldEvent->address,
+            'customer_name'      => $oldEvent->customer_name,
+            'customer_email'     => $oldEvent->customer_email,
+            'customer_phone'     => $oldEvent->customer_phone,
+            'installation_types' => $oldEvent->installation_types,
+            'event_status'       => 'scheduled',
+            'related_event_id'   => $oldEvent->id,
+            'rescheduled_from_date' => $oldEvent->event_date,
+            'rescheduled_from_time' => $oldEvent->event_time,
+            'reschedule_reason'     => $combinedReason,
+        ]);
+
+        // Notify customer of reschedule (only if requested)
+        $emailSent = false;
+        $notifyCustomer = $request->input('notify_customer');
+        if ($notifyCustomer && $newEvent->customer_email) {
             try {
-                Mail::to($event->customer_email)->send(new ScheduleNotification([
-                    'title'         => $event->title . ' — Rescheduled',
+                $oldDateFormatted = $oldEvent->event_date->format('l, F j, Y');
+                $description = 'Your appointment has been rescheduled to a new date.';
+                if ($installerReason) {
+                    $description .= "\n\nReason: " . $installerReason;
+                }
+                if ($adminReason) {
+                    $description .= "\n\nNote: " . $adminReason;
+                }
+                $description .= "\n\nPreviously scheduled: " . $oldDateFormatted . ($oldEvent->event_time ? ' at ' . $oldEvent->event_time : '');
+
+                Mail::to($newEvent->customer_email)->send(new ScheduleNotification([
+                    'title'         => $newEvent->title . ' — Rescheduled',
                     'event_date'    => $validated['new_date'],
-                    'start_time'    => $validated['new_time'] ?? $oldTime,
-                    'end_time'      => $event->end_time,
-                    'address'       => $event->address,
-                    'description'   => $validated['reason']
-                        ? 'Your appointment has been rescheduled. Reason: ' . $validated['reason']
-                        : 'Your appointment has been rescheduled to a new date.',
-                    'customer_name' => $event->customer_name ?? 'Customer',
-                    'service_name'  => $event->service?->name,
+                    'start_time'    => $validated['new_time'] ?? $oldEvent->event_time,
+                    'end_time'      => $validated['new_end_time'] ?? $oldEvent->end_time,
+                    'address'       => $newEvent->address,
+                    'description'   => $description,
+                    'customer_name' => $newEvent->customer_name ?? 'Customer',
+                    'service_name'  => $newEvent->service?->name,
                     'type'          => 'event',
                 ]));
+                $emailSent = true;
             } catch (\Exception $e) {
                 \Log::warning('Admin reschedule notification failed: ' . $e->getMessage());
             }
         }
 
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Event rescheduled.']);
+            return response()->json(['success' => true, 'message' => 'New event created.', 'email_sent' => $emailSent, 'new_event_id' => $newEvent->id]);
         }
 
         return redirect()->route('admin.calendar.index', ['month' => \Carbon\Carbon::parse($validated['new_date'])->format('Y-m')])
-            ->with('success', 'Event rescheduled.' . ($event->customer_email ? ' Customer notified.' : ''));
+            ->with('success', 'New event created.' . ($emailSent ? ' Customer notified.' : ''));
     }
 
     /**

@@ -13,7 +13,7 @@ class CalendarEvent extends Model
         'end_date', 'color', 'service_id', 'crew_id', 'created_by', 'address',
         'customer_name', 'customer_email', 'customer_phone', 'installation_types',
         'reschedule_reason', 'rescheduled_at', 'rescheduled_from_date', 'rescheduled_from_time',
-        'event_status',
+        'event_status', 'related_event_id',
     ];
 
     protected $casts = [
@@ -37,5 +37,21 @@ class CalendarEvent extends Model
     public function creator()
     {
         return $this->belongsTo(VipUser::class, 'created_by');
+    }
+
+    /**
+     * The previous event this was rescheduled from.
+     */
+    public function previousEvent()
+    {
+        return $this->belongsTo(CalendarEvent::class, 'related_event_id');
+    }
+
+    /**
+     * The new event that replaced this one (if rescheduled).
+     */
+    public function rescheduledTo()
+    {
+        return $this->hasOne(CalendarEvent::class, 'related_event_id');
     }
 }

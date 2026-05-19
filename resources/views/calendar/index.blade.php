@@ -838,7 +838,7 @@ function openCalItem(item) {
         // Reschedule banner for jobs
         if (item.is_rescheduled) {
             details += `<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem;">
-                <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Rescheduled</strong>${item.reschedule_reason ? ': ' + item.reschedule_reason : ''}
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Reschedule Request</strong>${item.reschedule_reason ? ': ' + item.reschedule_reason : ''}
                 ${item.rescheduled_from_date ? '<br><small class="text-muted"><i class="bi bi-calendar me-1"></i>Previously scheduled: ' + item.rescheduled_from_date + (item.rescheduled_from_time ? ' @ ' + item.rescheduled_from_time : '') + '</small>' : ''}
             </div>`;
         }
