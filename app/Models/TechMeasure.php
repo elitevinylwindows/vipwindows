@@ -24,6 +24,7 @@ class TechMeasure extends Model
         'started_at',
         'completed_at',
         'notes',
+        'frame_type',
         'has_grids',
         'grid_list',
         'grid_pattern',

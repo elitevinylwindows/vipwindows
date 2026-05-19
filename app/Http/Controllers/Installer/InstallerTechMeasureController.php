@@ -234,7 +234,18 @@ class InstallerTechMeasureController extends Controller
     public function updateNotes(Request $request, $id)
     {
         $measure = TechMeasure::findOrFail($id);
-        $measure->update(['notes' => $request->input('notes')]);
+
+        $data = [];
+        if ($request->has('notes')) {
+            $data['notes'] = $request->input('notes');
+        }
+        if ($request->has('frame_type')) {
+            $data['frame_type'] = $request->input('frame_type');
+        }
+
+        if (!empty($data)) {
+            $measure->update($data);
+        }
 
         return response()->json(['success' => true]);
     }

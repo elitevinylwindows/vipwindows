@@ -10,7 +10,8 @@ return new class extends Migration
     {
         if (Schema::hasTable('tech_measures') && !Schema::hasColumn('tech_measures', 'has_grids')) {
             Schema::table('tech_measures', function (Blueprint $table) {
-                $table->boolean('has_grids')->default(false)->after('notes');
+                $table->string('frame_type', 100)->nullable()->after('notes');
+                $table->boolean('has_grids')->default(false)->after('frame_type');
                 $table->string('grid_list', 100)->nullable()->after('has_grids');
                 $table->string('grid_pattern', 100)->nullable()->after('grid_list');
             });

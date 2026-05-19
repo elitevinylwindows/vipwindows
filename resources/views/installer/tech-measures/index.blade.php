@@ -223,7 +223,7 @@
 const csrf = document.querySelector('meta[name=csrf-token]').content;
 let currentMeasureId = null;
 let currentMeasureData = null;
-const seriesData = @json($seriesList);
+// seriesData removed — Series no longer used in tech measure form
 
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.tm-card');
@@ -327,9 +327,6 @@ function renderMeasureDetail(data) {
         startElapsedTimer(new Date(m.active_since));
     }
 
-    // Series options for add form
-    let seriesOpts = '<option value="">— Select Series —</option>' + seriesData.map(s => `<option value="${s.id}">${s.series}</option>`).join('');
-
     // Items table
     let itemsHtml = '';
     if (items.length) {
@@ -340,7 +337,6 @@ function renderMeasureDetail(data) {
                 <th>Width</th>
                 <th>Height</th>
                 <th>Unit (Configuration)</th>
-                <th>Frame Type</th>
                 <th>Reference</th>
                 <th>Notes</th>
                 <th style="width:60px;"></th>
@@ -355,8 +351,7 @@ function renderMeasureDetail(data) {
                 <td class="text-center">${item.qty || 1}</td>
                 <td class="text-nowrap">${item.width || '—'}</td>
                 <td class="text-nowrap">${item.height || '—'}</td>
-                <td>${item.description || '—'}<br><span class="text-muted" style="font-size:.7rem;">${item.series_type || ''}</span></td>
-                <td>${item.frame_type || '—'}</td>
+                <td>${item.description || '—'}</td>
                 <td>${item.room_label || '—'}${photoHtml}</td>
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
                 <td class="text-center">
@@ -398,6 +393,23 @@ function renderMeasureDetail(data) {
         ${itemsHtml}
 
         ${m.status === 'in_progress' || m.status === 'pending' ? `
+        {{-- Frame Type — applies to all openings --}}
+        <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type <small class="text-muted fw-normal">(applies to all openings)</small></h6>
+        <div class="tm-add-form mb-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id})">
+                        <option value="">— Select Frame Type —</option>
+                        <option value='Retrofit 1 3/4"' ${m.frame_type === 'Retrofit 1 3/4"' ? 'selected' : ''}>Retrofit 1 3/4"</option>
+                        <option value='Retrofit 2 1/2"' ${m.frame_type === 'Retrofit 2 1/2"' ? 'selected' : ''}>Retrofit 2 1/2"</option>
+                        <option value="Block" ${m.frame_type === 'Block' ? 'selected' : ''}>Block</option>
+                        <option value='Nailon 1" Setback' ${m.frame_type === 'Nailon 1&quot; Setback' ? 'selected' : ''}>Nailon 1" Setback</option>
+                        <option value='Nailon 1 3/8" Setback' ${m.frame_type === 'Nailon 1 3/8&quot; Setback' ? 'selected' : ''}>Nailon 1 3/8" Setback</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <h6 class="section-title"><i class="bi bi-plus-circle"></i> Add Opening</h6>
         <div class="tm-add-form">
             <div class="row g-2 align-items-end">
@@ -405,47 +417,28 @@ function renderMeasureDetail(data) {
                     <label>Qty</label>
                     <input type="number" id="addQty" class="form-control form-control-sm" value="1" min="1">
                 </div>
-                <div class="col-md-1">
+                <div class="col">
                     <label>Width</label>
                     <input type="text" id="addWidth" class="form-control form-control-sm" placeholder='36 1/2'>
                 </div>
-                <div class="col-md-1">
+                <div class="col">
                     <label>Height</label>
                     <input type="text" id="addHeight" class="form-control form-control-sm" placeholder='60 3/8'>
                 </div>
                 <div class="col-md-2">
-                    <label>Series</label>
-                    <select id="addSeries" class="form-select form-select-sm" onchange="loadConfigs(this.value)">${seriesOpts}</select>
-                </div>
-                <div class="col-md-2">
                     <label>Unit (Configuration)</label>
-                    <select id="addConfig" class="form-select form-select-sm">
-                        <option value="">— Select —</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label>Frame Type</label>
-                    <select id="addFrame" class="form-select form-select-sm">
-                        <option value="">— Select —</option>
-                        <option value='Retrofit 1 3/4"'>Retrofit 1 3/4"</option>
-                        <option value='Retrofit 2 1/2"'>Retrofit 2 1/2"</option>
-                        <option value="Block">Block</option>
-                        <option value='Nailon 1" Setback'>Nailon 1" Setback</option>
-                        <option value='Nailon 1 3/8" Setback'>Nailon 1 3/8" Setback</option>
-                    </select>
+                    <input type="text" id="addConfig" class="form-control form-control-sm" placeholder="e.g. SH, Slider, PW">
                 </div>
                 <div class="col-md-2">
                     <label>Reference</label>
                     <input type="text" id="addRoom" class="form-control form-control-sm" placeholder="e.g. Living Room">
                 </div>
-            </div>
-            <div class="row g-2 mt-1">
-                <div class="col-md-9">
+                <div class="col-md-3">
                     <label>Notes</label>
-                    <input type="text" id="addNotes" class="form-control form-control-sm" placeholder="Any notes about this opening...">
+                    <input type="text" id="addNotes" class="form-control form-control-sm" placeholder="Any notes...">
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button class="btn btn-sm btn-vip w-100" onclick="addItem(${m.id})"><i class="bi bi-plus-lg me-1"></i>Add Opening</button>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button class="btn btn-sm btn-vip w-100" onclick="addItem(${m.id})" title="Add Opening"><i class="bi bi-plus-lg"></i></button>
                 </div>
             </div>
         </div>
@@ -531,37 +524,16 @@ function renderMeasureDetail(data) {
     `;
 }
 
-function loadConfigs(seriesId) {
-    const configSelect = document.getElementById('addConfig');
-    configSelect.innerHTML = '<option value="">Loading...</option>';
-    if (!seriesId) { configSelect.innerHTML = '<option value="">— Select —</option>'; return; }
-
-    fetch(`/installer/quotes/series-types/${seriesId}`, {
-        headers: { 'Accept': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(types => {
-        let html = '<option value="">— Select —</option>';
-        types.forEach(t => { html += `<option value="${t.series_type}">${t.series_type}</option>`; });
-        configSelect.innerHTML = html;
-    })
-    .catch(() => { configSelect.innerHTML = '<option value="">— Error —</option>'; });
-}
 
 function addItem(measureId) {
     const qty = parseInt(document.getElementById('addQty')?.value || 1);
     const width = document.getElementById('addWidth')?.value?.trim();
     const height = document.getElementById('addHeight')?.value?.trim();
-    const seriesId = document.getElementById('addSeries')?.value || null;
-    const seriesType = document.getElementById('addConfig')?.value || null;
-    const frame = document.getElementById('addFrame')?.value;
+    const config = document.getElementById('addConfig')?.value || null;
     const room = document.getElementById('addRoom')?.value?.trim();
     const notes = document.getElementById('addNotes')?.value?.trim();
 
-    // Build description from series + config
-    const seriesEl = document.getElementById('addSeries');
-    const seriesName = seriesEl?.options[seriesEl.selectedIndex]?.text || '';
-    const desc = [seriesName, seriesType].filter(Boolean).join(' — ') || 'Opening';
+    const desc = config || 'Opening';
 
     fetch(`/installer/tech-measures/${measureId}/item`, {
         method: 'POST',
@@ -569,21 +541,43 @@ function addItem(measureId) {
         body: JSON.stringify({
             room_label: room,
             description: desc,
-            series_id: seriesId,
-            series_type: seriesType,
+            series_type: config,
             width: width || null,
             height: height || null,
             qty: qty,
-            frame_type: frame,
             notes: notes,
         })
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) loadMeasure(measureId);
+        if (data.success) {
+            // Clear inputs for next entry
+            document.getElementById('addQty').value = 1;
+            document.getElementById('addWidth').value = '';
+            document.getElementById('addHeight').value = '';
+            document.getElementById('addRoom').value = '';
+            document.getElementById('addNotes').value = '';
+            loadMeasure(measureId);
+        }
         else alert(data.error || 'Failed to add item.');
     })
     .catch(() => alert('Failed to add item.'));
+}
+
+function saveFrameType(measureId) {
+    const frameType = document.getElementById('globalFrame')?.value || null;
+    fetch(`/installer/tech-measures/${measureId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ frame_type: frameType })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && currentMeasureData) {
+            currentMeasureData.measure.frame_type = frameType;
+        }
+    })
+    .catch(() => {});
 }
 
 function toggleGridFields() {
