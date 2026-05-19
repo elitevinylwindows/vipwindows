@@ -266,7 +266,7 @@ class InstallerJobController extends Controller
             $totalTime = $job->timeLogs()->whereNotNull('clock_out')->sum('total_minutes');
         } catch (\Exception $e) {}
 
-        return response()->json([
+        $data = [
             'job' => $job,
             'notes' => $notes,
             'items' => $items,
@@ -276,7 +276,16 @@ class InstallerJobController extends Controller
             'time_logs' => $timeLogs,
             'total_time_minutes' => $totalTime,
             'image_url' => $job->image ? asset('storage/' . $job->image) : null,
-        ]);
+        ];
+
+        // If AJAX request, return JSON (used by left-rail jobs page)
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json($data);
+        }
+
+        // For direct page load (e.g. from calendar "Arrived" link),
+        // redirect to the jobs index with the job highlighted
+        return redirect()->route('installer.jobs.index', ['highlight' => $job->id]);
     }
 
     public function updateStatus(Request $request, $id)
