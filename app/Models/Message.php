@@ -14,10 +14,15 @@ class Message extends Model
         'body',
         'read_at',
         'attachment',
+        'attachment_name',
+        'attachment_type',
+        'attachment_size',
+        'message_type',
     ];
 
     protected $casts = [
         'read_at' => 'datetime',
+        'attachment_size' => 'integer',
     ];
 
     public function sender()
@@ -33,5 +38,34 @@ class Message extends Model
     public function isRead(): bool
     {
         return $this->read_at !== null;
+    }
+
+    public function isVoiceNote(): bool
+    {
+        return $this->message_type === 'voice';
+    }
+
+    public function isFile(): bool
+    {
+        return $this->message_type === 'file';
+    }
+
+    public function isImage(): bool
+    {
+        if (!$this->attachment_type) return false;
+        return str_starts_with($this->attachment_type, 'image/');
+    }
+
+    public function attachmentUrl(): ?string
+    {
+        return $this->attachment ? asset('storage/' . $this->attachment) : null;
+    }
+
+    public function formattedSize(): string
+    {
+        $bytes = $this->attachment_size ?? 0;
+        if ($bytes < 1024) return $bytes . ' B';
+        if ($bytes < 1048576) return round($bytes / 1024, 1) . ' KB';
+        return round($bytes / 1048576, 1) . ' MB';
     }
 }

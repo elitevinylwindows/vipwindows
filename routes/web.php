@@ -185,6 +185,7 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::get('/messages/unread-count', [MessageController::class, 'unreadCount'])->name('messages.unreadCount');
     Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{id}/send', [MessageController::class, 'send'])->name('messages.send');
+    Route::delete('/messages/{id}/message/{messageId}', [MessageController::class, 'deleteMessage'])->name('messages.deleteMessage');
     Route::post('/messages/start', [MessageController::class, 'startConversation'])->name('messages.start');
 
     // Tech Measures (admin view + convert to quote)
@@ -449,6 +450,7 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::post('/messages/start', [InstallerMessageController::class, 'startConversation'])->name('messages.start');
     Route::get('/messages/{id}', [InstallerMessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{id}/send', [InstallerMessageController::class, 'send'])->name('messages.send');
+    Route::delete('/messages/{id}/message/{messageId}', [InstallerMessageController::class, 'deleteMessage'])->name('messages.deleteMessage');
 
     // Tech Measures (installer/tech data entry)
     Route::get('/tech-measures', [InstallerTechMeasureController::class, 'index'])->name('tech-measures.index');

@@ -8,12 +8,10 @@ use App\Models\Message;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class MessageController extends Controller
 {
-    /**
-     * Show the messaging inbox.
-     */
     public function index()
     {
         $admin = Auth::guard('vip')->user();
@@ -23,13 +21,11 @@ class MessageController extends Controller
             ->orderByDesc('last_message_at')
             ->get();
 
-        // Installers that don't have a conversation yet (for "New Message")
         $installers = VipUser::where('role', 'installer')
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        // Total unread
         $totalUnread = 0;
         foreach ($conversations as $conv) {
             $conv->unread_count = $conv->unreadCountFor($admin->id);
@@ -39,15 +35,11 @@ class MessageController extends Controller
         return view('admin.messages.index', compact('conversations', 'installers', 'totalUnread'));
     }
 
-    /**
-     * Show a conversation (JSON for AJAX load in right panel).
-     */
     public function show($id)
     {
         $admin = Auth::guard('vip')->user();
         $conversation = Conversation::where('admin_id', $admin->id)->findOrFail($id);
 
-        // Mark all messages from installer as read
         $conversation->messages()
             ->where('sender_id', '!=', $admin->id)
             ->whereNull('read_at')
@@ -57,57 +49,62 @@ class MessageController extends Controller
 
         return response()->json([
             'conversation' => $conversation->load('installer'),
-            'messages' => $messages->map(fn($m) => [
-                'id' => $m->id,
-                'body' => $m->body,
-                'sender_name' => $m->sender->name ?? 'Unknown',
-                'sender_id' => $m->sender_id,
-                'is_mine' => $m->sender_id === $admin->id,
-                'read_at' => $m->read_at?->format('M d, g:i A'),
-                'created_at' => $m->created_at->format('M d, g:i A'),
-                'time_ago' => $m->created_at->diffForHumans(),
-                'attachment' => $m->attachment,
-            ]),
+            'messages' => $messages->map(fn($m) => $this->formatMessage($m, $admin->id)),
         ]);
     }
 
-    /**
-     * Send a message in an existing conversation.
-     */
     public function send(Request $request, $id)
     {
         $admin = Auth::guard('vip')->user();
         $conversation = Conversation::where('admin_id', $admin->id)->findOrFail($id);
 
-        $validated = $request->validate([
-            'body' => 'required|string|max:5000',
+        $request->validate([
+            'body' => 'nullable|string|max:5000',
+            'attachment' => 'nullable|file|max:20480',
+            'voice_note' => 'nullable|file|max:10240',
         ]);
 
-        $message = Message::create([
+        $data = [
             'conversation_id' => $conversation->id,
             'sender_id' => $admin->id,
-            'body' => $validated['body'],
-        ]);
+            'body' => $request->input('body', ''),
+            'message_type' => 'text',
+        ];
 
+        // Handle voice note
+        if ($request->hasFile('voice_note')) {
+            $file = $request->file('voice_note');
+            $path = $file->store('messages/voice/' . $conversation->id, 'public');
+            $data['attachment'] = $path;
+            $data['attachment_name'] = 'Voice message';
+            $data['attachment_type'] = $file->getMimeType();
+            $data['attachment_size'] = $file->getSize();
+            $data['message_type'] = 'voice';
+        }
+        // Handle file attachment
+        elseif ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $path = $file->store('messages/files/' . $conversation->id, 'public');
+            $data['attachment'] = $path;
+            $data['attachment_name'] = $file->getClientOriginalName();
+            $data['attachment_type'] = $file->getMimeType();
+            $data['attachment_size'] = $file->getSize();
+            $data['message_type'] = 'file';
+        }
+
+        if (empty($data['body']) && $data['message_type'] === 'text') {
+            return response()->json(['error' => 'Message cannot be empty.'], 422);
+        }
+
+        $message = Message::create($data);
         $conversation->update(['last_message_at' => now()]);
 
         return response()->json([
             'success' => true,
-            'message' => [
-                'id' => $message->id,
-                'body' => $message->body,
-                'sender_name' => $admin->name,
-                'sender_id' => $admin->id,
-                'is_mine' => true,
-                'created_at' => $message->created_at->format('M d, g:i A'),
-                'time_ago' => $message->created_at->diffForHumans(),
-            ],
+            'message' => $this->formatMessage($message->load('sender'), $admin->id),
         ]);
     }
 
-    /**
-     * Start a new conversation with an installer.
-     */
     public function startConversation(Request $request)
     {
         $admin = Auth::guard('vip')->user();
@@ -117,7 +114,6 @@ class MessageController extends Controller
             'body' => 'required|string|max:5000',
         ]);
 
-        // Check if conversation already exists
         $conversation = Conversation::where('admin_id', $admin->id)
             ->where('installer_id', $validated['installer_id'])
             ->first();
@@ -136,6 +132,7 @@ class MessageController extends Controller
             'conversation_id' => $conversation->id,
             'sender_id' => $admin->id,
             'body' => $validated['body'],
+            'message_type' => 'text',
         ]);
 
         $conversation->update(['last_message_at' => now()]);
@@ -146,9 +143,22 @@ class MessageController extends Controller
         ]);
     }
 
-    /**
-     * Get unread count (for badge polling).
-     */
+    public function deleteMessage($conversationId, $messageId)
+    {
+        $admin = Auth::guard('vip')->user();
+        $message = Message::where('conversation_id', $conversationId)
+            ->where('sender_id', $admin->id)
+            ->findOrFail($messageId);
+
+        if ($message->attachment) {
+            Storage::disk('public')->delete($message->attachment);
+        }
+
+        $message->delete();
+
+        return response()->json(['success' => true]);
+    }
+
     public function unreadCount()
     {
         $admin = Auth::guard('vip')->user();
@@ -158,5 +168,25 @@ class MessageController extends Controller
             ->count();
 
         return response()->json(['count' => $count]);
+    }
+
+    private function formatMessage(Message $m, int $myId): array
+    {
+        return [
+            'id' => $m->id,
+            'body' => $m->body,
+            'sender_name' => $m->sender->name ?? 'Unknown',
+            'sender_id' => $m->sender_id,
+            'is_mine' => $m->sender_id === $myId,
+            'read_at' => $m->read_at?->format('M d, g:i A'),
+            'created_at' => $m->created_at->format('M d, g:i A'),
+            'time_ago' => $m->created_at->diffForHumans(),
+            'message_type' => $m->message_type ?? 'text',
+            'attachment_url' => $m->attachmentUrl(),
+            'attachment_name' => $m->attachment_name,
+            'attachment_type' => $m->attachment_type,
+            'attachment_size' => $m->formattedSize(),
+            'is_image' => $m->isImage(),
+        ];
     }
 }
