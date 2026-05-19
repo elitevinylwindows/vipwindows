@@ -14,9 +14,11 @@ use App\Models\JobNote;
 use App\Models\JobTimeLog;
 use App\Models\Service;
 use App\Models\VipUser;
+use App\Mail\ScheduleNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class InstallerJobController extends Controller
 {
