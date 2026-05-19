@@ -146,6 +146,9 @@
             <a href="{{ route('admin.invoices.index') }}" class="{{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
                 <i class="bi bi-receipt"></i> Invoices
             </a>
+            <a href="{{ route('admin.tech-measures.index') }}" class="{{ request()->routeIs('admin.tech-measures.*') ? 'active' : '' }}">
+                <i class="bi bi-rulers"></i> Tech Measures
+            </a>
             <a href="{{ route('admin.services.index') }}" class="{{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
                 <i class="bi bi-wrench"></i> Services
             </a>
@@ -193,10 +196,6 @@
                 @else
                     <span id="msgUnreadBadge" class="badge bg-danger ms-1" style="font-size:.6rem; display:none;">0</span>
                 @endif
-            </a>
-
-            <a href="{{ route('admin.tech-measures.index') }}" class="{{ request()->routeIs('admin.tech-measures.*') ? 'active' : '' }}">
-                <i class="bi bi-rulers"></i> Tech Measures
             </a>
 
             <div class="nav-label mt-3">Configuration</div>
