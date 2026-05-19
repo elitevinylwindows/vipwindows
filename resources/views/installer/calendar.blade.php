@@ -570,21 +570,22 @@ function showJobPopup(jobId) {
         `;
     } else {
         // Pending or scheduled — show full Start Route → Arrived → Start Job flow
-        if (fullAddress) {
+        const routeState = jobsData[jobId]._routeState || 'idle'; // idle → routed → arrived
+        if (fullAddress && routeState === 'idle') {
             routeRow += `
-                <a href="${mapsUrl}" target="_blank" id="startRouteBtn_${jobId}" class="btn btn-vip flex-fill" onclick="onRouteStarted(${jobId})">
+                <button class="btn btn-vip flex-fill" id="startRouteBtn_${jobId}" onclick="onRouteStarted(${jobId}, '${mapsUrl}')">
                     <i class="bi bi-geo-alt-fill me-1"></i> Start Route
-                </a>
+                </button>
             `;
         }
         routeRow += `
-            <button class="btn btn-danger flex-fill" id="arrivedBtn_${jobId}" style="${fullAddress ? 'display:none;' : ''}"
+            <button class="btn btn-danger flex-fill" id="arrivedBtn_${jobId}" style="${routeState === 'routed' ? '' : 'display:none;'}"
                     onclick="onArrivedAtLocation(${jobId})">
                 <i class="bi bi-pin-map-fill me-1"></i> Arrived at Location
             </button>
         `;
         routeRow += `
-            <button class="btn btn-success flex-fill" id="startJobBtn_${jobId}" style="display:none;"
+            <button class="btn btn-success flex-fill" id="startJobBtn_${jobId}" style="${routeState === 'arrived' ? '' : 'display:none;'}"
                     onclick="onStartJob(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
                 <i class="bi bi-play-circle me-1"></i> Start Job
             </button>
@@ -610,18 +611,21 @@ function showJobPopup(jobId) {
     new bootstrap.Modal(document.getElementById('jobPopupModal')).show();
 }
 
-function onRouteStarted(jobId) {
-    // After clicking Start Route (which opens Google Maps), show Arrived button
-    setTimeout(() => {
-        const routeBtn = document.getElementById('startRouteBtn_' + jobId);
-        const arrivedBtn = document.getElementById('arrivedBtn_' + jobId);
-        if (routeBtn) routeBtn.style.display = 'none';
-        if (arrivedBtn) arrivedBtn.style.display = '';
-    }, 500);
+function onRouteStarted(jobId, mapsUrl) {
+    // Open Google Maps in new tab
+    window.open(mapsUrl, '_blank');
+
+    // Immediately swap buttons and track state
+    jobsData[jobId]._routeState = 'routed';
+    const routeBtn = document.getElementById('startRouteBtn_' + jobId);
+    const arrivedBtn = document.getElementById('arrivedBtn_' + jobId);
+    if (routeBtn) routeBtn.style.display = 'none';
+    if (arrivedBtn) arrivedBtn.style.display = '';
 }
 
 function onArrivedAtLocation(jobId) {
-    // Hide Arrived, show Start Job
+    // Track state and swap buttons
+    jobsData[jobId]._routeState = 'arrived';
     const arrivedBtn = document.getElementById('arrivedBtn_' + jobId);
     const startJobBtn = document.getElementById('startJobBtn_' + jobId);
     if (arrivedBtn) arrivedBtn.style.display = 'none';
