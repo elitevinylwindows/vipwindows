@@ -16,128 +16,164 @@ class InstallerMessageController extends Controller
     {
         $installer = Auth::guard('vip')->user();
 
-        $conversations = Conversation::where('installer_id', $installer->id)
-            ->with(['admin', 'latestMessage'])
-            ->orderByDesc('last_message_at')
-            ->get();
+        $conversations = collect();
+        $totalUnread = 0;
+
+        try {
+            $conversations = Conversation::where('installer_id', $installer->id)
+                ->with(['admin', 'latestMessage'])
+                ->orderByDesc('last_message_at')
+                ->get();
+
+            foreach ($conversations as $conv) {
+                $conv->unread_count = $conv->unreadCountFor($installer->id);
+                $totalUnread += $conv->unread_count;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Messages index error: ' . $e->getMessage());
+        }
 
         $admins = VipUser::whereIn('role', ['admin', 'technician'])
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
 
-        $totalUnread = 0;
-        foreach ($conversations as $conv) {
-            $conv->unread_count = $conv->unreadCountFor($installer->id);
-            $totalUnread += $conv->unread_count;
-        }
-
         return view('installer.messages.index', compact('conversations', 'totalUnread', 'admins'));
     }
 
     public function show($id)
     {
-        $installer = Auth::guard('vip')->user();
-        $conversation = Conversation::where('installer_id', $installer->id)->findOrFail($id);
+        try {
+            $installer = Auth::guard('vip')->user();
 
-        $conversation->messages()
-            ->where('sender_id', '!=', $installer->id)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+            $conversation = Conversation::where(function ($q) use ($installer) {
+                $q->where('installer_id', $installer->id)
+                  ->orWhere('admin_id', $installer->id);
+            })->findOrFail($id);
 
-        $messages = $conversation->messages()->with('sender')->get();
+            $conversation->messages()
+                ->where('sender_id', '!=', $installer->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
 
-        return response()->json([
-            'conversation' => $conversation->load('admin'),
-            'messages' => $messages->map(fn($m) => $this->formatMessage($m, $installer->id)),
-        ]);
+            $messages = $conversation->messages()->with('sender')->get();
+
+            return response()->json([
+                'conversation' => $conversation->load('admin'),
+                'messages' => $messages->map(fn($m) => $this->formatMessage($m, $installer->id)),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Message show error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load messages: ' . $e->getMessage()], 500);
+        }
     }
 
     public function send(Request $request, $id)
     {
-        $installer = Auth::guard('vip')->user();
-        $conversation = Conversation::where('installer_id', $installer->id)->findOrFail($id);
+        try {
+            $installer = Auth::guard('vip')->user();
 
-        $request->validate([
-            'body' => 'nullable|string|max:5000',
-            'attachment' => 'nullable|file|max:20480',
-            'voice_note' => 'nullable|file|max:10240',
-        ]);
+            // Find conversation — allow both installer_id OR admin_id match
+            $conversation = Conversation::where(function ($q) use ($installer) {
+                $q->where('installer_id', $installer->id)
+                  ->orWhere('admin_id', $installer->id);
+            })->findOrFail($id);
 
-        $data = [
-            'conversation_id' => $conversation->id,
-            'sender_id' => $installer->id,
-            'body' => $request->input('body', ''),
-            'message_type' => 'text',
-        ];
+            $request->validate([
+                'body' => 'nullable|string|max:5000',
+                'attachment' => 'nullable|file|max:20480',
+                'voice_note' => 'nullable|file|max:10240',
+            ]);
 
-        if ($request->hasFile('voice_note')) {
-            $file = $request->file('voice_note');
-            $path = $file->store('messages/voice/' . $conversation->id, 'public');
-            $data['attachment'] = $path;
-            $data['attachment_name'] = 'Voice message';
-            $data['attachment_type'] = $file->getMimeType();
-            $data['attachment_size'] = $file->getSize();
-            $data['message_type'] = 'voice';
-        } elseif ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $path = $file->store('messages/files/' . $conversation->id, 'public');
-            $data['attachment'] = $path;
-            $data['attachment_name'] = $file->getClientOriginalName();
-            $data['attachment_type'] = $file->getMimeType();
-            $data['attachment_size'] = $file->getSize();
-            $data['message_type'] = 'file';
+            $data = [
+                'conversation_id' => $conversation->id,
+                'sender_id' => $installer->id,
+                'body' => $request->input('body', ''),
+                'message_type' => 'text',
+            ];
+
+            if ($request->hasFile('voice_note')) {
+                $file = $request->file('voice_note');
+                $path = $file->store('messages/voice/' . $conversation->id, 'public');
+                $data['attachment'] = $path;
+                $data['attachment_name'] = 'Voice message';
+                $data['attachment_type'] = $file->getMimeType();
+                $data['attachment_size'] = $file->getSize();
+                $data['message_type'] = 'voice';
+            } elseif ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $path = $file->store('messages/files/' . $conversation->id, 'public');
+                $data['attachment'] = $path;
+                $data['attachment_name'] = $file->getClientOriginalName();
+                $data['attachment_type'] = $file->getMimeType();
+                $data['attachment_size'] = $file->getSize();
+                $data['message_type'] = 'file';
+            }
+
+            if (empty($data['body']) && $data['message_type'] === 'text') {
+                return response()->json(['error' => 'Message cannot be empty.'], 422);
+            }
+
+            $message = Message::create($data);
+            $conversation->update(['last_message_at' => now()]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $this->formatMessage($message->load('sender'), $installer->id),
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('Message send DB error: ' . $e->getMessage());
+            return response()->json(['error' => 'Database error: ' . $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            \Log::error('Message send error: ' . $e->getMessage());
+            return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
         }
-
-        if (empty($data['body']) && $data['message_type'] === 'text') {
-            return response()->json(['error' => 'Message cannot be empty.'], 422);
-        }
-
-        $message = Message::create($data);
-        $conversation->update(['last_message_at' => now()]);
-
-        return response()->json([
-            'success' => true,
-            'message' => $this->formatMessage($message->load('sender'), $installer->id),
-        ]);
     }
 
     public function startConversation(Request $request)
     {
-        $installer = Auth::guard('vip')->user();
+        try {
+            $installer = Auth::guard('vip')->user();
 
-        $validated = $request->validate([
-            'admin_id' => 'required|exists:vip_users,id',
-            'body' => 'required|string|max:5000',
-        ]);
-
-        $conversation = Conversation::where('installer_id', $installer->id)
-            ->where('admin_id', $validated['admin_id'])
-            ->first();
-
-        if (!$conversation) {
-            $admin = VipUser::findOrFail($validated['admin_id']);
-            $conversation = Conversation::create([
-                'admin_id' => $validated['admin_id'],
-                'installer_id' => $installer->id,
-                'subject' => 'Chat with ' . $admin->name,
-                'last_message_at' => now(),
+            $validated = $request->validate([
+                'admin_id' => 'required|exists:vip_users,id',
+                'body' => 'required|string|max:5000',
             ]);
+
+            $conversation = Conversation::where('installer_id', $installer->id)
+                ->where('admin_id', $validated['admin_id'])
+                ->first();
+
+            if (!$conversation) {
+                $admin = VipUser::findOrFail($validated['admin_id']);
+                $conversation = Conversation::create([
+                    'admin_id' => $validated['admin_id'],
+                    'installer_id' => $installer->id,
+                    'subject' => 'Chat with ' . $admin->name,
+                    'last_message_at' => now(),
+                ]);
+            }
+
+            Message::create([
+                'conversation_id' => $conversation->id,
+                'sender_id' => $installer->id,
+                'body' => $validated['body'],
+                'message_type' => 'text',
+            ]);
+
+            $conversation->update(['last_message_at' => now()]);
+
+            return response()->json([
+                'success' => true,
+                'conversation_id' => $conversation->id,
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('Start conversation DB error: ' . $e->getMessage());
+            return response()->json(['error' => 'Database error: ' . $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            \Log::error('Start conversation error: ' . $e->getMessage());
+            return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
         }
-
-        Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $installer->id,
-            'body' => $validated['body'],
-            'message_type' => 'text',
-        ]);
-
-        $conversation->update(['last_message_at' => now()]);
-
-        return response()->json([
-            'success' => true,
-            'conversation_id' => $conversation->id,
-        ]);
     }
 
     public function deleteMessage($conversationId, $messageId)

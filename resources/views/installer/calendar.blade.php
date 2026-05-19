@@ -268,10 +268,24 @@
                         <div class="cell-jobs">
                             @foreach($allItems->take($maxShow) as $entry)
                                 @if($entry['type'] === 'job')
-                                    <span class="cell-job s-{{ $entry['item']->status }}" onclick="event.stopPropagation(); showJobPopup({{ $entry['item']->id }})" style="cursor:pointer;">{{ $entry['item']->customer_name ? substr($entry['item']->customer_name, 0, 12) : $entry['item']->job_number }}</span>
+                                    <span class="cell-job s-{{ $entry['item']->status }}" onclick="event.stopPropagation(); showJobPopup({{ $entry['item']->id }})" style="cursor:pointer;">
+                                        @if($entry['item']->status === 'completed')
+                                            <i class="bi bi-check-circle-fill text-success" style="font-size:.55rem;"></i>
+                                        @elseif($entry['item']->rescheduled_at)
+                                            <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:.55rem;"></i>
+                                        @endif
+                                        {{ $entry['item']->customer_name ? substr($entry['item']->customer_name, 0, 12) : $entry['item']->job_number }}
+                                    </span>
                                 @elseif($entry['type'] === 'event')
                                     <span class="cell-job s-event" onclick="event.stopPropagation(); showEventPopup({{ $entry['item']->id }})" style="cursor:pointer; background:{{ $entry['item']->color ?? '#c9a84c' }}22; color:{{ $entry['item']->color ?? '#c9a84c' }}; border-left: 2px solid {{ $entry['item']->color ?? '#c9a84c' }};">
-                                        <i class="bi bi-calendar-event" style="font-size:.55rem;"></i> {{ substr($entry['item']->title, 0, 10) }}
+                                        @if(($entry['item']->event_status ?? '') === 'completed')
+                                            <i class="bi bi-check-circle-fill text-success" style="font-size:.55rem;"></i>
+                                        @elseif($entry['item']->rescheduled_at)
+                                            <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:.55rem;"></i>
+                                        @else
+                                            <i class="bi bi-calendar-event" style="font-size:.55rem;"></i>
+                                        @endif
+                                        {{ substr($entry['item']->title, 0, 10) }}
                                     </span>
                                 @else
                                     <span class="cell-job s-booking{{ $entry['item']->status === 'confirmed' ? '-confirmed' : '' }}">
@@ -384,7 +398,7 @@
 
 {{-- Reschedule Modal --}}
 <div class="modal fade" id="rescheduleModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header py-2">
                 <h6 class="modal-title mb-0"><i class="bi bi-calendar2-week me-1"></i> Reschedule</h6>
@@ -393,19 +407,25 @@
             <div class="modal-body">
                 <input type="hidden" id="rescheduleType" value="">
                 <input type="hidden" id="rescheduleId" value="">
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">New Date</label>
-                    <input type="date" class="form-control" id="rescheduleDate">
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">New Date</label>
+                        <input type="date" class="form-control" id="rescheduleDate">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">New Time</label>
+                        <input type="time" class="form-control" id="rescheduleTime">
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">New Time</label>
-                    <input type="time" class="form-control" id="rescheduleTime">
+                <div class="mb-0">
+                    <label class="form-label small fw-semibold">Reason for Rescheduling <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="rescheduleReason" rows="3" placeholder="e.g. Customer not available, weather delay, materials not ready..."></textarea>
                 </div>
             </div>
             <div class="modal-footer py-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-vip btn-sm" onclick="submitReschedule()">
-                    <i class="bi bi-check2 me-1"></i> Confirm
+                    <i class="bi bi-check2 me-1"></i> Confirm Reschedule
                 </button>
             </div>
         </div>
@@ -447,6 +467,8 @@
             'status' => $j->status,
             'service_name' => $j->service?->name ?? '—',
             'description' => $j->description,
+            'is_rescheduled' => (bool) $j->rescheduled_at,
+            'reschedule_reason' => $j->reschedule_reason,
         ];
     })->keyBy('id');
 
@@ -466,6 +488,9 @@
             'color' => $e->color ?? '#c9a84c',
             'crew_name' => $e->crew?->name ?? '—',
             'service_name' => $e->service?->name ?? null,
+            'event_status' => $e->event_status ?? 'scheduled',
+            'is_rescheduled' => (bool) $e->rescheduled_at,
+            'reschedule_reason' => $e->reschedule_reason,
         ];
     })->keyBy('id');
 @endphp
@@ -726,6 +751,7 @@ function openReschedule(type, id, currentDate, currentTime) {
     document.getElementById('rescheduleId').value = id;
     document.getElementById('rescheduleDate').value = currentDate || '';
     document.getElementById('rescheduleTime').value = currentTime || '';
+    document.getElementById('rescheduleReason').value = '';
 
     setTimeout(() => {
         new bootstrap.Modal(document.getElementById('rescheduleModal')).show();
@@ -737,49 +763,29 @@ function submitReschedule() {
     const id = document.getElementById('rescheduleId').value;
     const newDate = document.getElementById('rescheduleDate').value;
     const newTime = document.getElementById('rescheduleTime').value;
+    const reason = document.getElementById('rescheduleReason').value.trim();
 
     if (!newDate) { alert('Please select a date.'); return; }
+    if (!reason) { alert('Please provide a reason for rescheduling.'); return; }
 
-    let url, body;
-    if (type === 'event') {
-        // Fetch current event data first, then update
-        url = `/admin/calendar/event/${id}`;
-        const ev = eventsData[id];
-        body = new URLSearchParams({
-            _token: '{{ csrf_token() }}',
-            _method: 'PUT',
-            title: ev.title,
-            event_date: newDate,
-            event_time: newTime || ev.event_time || '',
-            end_time: ev.end_time || '',
-            customer_name: ev.customer_name || '',
-            customer_email: ev.customer_email || '',
-            customer_phone: ev.customer_phone || '',
-            address: ev.address || '',
-            description: ev.description || '',
-        });
-    } else {
-        url = `/installer/jobs/${id}`;
-        const job = jobsData[id];
-        body = JSON.stringify({
-            customer_name: job.customer_name || '',
-            scheduled_date: newDate,
-            scheduled_time: newTime || job.scheduled_time || '',
-        });
-    }
+    const url = type === 'event'
+        ? `/installer/calendar-events/${id}/reschedule`
+        : `/installer/jobs/${id}/reschedule`;
 
     fetch(url, {
         method: 'POST',
-        headers: type === 'job'
-            ? { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-HTTP-Method-Override': 'PUT' }
-            : { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'text/html' },
-        body: body,
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_date: newDate, new_time: newTime, reason: reason }),
     })
     .then(r => {
+        if (!r.ok) return r.json().then(d => { throw new Error(d.error || d.message || `HTTP ${r.status}`); });
+        return r.json();
+    })
+    .then(data => {
         bootstrap.Modal.getInstance(document.getElementById('rescheduleModal'))?.hide();
         location.reload();
     })
-    .catch(() => alert('Failed to reschedule.'));
+    .catch(e => alert('Failed to reschedule: ' + e.message));
 }
 
 function toggleDayFields(day) {

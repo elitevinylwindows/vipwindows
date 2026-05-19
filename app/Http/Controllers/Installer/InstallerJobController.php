@@ -552,6 +552,101 @@ class InstallerJobController extends Controller
     }
 
     /**
+     * Reschedule a job with a reason.
+     */
+    public function reschedule(Request $request, $id)
+    {
+        $job = $this->findMyJob($id);
+
+        $validated = $request->validate([
+            'new_date' => 'required|date',
+            'new_time' => 'nullable|string|max:20',
+            'reason'   => 'required|string|max:2000',
+        ]);
+
+        $oldDate = $job->scheduled_date?->format('Y-m-d');
+        $oldTime = $job->scheduled_time;
+
+        $job->update([
+            'rescheduled_from_date' => $oldDate,
+            'rescheduled_from_time' => $oldTime,
+            'scheduled_date'        => $validated['new_date'],
+            'scheduled_time'        => $validated['new_time'] ?? $oldTime,
+            'reschedule_reason'     => $validated['reason'],
+            'rescheduled_at'        => now(),
+        ]);
+
+        // Send reschedule notification to customer
+        if ($job->customer_email) {
+            try {
+                Mail::to($job->customer_email)->send(new ScheduleNotification([
+                    'title'         => $job->job_number . ' — Rescheduled',
+                    'event_date'    => $validated['new_date'],
+                    'start_time'    => $validated['new_time'] ?? $oldTime,
+                    'address'       => collect([$job->install_address, $job->install_city, $job->install_state, $job->install_zip])->filter()->implode(', '),
+                    'description'   => 'This appointment has been rescheduled. Reason: ' . $validated['reason'],
+                    'customer_name' => $job->customer_name ?? 'Customer',
+                    'service_name'  => $job->service?->name,
+                    'type'          => 'job',
+                ]));
+            } catch (\Exception $e) {
+                \Log::warning('Reschedule notification failed: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Job rescheduled.']);
+    }
+
+    /**
+     * Reschedule a calendar event with a reason (from installer side).
+     */
+    public function rescheduleEvent(Request $request, $id)
+    {
+        $crewIds = $this->myCrewIds();
+        $event = CalendarEvent::whereIn('crew_id', $crewIds)->findOrFail($id);
+
+        $validated = $request->validate([
+            'new_date' => 'required|date',
+            'new_time' => 'nullable|string|max:20',
+            'reason'   => 'required|string|max:2000',
+        ]);
+
+        $oldDate = $event->event_date?->format('Y-m-d');
+        $oldTime = $event->event_time;
+
+        $event->update([
+            'rescheduled_from_date' => $oldDate,
+            'rescheduled_from_time' => $oldTime,
+            'event_date'            => $validated['new_date'],
+            'event_time'            => $validated['new_time'] ?? $oldTime,
+            'reschedule_reason'     => $validated['reason'],
+            'rescheduled_at'        => now(),
+            'event_status'          => 'rescheduled',
+        ]);
+
+        // Send reschedule notification to customer
+        if ($event->customer_email) {
+            try {
+                Mail::to($event->customer_email)->send(new ScheduleNotification([
+                    'title'         => $event->title . ' — Rescheduled',
+                    'event_date'    => $validated['new_date'],
+                    'start_time'    => $validated['new_time'] ?? $oldTime,
+                    'end_time'      => $event->end_time,
+                    'address'       => $event->address,
+                    'description'   => 'This appointment has been rescheduled. Reason: ' . $validated['reason'],
+                    'customer_name' => $event->customer_name ?? 'Customer',
+                    'service_name'  => $event->service?->name,
+                    'type'          => 'event',
+                ]));
+            } catch (\Exception $e) {
+                \Log::warning('Event reschedule notification failed: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Event rescheduled.']);
+    }
+
+    /**
      * Send a reminder email to the customer for a job.
      */
     public function sendReminder($id)

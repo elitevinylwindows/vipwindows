@@ -512,7 +512,21 @@ function sendMessage() {
         headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
         body: formData
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) {
+            return r.text().then(text => {
+                // Try to parse as JSON for Laravel validation errors
+                try {
+                    const json = JSON.parse(text);
+                    throw new Error(json.message || json.error || `Server error ${r.status}`);
+                } catch (e) {
+                    if (e.message.includes('Server error') || e.message.includes('SQLSTATE') || e.message.includes('CSRF')) throw e;
+                    throw new Error(`HTTP ${r.status}: ${text.substring(0, 200)}`);
+                }
+            });
+        }
+        return r.json();
+    })
     .then(data => {
         if (data.success) {
             input.value = '';
@@ -520,7 +534,7 @@ function sendMessage() {
             loadConversation(currentConvId);
         } else { alert(data.error || 'Failed to send.'); }
     })
-    .catch(() => alert('Failed to send message.'))
+    .catch(e => alert('Failed to send: ' + e.message))
     .finally(() => { btn.disabled = false; input.focus(); });
 }
 
@@ -590,9 +604,12 @@ function stopAndSendRecording() {
             headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
             body: formData
         })
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) return r.text().then(t => { throw new Error(`HTTP ${r.status}: ${t.substring(0, 200)}`); });
+            return r.json();
+        })
         .then(data => { if (data.success) loadConversation(currentConvId); })
-        .catch(() => alert('Failed to send voice note.'));
+        .catch(e => alert('Failed to send voice note: ' + e.message));
 
         audioChunks = [];
         mediaRecorder = null;

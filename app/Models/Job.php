@@ -18,6 +18,7 @@ class Job extends Model
         'assigned_to', 'assignment_type', 'crew_id', 'scheduled_date', 'end_date',
         'scheduled_time', 'estimated_duration', 'actual_start',
         'actual_end', 'notes', 'completion_notes', 'created_by', 'image',
+        'reschedule_reason', 'rescheduled_at', 'rescheduled_from_date', 'rescheduled_from_time',
     ];
 
     protected $casts = [
@@ -25,6 +26,8 @@ class Job extends Model
         'end_date' => 'date',
         'actual_start' => 'datetime',
         'actual_end' => 'datetime',
+        'rescheduled_at' => 'datetime',
+        'rescheduled_from_date' => 'date',
     ];
 
     public function assignee()

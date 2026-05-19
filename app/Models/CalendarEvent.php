@@ -12,12 +12,16 @@ class CalendarEvent extends Model
         'title', 'description', 'event_date', 'event_time', 'end_time',
         'end_date', 'color', 'service_id', 'crew_id', 'created_by', 'address',
         'customer_name', 'customer_email', 'customer_phone', 'installation_types',
+        'reschedule_reason', 'rescheduled_at', 'rescheduled_from_date', 'rescheduled_from_time',
+        'event_status',
     ];
 
     protected $casts = [
         'event_date' => 'date',
         'end_date' => 'date',
         'installation_types' => 'array',
+        'rescheduled_at' => 'datetime',
+        'rescheduled_from_date' => 'date',
     ];
 
     public function service()
