@@ -411,6 +411,7 @@ function renderMessages(messages) {
 
     body.innerHTML = html;
     body.scrollTop = body.scrollHeight;
+    setTimeout(initVoicePlayers, 50);
 }
 
 function renderBubble(m) {
@@ -462,57 +463,103 @@ function renderVoicePlayer(url, id) {
         return `<div class="voice-bar" style="height:${h}px;"></div>`;
     }).join('');
 
-    return `<div class="voice-player">
-        <button class="play-btn" onclick="playVoice(this, '${url}')" data-playing="false">
+    return `<div class="voice-player" id="vp_${id}">
+        <button class="play-btn" onclick="playVoice(this, '${url}', ${id})" data-playing="false">
             <i class="bi bi-play-fill"></i>
         </button>
-        <div class="voice-wave">${bars}</div>
-        <span class="voice-duration">--:--</span>
+        <div class="voice-wave-wrap" onclick="seekVoice(event, ${id})" style="flex:1; cursor:pointer; position:relative;">
+            <div class="voice-wave">${bars}</div>
+            <div class="voice-progress" id="vprog_${id}" style="position:absolute; top:0; left:0; bottom:0; width:0%; background:rgba(201,168,76,.25); border-radius:4px; pointer-events:none; transition: width 0.1s;"></div>
+        </div>
+        <span class="voice-duration" id="vdur_${id}">--:--</span>
+        <audio id="vaud_${id}" preload="metadata" src="${url}" style="display:none;"></audio>
     </div>`;
 }
 
-function playVoice(btn, url) {
+// Initialize audio elements after messages render
+function initVoicePlayers() {
+    document.querySelectorAll('.voice-player audio').forEach(audio => {
+        const id = audio.id.replace('vaud_', '');
+        const durSpan = document.getElementById('vdur_' + id);
+
+        audio.addEventListener('loadedmetadata', () => {
+            if (audio.duration && isFinite(audio.duration)) {
+                const dur = Math.round(audio.duration);
+                if (durSpan) durSpan.textContent = Math.floor(dur/60) + ':' + String(dur%60).padStart(2,'0');
+            }
+        });
+
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration && isFinite(audio.duration)) {
+                const pct = (audio.currentTime / audio.duration) * 100;
+                const prog = document.getElementById('vprog_' + id);
+                if (prog) prog.style.width = pct + '%';
+                const elapsed = Math.round(audio.currentTime);
+                if (durSpan) durSpan.textContent = Math.floor(elapsed/60) + ':' + String(elapsed%60).padStart(2,'0');
+            }
+        });
+
+        audio.addEventListener('ended', () => {
+            const btn = document.querySelector(`#vp_${id} .play-btn`);
+            if (btn) { btn.dataset.playing = 'false'; btn.innerHTML = '<i class="bi bi-play-fill"></i>'; }
+            const prog = document.getElementById('vprog_' + id);
+            if (prog) prog.style.width = '0%';
+            if (audio.duration && isFinite(audio.duration)) {
+                const dur = Math.round(audio.duration);
+                if (durSpan) durSpan.textContent = Math.floor(dur/60) + ':' + String(dur%60).padStart(2,'0');
+            }
+        });
+
+        audio.addEventListener('error', () => {
+            if (durSpan) durSpan.textContent = 'Error';
+            console.error('Voice audio error for message', id, audio.error);
+        });
+    });
+}
+
+function playVoice(btn, url, id) {
     const isPlaying = btn.dataset.playing === 'true';
-    // Stop all other audio
-    document.querySelectorAll('audio.voice-audio').forEach(a => { a.pause(); a.remove(); });
-    document.querySelectorAll('.play-btn').forEach(b => { b.dataset.playing = 'false'; b.innerHTML = '<i class="bi bi-play-fill"></i>'; });
 
-    if (isPlaying) return;
+    // Pause all other voice players
+    document.querySelectorAll('.voice-player audio').forEach(a => {
+        if (a.id !== 'vaud_' + id) {
+            a.pause();
+            a.currentTime = 0;
+        }
+    });
+    document.querySelectorAll('.play-btn').forEach(b => {
+        if (b !== btn) { b.dataset.playing = 'false'; b.innerHTML = '<i class="bi bi-play-fill"></i>'; }
+    });
 
-    const audio = new Audio();
-    audio.preload = 'auto';
-    audio.src = url;
-    audio.className = 'voice-audio';
-    audio.style.display = 'none';
-    document.body.appendChild(audio);
+    const audio = document.getElementById('vaud_' + id);
+    if (!audio) return;
+
+    if (isPlaying) {
+        audio.pause();
+        btn.dataset.playing = 'false';
+        btn.innerHTML = '<i class="bi bi-play-fill"></i>';
+        return;
+    }
 
     btn.dataset.playing = 'true';
     btn.innerHTML = '<i class="bi bi-pause-fill"></i>';
 
-    const durSpan = btn.closest('.voice-player').querySelector('.voice-duration');
-
-    audio.addEventListener('loadedmetadata', () => {
-        const dur = Math.round(audio.duration);
-        durSpan.textContent = Math.floor(dur/60) + ':' + String(dur%60).padStart(2,'0');
-    });
-    audio.addEventListener('ended', () => {
-        btn.dataset.playing = 'false';
-        btn.innerHTML = '<i class="bi bi-play-fill"></i>';
-        audio.remove();
-    });
-    audio.addEventListener('error', () => {
-        btn.dataset.playing = 'false';
-        btn.innerHTML = '<i class="bi bi-play-fill"></i>';
-        durSpan.textContent = 'Error';
-        audio.remove();
-        window.open(url, '_blank');
-    });
     audio.play().catch(err => {
         console.error('Voice playback failed:', err);
         btn.dataset.playing = 'false';
         btn.innerHTML = '<i class="bi bi-play-fill"></i>';
-        window.open(url, '_blank');
+        const durSpan = document.getElementById('vdur_' + id);
+        if (durSpan) durSpan.textContent = 'Error';
     });
+}
+
+function seekVoice(event, id) {
+    const audio = document.getElementById('vaud_' + id);
+    if (!audio || !audio.duration || !isFinite(audio.duration)) return;
+    const wrap = event.currentTarget;
+    const rect = wrap.getBoundingClientRect();
+    const pct = (event.clientX - rect.left) / rect.width;
+    audio.currentTime = pct * audio.duration;
 }
 
 function refreshMessages(id) {

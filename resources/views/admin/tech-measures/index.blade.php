@@ -230,6 +230,7 @@ function renderDetail(data) {
     let actions = '';
     if (m.status !== 'converted') {
         actions += `<button class="btn btn-sm btn-outline-primary me-1" onclick="editMeasure(${m.id})" title="Edit"><i class="bi bi-pencil"></i></button>`;
+        actions += `<button class="btn btn-sm btn-outline-primary me-1" onclick="downloadPdf(${m.id})" title="Download PDF"><i class="bi bi-download"></i></button>`;
     }
     if (m.status === 'completed') {
         actions += `<button class="btn btn-sm btn-vip" onclick="convertToQuote(${m.id})"><i class="bi bi-calculator me-1"></i>Convert to Quote</button>`;
@@ -239,7 +240,7 @@ function renderDetail(data) {
     let itemsHtml = '';
     if (items.length) {
         itemsHtml = `<table class="tm-items-tbl"><thead><tr>
-            <th style="width:30px;">#</th><th>Qty</th><th>Width</th><th>Height</th><th>Unit (Configuration)</th><th>Reference</th><th>Notes</th>
+            <th style="width:30px;">#</th><th>Qty</th><th>Width</th><th>Height</th><th>Unit (Configuration)</th><th>Reference</th><th>Notes</th><th style="width:60px;"></th>
         </tr></thead><tbody>`;
         items.forEach((item, idx) => {
             const photoHtml = item.photos?.length ? `<div class="item-photos">${item.photos.map(p => `<img src="${p.url}" class="item-photo" onclick="window.open('${p.url}','_blank')">`).join('')}</div>` : '';
@@ -251,6 +252,11 @@ function renderDetail(data) {
                 <td>${item.description || '—'}</td>
                 <td>${item.room_label || '—'}${photoHtml}</td>
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
+                <td class="text-center text-nowrap">
+                    <button class="btn btn-sm text-primary p-0 me-1" onclick="editItem(${m.id}, ${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')})" title="Edit"><i class="bi bi-pencil" style="font-size:.75rem;"></i></button>
+                    <button class="btn btn-sm text-primary p-0 me-1" onclick="uploadItemPhoto(${m.id}, ${item.id})" title="Add Photo"><i class="bi bi-camera" style="font-size:.75rem;"></i></button>
+                    <button class="btn btn-sm text-danger p-0" onclick="removeItem(${m.id}, ${item.id})" title="Remove"><i class="bi bi-x-lg" style="font-size:.65rem;"></i></button>
+                </td>
             </tr>`;
         });
         itemsHtml += '</tbody></table>';
@@ -258,21 +264,138 @@ function renderDetail(data) {
         itemsHtml = '<p class="text-muted small">No measurements recorded yet.</p>';
     }
 
-    // Frame type & grid info (at the bottom, like installer view)
-    let frameGridHtml = '';
-    if (m.frame_type) {
-        frameGridHtml += `<div class="tm-info-card"><div class="label">Frame Type</div><div class="value">${escHtml(m.frame_type)}</div></div>`;
+    // Add opening form (for non-converted measures)
+    let addFormHtml = '';
+    if (m.status !== 'converted') {
+        addFormHtml = `
+        <h6 class="section-title"><i class="bi bi-plus-circle"></i> Add Opening</h6>
+        <div class="card" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+            <div class="card-body py-2 px-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-1">
+                        <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Qty</label>
+                        <input type="number" id="addQty" class="form-control form-control-sm" value="1" min="1">
+                    </div>
+                    <div class="col">
+                        <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Width</label>
+                        <input type="text" id="addWidth" class="form-control form-control-sm" placeholder="36 1/2">
+                    </div>
+                    <div class="col">
+                        <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Height</label>
+                        <input type="text" id="addHeight" class="form-control form-control-sm" placeholder="60 3/8">
+                    </div>
+                    <div class="col-md-2">
+                        <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Unit (Config)</label>
+                        <select id="addConfig" class="form-select form-select-sm">
+                            <option value="">— Select —</option>
+                            ${unitOptions.map(o => '<option value="' + escHtml(o.name) + '">' + escHtml(o.name) + '</option>').join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Reference</label>
+                        <input type="text" id="addRoom" class="form-control form-control-sm" placeholder="e.g. Living Room">
+                    </div>
+                    <div class="col-md-2">
+                        <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Notes</label>
+                        <input type="text" id="addNotes" class="form-control form-control-sm" placeholder="Any notes...">
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button class="btn btn-sm btn-vip w-100" onclick="addItem(${m.id})" title="Add Opening"><i class="bi bi-plus-lg"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
     }
-    if (m.has_grids) {
-        frameGridHtml += `<div class="tm-info-card"><div class="label">Grid List</div><div class="value">${escHtml(m.grid_list || '—')}</div></div>`;
-        frameGridHtml += `<div class="tm-info-card"><div class="label">Grid Pattern</div><div class="value">${escHtml(m.grid_pattern || '—')}</div></div>`;
+
+    // Frame type & grid sections (editable for non-converted)
+    let frameGridHtml = '';
+    if (m.status !== 'converted') {
+        frameGridHtml = `
+        <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type</h6>
+        <div class="card" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id})">
+                            <option value="">— Select Frame Type —</option>
+                            ${frameTypeOptions.map(o => '<option value="' + escHtml(o.name) + '" ' + (m.frame_type === o.name ? 'selected' : '') + '>' + escHtml(o.name) + '</option>').join('')}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <h6 class="section-title"><i class="bi bi-grid-3x3"></i> Grids</h6>
+        <div class="card" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <label class="fw-semibold" style="font-size:.85rem;">Does this project have grids?</label>
+                    <div class="form-check form-check-inline mb-0">
+                        <input class="form-check-input" type="radio" name="hasGrids" id="gridsYes" value="yes" ${m.has_grids ? 'checked' : ''} onchange="toggleGridFields()">
+                        <label class="form-check-label" for="gridsYes" style="font-size:.85rem;">Yes</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-0">
+                        <input class="form-check-input" type="radio" name="hasGrids" id="gridsNo" value="no" ${!m.has_grids ? 'checked' : ''} onchange="toggleGridFields()">
+                        <label class="form-check-label" for="gridsNo" style="font-size:.85rem;">No</label>
+                    </div>
+                </div>
+                <div id="gridFieldsWrap" style="display:${m.has_grids ? 'block' : 'none'};">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <select id="gridList" class="form-select form-select-sm" onchange="saveGridSettings(${m.id})">
+                                <option value="">— Select —</option>
+                                ${gridOptions.map(o => '<option value="' + escHtml(o.name) + '" ' + (m.grid_list === o.name ? 'selected' : '') + '>' + escHtml(o.name) + '</option>').join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select id="gridPattern" class="form-select form-select-sm" onchange="saveGridSettings(${m.id})">
+                                <option value="">— Select —</option>
+                                ${patternOptions.map(o => '<option value="' + escHtml(o.name) + '" ' + (m.grid_pattern === o.name ? 'selected' : '') + '>' + escHtml(o.name) + '</option>').join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    } else {
+        // Read-only for converted
+        let fgReadonly = '';
+        if (m.frame_type) {
+            fgReadonly += `<div class="tm-info-card"><div class="label">Frame Type</div><div class="value">${escHtml(m.frame_type)}</div></div>`;
+        }
+        if (m.has_grids) {
+            fgReadonly += `<div class="tm-info-card"><div class="label">Grid List</div><div class="value">${escHtml(m.grid_list || '—')}</div></div>`;
+            fgReadonly += `<div class="tm-info-card"><div class="label">Grid Pattern</div><div class="value">${escHtml(m.grid_pattern || '—')}</div></div>`;
+        }
+        if (fgReadonly) {
+            frameGridHtml = `<h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame & Grids</h6><div class="tm-info-grid">${fgReadonly}</div>`;
+        }
     }
 
     let photosHtml = '';
     if (photos.length) {
-        photosHtml = '<div class="tm-photo-grid">' + photos.map(p => `<div class="tm-photo-card"><img src="${p.url}" onclick="window.open('${p.url}','_blank')"></div>`).join('') + '</div>';
+        photosHtml = '<div class="tm-photo-grid">' + photos.map(p => `<div class="tm-photo-card" style="position:relative;"><img src="${p.url}" onclick="window.open('${p.url}','_blank')">
+            ${m.status !== 'converted' ? `<button style="position:absolute;top:4px;right:4px;background:rgba(220,53,69,.9);color:#fff;border:none;width:20px;height:20px;border-radius:50%;font-size:.6rem;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="deletePhoto(${m.id},${p.id})"><i class="bi bi-x"></i></button>` : ''}
+        </div>`).join('') + '</div>';
     } else {
         photosHtml = '<p class="text-muted small">No site photos.</p>';
+    }
+
+    // Photo upload form
+    let photoUploadHtml = '';
+    if (m.status !== 'converted') {
+        photoUploadHtml = `<div class="mt-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <input type="file" id="generalPhotoFile" accept="image/*" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" id="generalPhotoCaption" class="form-control form-control-sm" placeholder="Caption (optional)">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-sm btn-vip" onclick="uploadGeneralPhoto(${m.id})"><i class="bi bi-upload me-1"></i>Upload</button>
+                </div>
+            </div>
+        </div>`;
     }
 
     // Contact action buttons
@@ -301,10 +424,18 @@ function renderDetail(data) {
         </div>
         <h6 class="section-title"><i class="bi bi-rulers"></i> Measurements (${items.length})</h6>
         ${itemsHtml}
-        ${frameGridHtml ? `<h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame & Grids</h6><div class="tm-info-grid">${frameGridHtml}</div>` : ''}
+        ${addFormHtml}
+        ${frameGridHtml}
         <h6 class="section-title"><i class="bi bi-image"></i> Site Photos</h6>
         ${photosHtml}
-        ${m.notes ? `<h6 class="section-title"><i class="bi bi-journal-text"></i> Notes</h6><div class="card" style="border:none;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div class="card-body py-2 px-3"><p class="small mb-0">${m.notes.replace(/\n/g, '<br>')}</p></div></div>` : ''}
+        ${photoUploadHtml}
+        <h6 class="section-title"><i class="bi bi-journal-text"></i> Notes</h6>
+        <div class="card" style="border:none;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+            <div class="card-body py-2 px-3">
+                <textarea id="generalNotes" class="form-control form-control-sm" rows="3" placeholder="General notes..." ${m.status === 'converted' ? 'disabled' : ''}>${m.notes || ''}</textarea>
+                ${m.status !== 'converted' ? `<button class="btn btn-sm btn-vip mt-2" onclick="saveNotes(${m.id})"><i class="bi bi-check me-1"></i>Save Notes</button>` : ''}
+            </div>
+        </div>
     `;
 }
 

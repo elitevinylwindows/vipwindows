@@ -830,20 +830,22 @@ function advanceEventStep(eventId, mapsUrl, detailUrl, techMeasureId) {
         btn.className = 'btn btn-warning w-100';
         btn.innerHTML = '<i class="bi bi-geo-fill me-1"></i> Arrived at Location';
     } else if (step === 1) {
-        // Step 2: Mark as arrived
+        // Step 2: Mark as arrived — advance to "In Progress"
+        evtSteps[eventId] = 2;
+        btn.className = 'btn btn-success w-100';
         if (detailUrl) {
-            // Advance to "In Progress" — go to tech measures
-            evtSteps[eventId] = 2;
-            btn.className = 'btn btn-success w-100';
             btn.innerHTML = '<i class="bi bi-play-circle me-1"></i> In Progress — View Measure';
         } else {
-            btn.className = 'btn btn-success w-100';
-            btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Arrived';
-            btn.disabled = true;
+            // Service or other non-tech-measure event — go to service jobs
+            btn.innerHTML = '<i class="bi bi-play-circle me-1"></i> In Progress — View Job';
         }
     } else {
-        // Step 3: Go to tech measures page
-        window.location.href = detailUrl;
+        // Step 3: Navigate to the appropriate page
+        if (detailUrl) {
+            window.location.href = detailUrl;
+        } else {
+            window.location.href = '/installer/service-jobs';
+        }
     }
 }
 

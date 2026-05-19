@@ -7,9 +7,11 @@ use App\Models\Crew;
 use App\Models\TechMeasure;
 use App\Models\TechMeasureItem;
 use App\Models\TechMeasurePhoto;
+use App\Models\VipMasterOption;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class TechMeasureController extends Controller
 {
@@ -36,7 +38,12 @@ class TechMeasureController extends Controller
 
         $crews = Crew::where('status', 'active')->orderBy('name')->get();
 
-        return view('admin.tech-measures.index', compact('measures', 'status', 'techs', 'crews'));
+        $unitOptions = VipMasterOption::optionsFor('unit');
+        $frameTypeOptions = VipMasterOption::optionsFor('frame_type');
+        $gridOptions = VipMasterOption::optionsFor('grid');
+        $patternOptions = VipMasterOption::optionsFor('pattern');
+
+        return view('admin.tech-measures.index', compact('measures', 'status', 'techs', 'crews', 'unitOptions', 'frameTypeOptions', 'gridOptions', 'patternOptions'));
     }
 
     /**
@@ -152,6 +159,117 @@ class TechMeasureController extends Controller
             'success' => true,
             'measure_id' => $measure->id,
         ]);
+    }
+
+    /**
+     * Add a measurement item (admin).
+     */
+    public function addItem(Request $request, $id)
+    {
+        $measure = TechMeasure::findOrFail($id);
+
+        $validated = $request->validate([
+            'room_label'   => 'nullable|string|max:100',
+            'description'  => 'nullable|string|max:500',
+            'series_type'  => 'nullable|string|max:100',
+            'width'        => 'nullable',
+            'height'       => 'nullable',
+            'qty'          => 'nullable|integer|min:1',
+            'notes'        => 'nullable|string|max:500',
+        ]);
+
+        $item = $measure->items()->create(array_merge($validated, [
+            'qty' => $validated['qty'] ?? 1,
+        ]));
+
+        return response()->json(['success' => true, 'item' => $item]);
+    }
+
+    /**
+     * Update a measurement item (admin).
+     */
+    public function updateItem(Request $request, $measureId, $itemId)
+    {
+        $item = TechMeasureItem::where('tech_measure_id', $measureId)->findOrFail($itemId);
+        $item->update($request->all());
+
+        return response()->json(['success' => true, 'item' => $item->fresh()]);
+    }
+
+    /**
+     * Remove a measurement item (admin).
+     */
+    public function removeItem($measureId, $itemId)
+    {
+        $item = TechMeasureItem::where('tech_measure_id', $measureId)->findOrFail($itemId);
+
+        foreach ($item->photos as $photo) {
+            Storage::disk('public')->delete($photo->file_path);
+            $photo->delete();
+        }
+
+        $item->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Update notes / frame type (admin).
+     */
+    public function updateNotes(Request $request, $id)
+    {
+        $measure = TechMeasure::findOrFail($id);
+        $data = $request->only(['notes', 'frame_type']);
+        $measure->update($data);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Update grid settings (admin).
+     */
+    public function updateGrids(Request $request, $id)
+    {
+        $measure = TechMeasure::findOrFail($id);
+        $measure->update($request->only(['has_grids', 'grid_list', 'grid_pattern']));
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Upload a photo (admin).
+     */
+    public function uploadPhoto(Request $request, $id)
+    {
+        $request->validate([
+            'photo'   => 'required|image|max:10240',
+            'item_id' => 'nullable|integer',
+            'caption' => 'nullable|string|max:255',
+        ]);
+
+        $measure = TechMeasure::findOrFail($id);
+        $path = $request->file('photo')->store('tech-measures/' . $id, 'public');
+
+        $photo = TechMeasurePhoto::create([
+            'tech_measure_id'      => $measure->id,
+            'tech_measure_item_id' => $request->input('item_id'),
+            'file_path'            => $path,
+            'caption'              => $request->input('caption'),
+        ]);
+
+        return response()->json(['success' => true, 'photo' => $photo]);
+    }
+
+    /**
+     * Delete a photo (admin).
+     */
+    public function deletePhoto($measureId, $photoId)
+    {
+        $photo = TechMeasurePhoto::where('tech_measure_id', $measureId)->findOrFail($photoId);
+        Storage::disk('public')->delete($photo->file_path);
+        $photo->delete();
+
+        return response()->json(['success' => true]);
     }
 
     /**

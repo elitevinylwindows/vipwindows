@@ -205,6 +205,13 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/tech-measures/{id}/send-email', [TechMeasureController::class, 'sendEmail'])->name('tech-measures.sendEmail');
     Route::post('/tech-measures/from-event', [TechMeasureController::class, 'createFromEvent'])->name('tech-measures.fromEvent');
     Route::post('/tech-measures/{id}/convert-to-quote', [TechMeasureController::class, 'convertToQuote'])->name('tech-measures.convertToQuote');
+    Route::post('/tech-measures/{id}/item', [TechMeasureController::class, 'addItem'])->name('tech-measures.addItem');
+    Route::put('/tech-measures/{id}/item/{itemId}', [TechMeasureController::class, 'updateItem'])->name('tech-measures.updateItem');
+    Route::delete('/tech-measures/{id}/item/{itemId}', [TechMeasureController::class, 'removeItem'])->name('tech-measures.removeItem');
+    Route::post('/tech-measures/{id}/notes', [TechMeasureController::class, 'updateNotes'])->name('tech-measures.updateNotes');
+    Route::post('/tech-measures/{id}/grids', [TechMeasureController::class, 'updateGrids'])->name('tech-measures.updateGrids');
+    Route::post('/tech-measures/{id}/photo', [TechMeasureController::class, 'uploadPhoto'])->name('tech-measures.uploadPhoto');
+    Route::delete('/tech-measures/{id}/photo/{photoId}', [TechMeasureController::class, 'deletePhoto'])->name('tech-measures.deletePhoto');
 
     // Quotes (full configurator)
     Route::get('/quotes', [VipQuoteController::class, 'index'])->name('quotes.index');
