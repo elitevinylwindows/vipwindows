@@ -702,6 +702,22 @@ function onStartJob(jobId, isTechMeasure) {
     });
 }
 
+function openEventRoute(eventId) {
+    const appUrl = eventsData[eventId]._mapsUrl;
+    const webUrl = eventsData[eventId]._mapsWebUrl;
+
+    if (appUrl && appUrl.startsWith('http')) {
+        window.open(appUrl, '_blank');
+    } else if (appUrl) {
+        window.location.href = appUrl;
+        setTimeout(() => {
+            if (webUrl) window.open(webUrl, '_blank');
+        }, 1500);
+    } else if (webUrl) {
+        window.open(webUrl, '_blank');
+    }
+}
+
 // ── Event Popup ──
 function showEventPopup(eventId) {
     const ev = eventsData[eventId];
@@ -743,8 +759,24 @@ function showEventPopup(eventId) {
     let actionRow = '';
 
     if (ev.address) {
-        const evMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.address)}`;
-        routeRow = `<a href="${evMapsUrl}" target="_blank" class="btn btn-vip flex-fill"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</a>`;
+        const evEncodedAddr = encodeURIComponent(ev.address);
+        const evIsIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const evIsAndroid = /Android/.test(navigator.userAgent);
+        let evMapsUrl;
+        if (evIsIOS) {
+            evMapsUrl = `comgooglemaps://?daddr=${evEncodedAddr}&directionsmode=driving`;
+        } else if (evIsAndroid) {
+            evMapsUrl = `google.navigation:q=${evEncodedAddr}`;
+        } else {
+            evMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${evEncodedAddr}`;
+        }
+        const evWebUrl = `https://www.google.com/maps/dir/?api=1&destination=${evEncodedAddr}`;
+
+        // Store on event data for onclick
+        eventsData[eventId]._mapsUrl = evMapsUrl;
+        eventsData[eventId]._mapsWebUrl = evWebUrl;
+
+        routeRow = `<button class="btn btn-vip flex-fill" onclick="openEventRoute(${eventId})"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</button>`;
     }
 
     if (ev.customer_phone) {
