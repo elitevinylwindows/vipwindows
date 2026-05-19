@@ -223,7 +223,19 @@
 const csrf = document.querySelector('meta[name=csrf-token]').content;
 let currentMeasureId = null;
 let currentMeasureData = null;
-// seriesData removed — Series no longer used in tech measure form
+
+// VIP Master options for dropdowns
+const unitOptions = @json($unitOptions);
+const frameTypeOptions = @json($frameTypeOptions);
+const gridOptions = @json($gridOptions);
+const patternOptions = @json($patternOptions);
+
+function escHtml(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.tm-card');
@@ -400,11 +412,7 @@ function renderMeasureDetail(data) {
                 <div class="col-md-4">
                     <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id})">
                         <option value="">— Select Frame Type —</option>
-                        <option value='Retrofit 1 3/4"' ${m.frame_type === 'Retrofit 1 3/4"' ? 'selected' : ''}>Retrofit 1 3/4"</option>
-                        <option value='Retrofit 2 1/2"' ${m.frame_type === 'Retrofit 2 1/2"' ? 'selected' : ''}>Retrofit 2 1/2"</option>
-                        <option value="Block" ${m.frame_type === 'Block' ? 'selected' : ''}>Block</option>
-                        <option value='Nailon 1" Setback' ${m.frame_type === 'Nailon 1&quot; Setback' ? 'selected' : ''}>Nailon 1" Setback</option>
-                        <option value='Nailon 1 3/8" Setback' ${m.frame_type === 'Nailon 1 3/8&quot; Setback' ? 'selected' : ''}>Nailon 1 3/8" Setback</option>
+                        ${frameTypeOptions.map(o => `<option value="${escHtml(o.name)}" ${m.frame_type === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
                     </select>
                 </div>
             </div>
@@ -427,7 +435,10 @@ function renderMeasureDetail(data) {
                 </div>
                 <div class="col-md-2">
                     <label>Unit (Configuration)</label>
-                    <input type="text" id="addConfig" class="form-control form-control-sm" placeholder="e.g. SH, Slider, PW">
+                    <select id="addConfig" class="form-select form-select-sm">
+                        <option value="">— Select —</option>
+                        ${unitOptions.map(o => `<option value="${escHtml(o.name)}">${escHtml(o.name)}</option>`).join('')}
+                    </select>
                 </div>
                 <div class="col-md-2">
                     <label>Reference</label>
@@ -463,24 +474,14 @@ function renderMeasureDetail(data) {
                         <label>Grid List</label>
                         <select id="gridList" class="form-select form-select-sm" onchange="saveGridSettings(${m.id})">
                             <option value="">— Select —</option>
-                            <option value="SDL" ${m.grid_list === 'SDL' ? 'selected' : ''}>SDL (Simulated Divided Lite)</option>
-                            <option value="GBG" ${m.grid_list === 'GBG' ? 'selected' : ''}>GBG (Grids Between Glass)</option>
-                            <option value="TDL" ${m.grid_list === 'TDL' ? 'selected' : ''}>TDL (True Divided Lite)</option>
-                            <option value="Flat" ${m.grid_list === 'Flat' ? 'selected' : ''}>Flat Grid</option>
-                            <option value="Contour" ${m.grid_list === 'Contour' ? 'selected' : ''}>Contour Grid</option>
+                            ${gridOptions.map(o => `<option value="${escHtml(o.name)}" ${m.grid_list === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label>Grid Pattern</label>
                         <select id="gridPattern" class="form-select form-select-sm" onchange="saveGridSettings(${m.id})">
                             <option value="">— Select —</option>
-                            <option value="Colonial" ${m.grid_pattern === 'Colonial' ? 'selected' : ''}>Colonial</option>
-                            <option value="Marginal-12" ${m.grid_pattern === 'Marginal-12' ? 'selected' : ''}>Marginal-12</option>
-                            <option value="Marginal-18" ${m.grid_pattern === 'Marginal-18' ? 'selected' : ''}>Marginal-18</option>
-                            <option value="Queen" ${m.grid_pattern === 'Queen' ? 'selected' : ''}>Queen</option>
-                            <option value="Diamond" ${m.grid_pattern === 'Diamond' ? 'selected' : ''}>Diamond</option>
-                            <option value="Prairie" ${m.grid_pattern === 'Prairie' ? 'selected' : ''}>Prairie</option>
-                            <option value="Custom" ${m.grid_pattern === 'Custom' ? 'selected' : ''}>Custom</option>
+                            ${patternOptions.map(o => `<option value="${escHtml(o.name)}" ${m.grid_pattern === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
                         </select>
                     </div>
                 </div>
@@ -555,6 +556,7 @@ function addItem(measureId) {
             document.getElementById('addQty').value = 1;
             document.getElementById('addWidth').value = '';
             document.getElementById('addHeight').value = '';
+            document.getElementById('addConfig').value = '';
             document.getElementById('addRoom').value = '';
             document.getElementById('addNotes').value = '';
             loadMeasure(measureId);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TechMeasure;
 use App\Models\TechMeasureItem;
 use App\Models\TechMeasurePhoto;
+use App\Models\VipMasterOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -35,10 +36,15 @@ class InstallerTechMeasureController extends Controller
 
         $measures = $query->paginate(50);
 
-        // Series data for the configurator dropdowns
-        $seriesList = \App\Models\Series::orderBy('series')->get();
+        // VIP Master options for dropdowns
+        $unitOptions = VipMasterOption::optionsFor('unit');
+        $frameTypeOptions = VipMasterOption::optionsFor('frame_type');
+        $gridOptions = VipMasterOption::optionsFor('grid');
+        $patternOptions = VipMasterOption::optionsFor('pattern');
 
-        return view('installer.tech-measures.index', compact('measures', 'status', 'seriesList'));
+        return view('installer.tech-measures.index', compact(
+            'measures', 'status', 'unitOptions', 'frameTypeOptions', 'gridOptions', 'patternOptions'
+        ));
     }
 
     /**
