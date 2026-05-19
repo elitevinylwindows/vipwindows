@@ -201,7 +201,27 @@
                 </div>
             @endif
 
-            @if(!$upcomingJobs->count() && !$bookings->where('status', 'pending')->count())
+            {{-- Upcoming Events (admin-scheduled) --}}
+            @php
+                $upcomingEvents = $calendarEvents->where('event_date', '>=', $today)->sortBy('event_date')->take(10);
+            @endphp
+            @if($upcomingEvents->count())
+                <div class="cal-day-section">
+                    <div class="day-header"><i class="bi bi-calendar-event me-1"></i> Upcoming Events</div>
+                    @foreach($upcomingEvents as $ue)
+                        <div class="cal-job-card" style="border-left-color: {{ $ue->color ?? '#c9a84c' }};" onclick="showEventPopup({{ $ue->id }})">
+                            <div class="jc-title">{{ $ue->title }}</div>
+                            <div class="jc-meta">
+                                <i class="bi bi-person me-1"></i>{{ $ue->customer_name ?? '—' }}
+                                &middot; {{ $ue->event_date->format('M d') }}
+                                @if($ue->event_time) @ {{ $ue->event_time }} @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            @if(!$upcomingJobs->count() && !$upcomingEvents->count() && !$bookings->where('status', 'pending')->count())
                 <div class="text-center py-4 text-muted">
                     <i class="bi bi-calendar-check" style="font-size:2rem; opacity:.3;"></i>
                     <p class="mt-2 small">{{ __('installer.no_upcoming_jobs') }}</p>
@@ -346,6 +366,52 @@
     </div>
 </div>
 
+{{-- Event Detail Popup --}}
+<div class="modal fade" id="eventPopupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0" id="eventPopupTitle"><i class="bi bi-calendar-event me-1"></i> Event</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="eventPopupBody">
+                <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-muted"></div></div>
+            </div>
+            <div class="modal-footer py-2" id="eventPopupFooter"></div>
+        </div>
+    </div>
+</div>
+
+{{-- Reschedule Modal --}}
+<div class="modal fade" id="rescheduleModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0"><i class="bi bi-calendar2-week me-1"></i> Reschedule</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rescheduleType" value="">
+                <input type="hidden" id="rescheduleId" value="">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">New Date</label>
+                    <input type="date" class="form-control" id="rescheduleDate">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">New Time</label>
+                    <input type="time" class="form-control" id="rescheduleTime">
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="submitReschedule()">
+                    <i class="bi bi-check2 me-1"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Booking Detail Modal --}}
 <div class="modal fade" id="bookingModal" tabindex="-1">
     <div class="modal-dialog">
@@ -376,14 +442,35 @@
             'install_state' => $j->install_state,
             'install_zip' => $j->install_zip,
             'scheduled_date' => $j->scheduled_date?->format('l, M d, Y'),
+            'scheduled_date_raw' => $j->scheduled_date?->format('Y-m-d'),
             'scheduled_time' => $j->scheduled_time,
             'status' => $j->status,
             'service_name' => $j->service?->name ?? '—',
             'description' => $j->description,
         ];
     })->keyBy('id');
+
+    $eventsJson = $calendarEvents->map(function($e) {
+        return [
+            'id' => $e->id,
+            'title' => $e->title,
+            'description' => $e->description,
+            'customer_name' => $e->customer_name,
+            'customer_email' => $e->customer_email,
+            'customer_phone' => $e->customer_phone,
+            'address' => $e->address,
+            'event_date' => $e->event_date?->format('l, M d, Y'),
+            'event_date_raw' => $e->event_date?->format('Y-m-d'),
+            'event_time' => $e->event_time,
+            'end_time' => $e->end_time,
+            'color' => $e->color ?? '#c9a84c',
+            'crew_name' => $e->crew?->name ?? '—',
+            'service_name' => $e->service?->name ?? null,
+        ];
+    })->keyBy('id');
 @endphp
 const jobsData = @json($jobsJson);
+const eventsData = @json($eventsJson);
 
 function showJobPopup(jobId) {
     const job = jobsData[jobId];
@@ -444,35 +531,50 @@ function showJobPopup(jobId) {
         </div>` : ''}
     `;
 
-    // Footer buttons — Start Route + Arrived at Location
+    // Footer buttons — Start Route + Arrived + Call + Send Reminder + Reschedule
     let footerHtml = '';
+    let routeRow = '';
+    let actionRow = '';
 
-    if (fullAddress) {
-        footerHtml += `
-            <a href="${mapsUrl}" target="_blank" id="startRouteBtn_${jobId}" class="btn btn-vip flex-fill" onclick="onRouteStarted(${jobId})">
-                <i class="bi bi-geo-alt-fill me-1"></i> Start Route
-            </a>
-        `;
-    }
-
-    footerHtml += `
-        <button class="btn btn-danger flex-fill" id="arrivedBtn_${jobId}" style="${fullAddress ? 'display:none;' : ''}"
-                onclick="onArrived(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
-            <i class="bi bi-pin-map-fill me-1"></i> Arrived at Location
-        </button>
-    `;
-
-    // If job is already in_progress (already started route before), show Arrived directly
+    // Route / Arrived row
     if (job.status === 'in_progress' && fullAddress) {
-        footerHtml = `
+        routeRow = `
             <button class="btn btn-danger flex-fill"
+                    onclick="onArrived(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
+                <i class="bi bi-pin-map-fill me-1"></i> Arrived at Location
+            </button>
+        `;
+    } else {
+        if (fullAddress) {
+            routeRow += `
+                <a href="${mapsUrl}" target="_blank" id="startRouteBtn_${jobId}" class="btn btn-vip flex-fill" onclick="onRouteStarted(${jobId})">
+                    <i class="bi bi-geo-alt-fill me-1"></i> Start Route
+                </a>
+            `;
+        }
+        routeRow += `
+            <button class="btn btn-danger flex-fill" id="arrivedBtn_${jobId}" style="${fullAddress ? 'display:none;' : ''}"
                     onclick="onArrived(${jobId}, ${isTechMeasure ? 'true' : 'false'})">
                 <i class="bi bi-pin-map-fill me-1"></i> Arrived at Location
             </button>
         `;
     }
 
-    document.getElementById('jobPopupFooter').innerHTML = `<div class="d-flex gap-2 w-100">${footerHtml}</div>`;
+    // Action buttons row: Call, Send Reminder, Reschedule
+    if (job.customer_phone) {
+        actionRow += `<a href="tel:${job.customer_phone}" class="btn btn-outline-secondary btn-sm flex-fill"><i class="bi bi-telephone me-1"></i>Call</a>`;
+    }
+    if (job.customer_email) {
+        actionRow += `<button class="btn btn-outline-warning btn-sm flex-fill" onclick="sendJobReminder(${jobId})"><i class="bi bi-bell me-1"></i>Reminder</button>`;
+    }
+    actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('job', ${jobId}, '${job.scheduled_date_raw || ''}', '${job.scheduled_time || ''}')"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
+
+    document.getElementById('jobPopupFooter').innerHTML = `
+        <div class="w-100">
+            <div class="d-flex gap-2 mb-2">${routeRow}</div>
+            <div class="d-flex gap-2">${actionRow}</div>
+        </div>
+    `;
 
     new bootstrap.Modal(document.getElementById('jobPopupModal')).show();
 }
@@ -504,6 +606,180 @@ function onArrived(jobId, isTechMeasure) {
     } else {
         window.location.href = '/installer/jobs/' + jobId;
     }
+}
+
+// ── Event Popup ──
+function showEventPopup(eventId) {
+    const ev = eventsData[eventId];
+    if (!ev) return;
+
+    document.getElementById('eventPopupTitle').innerHTML = `<i class="bi bi-calendar-event me-1" style="color:${ev.color}"></i> ${ev.title}`;
+
+    let bodyHtml = `
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h6 class="fw-bold mb-1">${ev.customer_name || 'No Customer'}</h6>
+                ${ev.customer_phone ? `<div class="small text-muted"><i class="bi bi-telephone me-1"></i><a href="tel:${ev.customer_phone}">${ev.customer_phone}</a></div>` : ''}
+                ${ev.customer_email ? `<div class="small text-muted"><i class="bi bi-envelope me-1"></i>${ev.customer_email}</div>` : ''}
+            </div>
+            ${ev.service_name ? `<span class="badge" style="background:${ev.color}; color:#fff;">${ev.service_name}</span>` : ''}
+        </div>
+
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <div class="small text-muted">Date</div>
+                <div class="fw-semibold">${ev.event_date || '—'}</div>
+            </div>
+            <div class="col-6">
+                <div class="small text-muted">Time</div>
+                <div class="fw-semibold">${ev.event_time || '—'}${ev.end_time ? ' – ' + ev.end_time : ''}</div>
+            </div>
+        </div>
+
+        ${ev.address ? `<div class="mb-3"><div class="small text-muted">Address</div><div class="fw-semibold">${ev.address}</div></div>` : ''}
+        ${ev.crew_name && ev.crew_name !== '—' ? `<div class="mb-3"><div class="small text-muted">Crew</div><div class="fw-semibold">${ev.crew_name}</div></div>` : ''}
+        ${ev.description ? `<div class="mb-3"><div class="small text-muted">Description</div><div class="small">${ev.description}</div></div>` : ''}
+    `;
+
+    document.getElementById('eventPopupBody').innerHTML = bodyHtml;
+
+    // Footer: Start Route + Call, Send Reminder, Reschedule
+    let routeRow = '';
+    let actionRow = '';
+
+    if (ev.address) {
+        const evMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.address)}`;
+        routeRow = `<a href="${evMapsUrl}" target="_blank" class="btn btn-vip flex-fill"><i class="bi bi-geo-alt-fill me-1"></i> Start Route</a>`;
+    }
+
+    if (ev.customer_phone) {
+        actionRow += `<a href="tel:${ev.customer_phone}" class="btn btn-outline-secondary btn-sm flex-fill"><i class="bi bi-telephone me-1"></i>Call</a>`;
+    }
+    if (ev.customer_email) {
+        actionRow += `<button class="btn btn-outline-warning btn-sm flex-fill" onclick="sendEventReminder(${eventId})"><i class="bi bi-bell me-1"></i>Reminder</button>`;
+    }
+    actionRow += `<button class="btn btn-outline-info btn-sm flex-fill" onclick="openReschedule('event', ${eventId}, '${ev.event_date_raw || ''}', '${ev.event_time || ''}')"><i class="bi bi-calendar2-week me-1"></i>Reschedule</button>`;
+
+    document.getElementById('eventPopupFooter').innerHTML = `
+        <div class="w-100">
+            ${routeRow ? `<div class="d-flex gap-2 mb-2">${routeRow}</div>` : ''}
+            <div class="d-flex gap-2">${actionRow}</div>
+        </div>
+    `;
+
+    new bootstrap.Modal(document.getElementById('eventPopupModal')).show();
+}
+
+// ── Send Reminder (Job) ──
+function sendJobReminder(jobId) {
+    const job = jobsData[jobId];
+    if (!job || !job.customer_email) { alert('No customer email on this job.'); return; }
+    if (!confirm('Send a reminder email to ' + job.customer_email + '?')) return;
+
+    const btn = event.target.closest('button');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Sending...'; }
+
+    fetch(`/installer/jobs/${jobId}/send-reminder`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (btn) { btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Sent!'; btn.classList.replace('btn-outline-warning', 'btn-success'); }
+        setTimeout(() => { if (btn) { btn.innerHTML = '<i class="bi bi-bell me-1"></i>Reminder'; btn.classList.replace('btn-success', 'btn-outline-warning'); btn.disabled = false; } }, 2000);
+    })
+    .catch(() => { alert('Failed to send reminder.'); if (btn) { btn.innerHTML = '<i class="bi bi-bell me-1"></i>Reminder'; btn.disabled = false; } });
+}
+
+// ── Send Reminder (Event) ──
+function sendEventReminder(eventId) {
+    const ev = eventsData[eventId];
+    if (!ev || !ev.customer_email) { alert('No customer email on this event.'); return; }
+    if (!confirm('Send a reminder email to ' + ev.customer_email + '?')) return;
+
+    const btn = event.target.closest('button');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Sending...'; }
+
+    fetch(`/admin/calendar/event/${eventId}/reminder`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            if (btn) { btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Sent!'; btn.classList.replace('btn-outline-warning', 'btn-success'); }
+            setTimeout(() => { if (btn) { btn.innerHTML = '<i class="bi bi-bell me-1"></i>Reminder'; btn.classList.replace('btn-success', 'btn-outline-warning'); btn.disabled = false; } }, 2000);
+        } else {
+            alert(data.error || 'Failed to send.');
+            if (btn) { btn.innerHTML = '<i class="bi bi-bell me-1"></i>Reminder'; btn.disabled = false; }
+        }
+    })
+    .catch(() => { alert('Failed to send reminder.'); if (btn) { btn.innerHTML = '<i class="bi bi-bell me-1"></i>Reminder'; btn.disabled = false; } });
+}
+
+// ── Reschedule ──
+function openReschedule(type, id, currentDate, currentTime) {
+    // Close the current popup
+    bootstrap.Modal.getInstance(document.getElementById(type === 'event' ? 'eventPopupModal' : 'jobPopupModal'))?.hide();
+
+    document.getElementById('rescheduleType').value = type;
+    document.getElementById('rescheduleId').value = id;
+    document.getElementById('rescheduleDate').value = currentDate || '';
+    document.getElementById('rescheduleTime').value = currentTime || '';
+
+    setTimeout(() => {
+        new bootstrap.Modal(document.getElementById('rescheduleModal')).show();
+    }, 300);
+}
+
+function submitReschedule() {
+    const type = document.getElementById('rescheduleType').value;
+    const id = document.getElementById('rescheduleId').value;
+    const newDate = document.getElementById('rescheduleDate').value;
+    const newTime = document.getElementById('rescheduleTime').value;
+
+    if (!newDate) { alert('Please select a date.'); return; }
+
+    let url, body;
+    if (type === 'event') {
+        // Fetch current event data first, then update
+        url = `/admin/calendar/event/${id}`;
+        const ev = eventsData[id];
+        body = new URLSearchParams({
+            _token: '{{ csrf_token() }}',
+            _method: 'PUT',
+            title: ev.title,
+            event_date: newDate,
+            event_time: newTime || ev.event_time || '',
+            end_time: ev.end_time || '',
+            customer_name: ev.customer_name || '',
+            customer_email: ev.customer_email || '',
+            customer_phone: ev.customer_phone || '',
+            address: ev.address || '',
+            description: ev.description || '',
+        });
+    } else {
+        url = `/installer/jobs/${id}`;
+        const job = jobsData[id];
+        body = JSON.stringify({
+            customer_name: job.customer_name || '',
+            scheduled_date: newDate,
+            scheduled_time: newTime || job.scheduled_time || '',
+        });
+    }
+
+    fetch(url, {
+        method: 'POST',
+        headers: type === 'job'
+            ? { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-HTTP-Method-Override': 'PUT' }
+            : { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'text/html' },
+        body: body,
+    })
+    .then(r => {
+        bootstrap.Modal.getInstance(document.getElementById('rescheduleModal'))?.hide();
+        location.reload();
+    })
+    .catch(() => alert('Failed to reschedule.'));
 }
 
 function toggleDayFields(day) {
