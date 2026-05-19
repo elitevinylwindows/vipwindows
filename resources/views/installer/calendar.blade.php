@@ -501,10 +501,24 @@ function showJobPopup(jobId) {
     const statusBadge = statusColors[job.status] || 'bg-secondary';
     const statusLabel = job.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-    // Build full address for Google Maps
+    // Build full address for Google Maps (use comgooglemaps:// on iOS, fallback to web)
     const addressParts = [job.install_address, job.install_city, job.install_state, job.install_zip].filter(Boolean);
     const fullAddress = addressParts.join(', ');
-    const mapsUrl = fullAddress ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress)}` : '';
+    const encodedAddr = encodeURIComponent(fullAddress);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    let mapsUrl = '';
+    if (fullAddress) {
+        if (isIOS) {
+            mapsUrl = `comgooglemaps://?daddr=${encodedAddr}&directionsmode=driving`;
+        } else if (isAndroid) {
+            mapsUrl = `google.navigation:q=${encodedAddr}`;
+        } else {
+            mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddr}`;
+        }
+    }
+    // Fallback URL for when the app isn't installed
+    const mapsWebUrl = fullAddress ? `https://www.google.com/maps/dir/?api=1&destination=${encodedAddr}` : '';
 
     // Determine if it's a tech measure (by service name)
     const isTechMeasure = (job.service_name || '').toLowerCase().includes('measure');
@@ -573,7 +587,10 @@ function showJobPopup(jobId) {
         const routeState = (jobsData[jobId] && jobsData[jobId]._routeState) ? jobsData[jobId]._routeState : 'idle';
 
         // Store mapsUrl on the data object so onclick can read it without quoting issues
-        if (jobsData[jobId]) jobsData[jobId]._mapsUrl = mapsUrl;
+        if (jobsData[jobId]) {
+            jobsData[jobId]._mapsUrl = mapsUrl;
+            jobsData[jobId]._mapsWebUrl = mapsWebUrl;
+        }
 
         routeRow += `
             <button class="btn btn-vip flex-fill" id="startRouteBtn_${jobId}"
@@ -625,16 +642,22 @@ function onRouteStarted(jobId) {
     if (routeBtn) routeBtn.style.display = 'none';
     if (arrivedBtn) arrivedBtn.style.display = '';
 
-    // Open Google Maps — use a temporary <a> tag for reliable iPad/mobile support
-    const mapsUrl = jobsData[jobId]._mapsUrl;
-    if (mapsUrl) {
-        const a = document.createElement('a');
-        a.href = mapsUrl;
-        a.target = '_blank';
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+    // Try to open Google Maps app, fall back to web
+    const appUrl = jobsData[jobId]._mapsUrl;
+    const webUrl = jobsData[jobId]._mapsWebUrl;
+
+    if (appUrl && appUrl.startsWith('http')) {
+        // Desktop — just open in new tab
+        window.open(appUrl, '_blank');
+    } else if (appUrl) {
+        // iOS/Android — try app scheme, fall back to web after timeout
+        window.location.href = appUrl;
+        setTimeout(() => {
+            // If we're still here after 1.5s, the app didn't open — use web fallback
+            if (webUrl) window.open(webUrl, '_blank');
+        }, 1500);
+    } else if (webUrl) {
+        window.open(webUrl, '_blank');
     }
 }
 
