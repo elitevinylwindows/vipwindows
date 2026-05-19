@@ -509,26 +509,48 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="adminRescheduleId" value="">
+
+                {{-- Installer reason banner (filled dynamically) --}}
+                <div id="adminRescheduleInstallerReason" class="alert alert-warning py-2 px-3 mb-3" style="font-size:.82rem; display:none;">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Installer Reschedule Request</strong>
+                    <div id="adminRescheduleInstallerReasonText" class="mt-1"></div>
+                </div>
+
+                {{-- Previous event info (filled dynamically) --}}
+                <div id="adminReschedulePrevInfo" class="mb-3 p-2 rounded" style="background:#f8f9fa; font-size:.82rem; display:none;">
+                    <strong class="text-muted"><i class="bi bi-clock-history me-1"></i>Previous Schedule:</strong>
+                    <span id="adminReschedulePrevDate"></span>
+                </div>
+
                 <div class="row g-3 mb-3">
-                    <div class="col-6">
-                        <label class="form-label small fw-semibold">New Date</label>
+                    <div class="col-4">
+                        <label class="form-label small fw-semibold">New Date <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="adminRescheduleDate">
                     </div>
-                    <div class="col-6">
-                        <label class="form-label small fw-semibold">New Time</label>
+                    <div class="col-4">
+                        <label class="form-label small fw-semibold">Start Time</label>
                         <input type="time" class="form-control" id="adminRescheduleTime">
                     </div>
+                    <div class="col-4">
+                        <label class="form-label small fw-semibold">End Time</label>
+                        <input type="time" class="form-control" id="adminRescheduleEndTime">
+                    </div>
                 </div>
-                <div class="mb-0">
+                <div class="mb-3">
                     <label class="form-label small fw-semibold">Reason for Rescheduling</label>
-                    <textarea class="form-control" id="adminRescheduleReason" rows="3" placeholder="e.g. Customer requested, weather, crew unavailable..."></textarea>
+                    <textarea class="form-control" id="adminRescheduleReason" rows="2" placeholder="e.g. Customer requested, weather, crew unavailable..."></textarea>
                 </div>
             </div>
-            <div class="modal-footer py-2">
+            <div class="modal-footer py-2 d-flex justify-content-between">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-vip btn-sm" onclick="submitAdminReschedule()">
-                    <i class="bi bi-check2 me-1"></i> Confirm Reschedule
-                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="submitAdminReschedule(true)" id="adminRescheduleNotifyBtn">
+                        <i class="bi bi-envelope me-1"></i> Reschedule & Notify Customer
+                    </button>
+                    <button type="button" class="btn btn-vip btn-sm" onclick="submitAdminReschedule(false)">
+                        <i class="bi bi-check2 me-1"></i> Reschedule
+                    </button>
+                </div>
             </div>
         </div>
     </div>
