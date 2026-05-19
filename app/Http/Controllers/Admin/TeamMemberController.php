@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TeamInvite;
 use App\Models\VipUser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class TeamMemberController extends Controller
 {
@@ -42,12 +45,33 @@ class TeamMemberController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
+        $plainPassword = $validated['password'];
+        $validated['password'] = Hash::make($plainPassword);
         $validated['status'] = 'active';
 
-        VipUser::create($validated);
+        $member = VipUser::create($validated);
 
-        return redirect()->route('admin.team.index')->with('success', 'Team member added.');
+        // Determine login URL based on role
+        $loginUrl = $validated['role'] === 'installer'
+            ? url('/installer/login')
+            : url('/admin');
+
+        // Send branded invite email
+        try {
+            Mail::to($member->email)->send(new TeamInvite([
+                'name'       => $member->name,
+                'email'      => $member->email,
+                'role'       => $member->role,
+                'password'   => $plainPassword,
+                'login_url'  => $loginUrl,
+                'invited_by' => Auth::guard('vip')->user()->name ?? 'VIP Windows',
+            ]));
+
+            return redirect()->route('admin.team.index')->with('success', 'Team member added. Invite email sent to ' . $member->email . '.');
+        } catch (\Exception $e) {
+            \Log::warning('Team invite email failed: ' . $e->getMessage());
+            return redirect()->route('admin.team.index')->with('success', 'Team member added (invite email could not be sent).');
+        }
     }
 
     public function update(Request $request, $id)
