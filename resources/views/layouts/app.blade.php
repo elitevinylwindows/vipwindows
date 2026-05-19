@@ -135,12 +135,14 @@
             <a href="{{ route('admin.jobs.index') }}" class="{{ request()->routeIs('admin.jobs.*') ? 'active' : '' }}">
                 <i class="bi bi-tools"></i> Jobs
             </a>
+            {{-- Orders and Quotes hidden for now
             <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                 <i class="bi bi-clipboard-check"></i> Orders
             </a>
             <a href="{{ route('admin.quotes.index') }}" class="{{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
                 <i class="bi bi-calculator"></i> Quotes
             </a>
+            --}}
             <a href="{{ route('admin.invoices.index') }}" class="{{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
                 <i class="bi bi-receipt"></i> Invoices
             </a>

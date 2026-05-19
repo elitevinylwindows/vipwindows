@@ -891,9 +891,22 @@ function openEditEvent(eventId) {
 function openAdminReschedule(eventId, currentDate, currentTime) {
     bootstrap.Modal.getInstance(document.getElementById('viewItemModal'))?.hide();
     document.getElementById('adminRescheduleId').value = eventId;
-    document.getElementById('adminRescheduleDate').value = currentDate || '';
     document.getElementById('adminRescheduleTime').value = currentTime || '';
-    setTimeout(() => new bootstrap.Modal(document.getElementById('adminRescheduleModal')).show(), 300);
+
+    // Fetch event to get current date
+    fetch(`/admin/calendar/event/${eventId}`, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(ev => {
+        document.getElementById('adminRescheduleDate').value = ev.event_date ? ev.event_date.substring(0,10) : (currentDate || '');
+        if (!currentTime && ev.event_time) document.getElementById('adminRescheduleTime').value = ev.event_time;
+        setTimeout(() => new bootstrap.Modal(document.getElementById('adminRescheduleModal')).show(), 300);
+    })
+    .catch(() => {
+        document.getElementById('adminRescheduleDate').value = currentDate || '';
+        setTimeout(() => new bootstrap.Modal(document.getElementById('adminRescheduleModal')).show(), 300);
+    });
 }
 
 function submitAdminReschedule() {
