@@ -138,6 +138,54 @@
     </div>
 </div>
 
+{{-- Edit Opening Item Modal --}}
+<div class="modal fade" id="editItemModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0"><i class="bi bi-pencil me-1"></i>Edit Opening</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <input type="hidden" id="editItemMeasureId">
+                <input type="hidden" id="editItemId">
+                <div class="row g-2">
+                    <div class="col-2">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Qty</label>
+                        <input type="number" id="editItemQty" class="form-control form-control-sm" min="1">
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Width</label>
+                        <input type="text" id="editItemWidth" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Height</label>
+                        <input type="text" id="editItemHeight" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Unit (Configuration)</label>
+                        <select id="editItemConfig" class="form-select form-select-sm">
+                            <option value="">— Select —</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Reference</label>
+                        <input type="text" id="editItemRoom" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Notes</label>
+                        <input type="text" id="editItemNotes" class="form-control form-control-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-vip btn-sm" onclick="saveEditItem()"><i class="bi bi-check-lg me-1"></i>Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Email Modal --}}
 <div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -253,7 +301,7 @@ function renderDetail(data) {
                 <td>${item.room_label || '—'}${photoHtml}</td>
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
                 <td class="text-center text-nowrap">
-                    <button class="btn btn-sm text-primary p-0 me-1" onclick="editItem(${m.id}, ${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')})" title="Edit"><i class="bi bi-pencil" style="font-size:.75rem;"></i></button>
+                    <button class="btn btn-sm text-primary p-0 me-1" onclick="editItemFromData(${m.id}, ${item.id})" title="Edit"><i class="bi bi-pencil" style="font-size:.75rem;"></i></button>
                     <button class="btn btn-sm text-primary p-0 me-1" onclick="uploadItemPhoto(${m.id}, ${item.id})" title="Add Photo"><i class="bi bi-camera" style="font-size:.75rem;"></i></button>
                     <button class="btn btn-sm text-danger p-0" onclick="removeItem(${m.id}, ${item.id})" title="Remove"><i class="bi bi-x-lg" style="font-size:.65rem;"></i></button>
                 </td>
@@ -404,7 +452,7 @@ function renderDetail(data) {
         contactBtns += `<a href="tel:${m.customer_phone}" class="btn btn-sm btn-outline-primary me-1" title="Call"><i class="bi bi-telephone me-1"></i>Call</a>`;
     }
     if (m.customer_email) {
-        contactBtns += `<button class="btn btn-sm btn-outline-secondary" onclick="openEmailModal()" title="Email"><i class="bi bi-envelope me-1"></i>Email</button>`;
+        contactBtns += `<button class="btn btn-sm btn-outline-secondary" onclick="openEmailModal()" title="Send Confirmation"><i class="bi bi-envelope me-1"></i>Send Confirmation</button>`;
     }
 
     body.innerHTML = `
@@ -508,6 +556,225 @@ function sendEmail() {
         } else alert(data.error || 'Failed to send email.');
     })
     .catch(() => alert('Failed to send email.'));
+}
+
+// VIP Master options for dropdowns
+const unitOptions = @json($unitOptions);
+const frameTypeOptions = @json($frameTypeOptions);
+const gridOptions = @json($gridOptions);
+const patternOptions = @json($patternOptions);
+
+function addItem(measureId) {
+    const qty = parseInt(document.getElementById('addQty')?.value || 1);
+    const width = document.getElementById('addWidth')?.value?.trim();
+    const height = document.getElementById('addHeight')?.value?.trim();
+    const config = document.getElementById('addConfig')?.value || null;
+    const room = document.getElementById('addRoom')?.value?.trim();
+    const notes = document.getElementById('addNotes')?.value?.trim();
+
+    fetch(`/admin/tech-measures/${measureId}/item`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({
+            room_label: room,
+            description: config || null,
+            series_type: config,
+            width: width || null,
+            height: height || null,
+            qty: qty,
+            notes: notes,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('addQty').value = 1;
+            document.getElementById('addWidth').value = '';
+            document.getElementById('addHeight').value = '';
+            document.getElementById('addRoom').value = '';
+            document.getElementById('addNotes').value = '';
+            loadMeasure(measureId);
+        }
+        else alert(data.error || 'Failed to add item.');
+    })
+    .catch(() => alert('Failed to add item.'));
+}
+
+function editItemFromData(measureId, itemId) {
+    if (!currentMeasureData) return;
+    const item = (currentMeasureData.items || []).find(i => i.id === itemId);
+    if (!item) return;
+    editItem(measureId, itemId, item);
+}
+
+function editItem(measureId, itemId, item) {
+    document.getElementById('editItemMeasureId').value = measureId;
+    document.getElementById('editItemId').value = itemId;
+    document.getElementById('editItemQty').value = item.qty || 1;
+    document.getElementById('editItemWidth').value = item.width || '';
+    document.getElementById('editItemHeight').value = item.height || '';
+    document.getElementById('editItemRoom').value = item.room_label || '';
+    document.getElementById('editItemNotes').value = item.notes || '';
+
+    const sel = document.getElementById('editItemConfig');
+    sel.innerHTML = '<option value="">— Select —</option>';
+    unitOptions.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.name;
+        opt.textContent = o.name;
+        if (o.name === item.description) opt.selected = true;
+        sel.appendChild(opt);
+    });
+
+    new bootstrap.Modal(document.getElementById('editItemModal')).show();
+}
+
+function saveEditItem() {
+    const measureId = document.getElementById('editItemMeasureId').value;
+    const itemId = document.getElementById('editItemId').value;
+    const config = document.getElementById('editItemConfig').value;
+
+    fetch(`/admin/tech-measures/${measureId}/item/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({
+            qty: parseInt(document.getElementById('editItemQty').value) || 1,
+            width: document.getElementById('editItemWidth').value.trim() || null,
+            height: document.getElementById('editItemHeight').value.trim() || null,
+            description: config || null,
+            series_type: config,
+            room_label: document.getElementById('editItemRoom').value.trim(),
+            notes: document.getElementById('editItemNotes').value.trim(),
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editItemModal')).hide();
+            loadMeasure(measureId);
+        } else alert(data.error || 'Failed to update.');
+    })
+    .catch(() => alert('Failed to update.'));
+}
+
+function removeItem(measureId, itemId) {
+    if (!confirm('Remove this measurement?')) return;
+    fetch(`/admin/tech-measures/${measureId}/item/${itemId}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => { if (data.success) loadMeasure(measureId); })
+    .catch(() => alert('Failed to remove.'));
+}
+
+function saveFrameType(measureId) {
+    const frameType = document.getElementById('globalFrame')?.value || null;
+    fetch(`/admin/tech-measures/${measureId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ frame_type: frameType })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && currentMeasureData) currentMeasureData.measure.frame_type = frameType;
+    })
+    .catch(() => {});
+}
+
+function toggleGridFields() {
+    const isYes = document.getElementById('gridsYes')?.checked;
+    const wrap = document.getElementById('gridFieldsWrap');
+    if (wrap) wrap.style.display = isYes ? 'block' : 'none';
+    if (currentMeasureId) saveGridSettings(currentMeasureId);
+}
+
+function saveGridSettings(measureId) {
+    const hasGrids = document.getElementById('gridsYes')?.checked ? 1 : 0;
+    const gridList = document.getElementById('gridList')?.value || null;
+    const gridPattern = document.getElementById('gridPattern')?.value || null;
+
+    fetch(`/admin/tech-measures/${measureId}/grids`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ has_grids: hasGrids, grid_list: gridList, grid_pattern: gridPattern })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && currentMeasureData) {
+            currentMeasureData.measure.has_grids = hasGrids;
+            currentMeasureData.measure.grid_list = gridList;
+            currentMeasureData.measure.grid_pattern = gridPattern;
+        }
+    })
+    .catch(() => {});
+}
+
+function saveNotes(measureId) {
+    const notes = document.getElementById('generalNotes')?.value;
+    fetch(`/admin/tech-measures/${measureId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ notes })
+    })
+    .then(r => r.json())
+    .then(data => { if (data.success) alert('Notes saved.'); })
+    .catch(() => alert('Failed to save notes.'));
+}
+
+function uploadItemPhoto(measureId, itemId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = function() {
+        const formData = new FormData();
+        formData.append('photo', this.files[0]);
+        formData.append('item_id', itemId);
+
+        fetch(`/admin/tech-measures/${measureId}/photo`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => { if (data.success) loadMeasure(measureId); })
+        .catch(() => alert('Failed to upload photo.'));
+    };
+    input.click();
+}
+
+function uploadGeneralPhoto(measureId) {
+    const fileInput = document.getElementById('generalPhotoFile');
+    const caption = document.getElementById('generalPhotoCaption')?.value?.trim() || '';
+    if (!fileInput?.files?.length) { alert('Please select a photo.'); return; }
+
+    const formData = new FormData();
+    formData.append('photo', fileInput.files[0]);
+    if (caption) formData.append('caption', caption);
+
+    fetch(`/admin/tech-measures/${measureId}/photo`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => { if (data.success) loadMeasure(measureId); })
+    .catch(() => alert('Failed to upload photo.'));
+}
+
+function deletePhoto(measureId, photoId) {
+    if (!confirm('Delete this photo?')) return;
+    fetch(`/admin/tech-measures/${measureId}/photo/${photoId}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => { if (data.success) loadMeasure(measureId); })
+    .catch(() => alert('Failed to delete photo.'));
+}
+
+function downloadPdf(measureId) {
+    window.open(`/installer/tech-measures/${measureId}/pdf`, '_blank');
 }
 
 function convertToQuote(measureId) {
