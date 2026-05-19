@@ -336,14 +336,12 @@ function renderMeasureDetail(data) {
         itemsHtml = `<table class="tm-items-tbl">
             <thead><tr>
                 <th style="width:30px;">#</th>
-                <th>Room / Location</th>
-                <th>Type</th>
-                <th>Series / Config</th>
-                <th>W × H</th>
                 <th>Qty</th>
-                <th>Frame</th>
-                <th>Glass</th>
-                <th>Grid</th>
+                <th>Width</th>
+                <th>Height</th>
+                <th>Unit (Configuration)</th>
+                <th>Frame Type</th>
+                <th>Reference</th>
                 <th>Notes</th>
                 <th style="width:60px;"></th>
             </tr></thead>
@@ -354,14 +352,12 @@ function renderMeasureDetail(data) {
                 : '';
             itemsHtml += `<tr>
                 <td class="text-center text-muted">${idx + 1}</td>
-                <td><strong>${item.room_label || '—'}</strong><br><span class="text-muted" style="font-size:.7rem;">${item.existing_condition || ''}</span>${photoHtml}</td>
-                <td>${item.opening_type || '—'}</td>
-                <td>${item.description || '—'}<br><span class="text-muted" style="font-size:.7rem;">${item.series_type || ''}</span></td>
-                <td class="text-nowrap">${item.width || '—'} × ${item.height || '—'}</td>
                 <td class="text-center">${item.qty || 1}</td>
+                <td class="text-nowrap">${item.width || '—'}</td>
+                <td class="text-nowrap">${item.height || '—'}</td>
+                <td>${item.description || '—'}<br><span class="text-muted" style="font-size:.7rem;">${item.series_type || ''}</span></td>
                 <td>${item.frame_type || '—'}</td>
-                <td>${item.glass_type || '—'}${item.tempered ? ' <span class="badge bg-warning text-dark" style="font-size:.55rem;">T</span>' : ''}</td>
-                <td>${item.grid_pattern || '—'}</td>
+                <td>${item.room_label || '—'}${photoHtml}</td>
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
                 <td class="text-center">
                     <button class="btn btn-sm text-primary p-0 me-1" onclick="uploadItemPhoto(${m.id}, ${item.id})" title="Add Photo"><i class="bi bi-camera" style="font-size:.75rem;"></i></button>
@@ -404,29 +400,10 @@ function renderMeasureDetail(data) {
         ${m.status === 'in_progress' || m.status === 'pending' ? `
         <h6 class="section-title"><i class="bi bi-plus-circle"></i> Add Opening</h6>
         <div class="tm-add-form">
-            <div class="row g-2">
-                <div class="col-md-2">
-                    <label>Room / Location</label>
-                    <input type="text" id="addRoom" class="form-control form-control-sm" placeholder="e.g. Living Room">
-                </div>
-                <div class="col-md-2">
-                    <label>Opening Type</label>
-                    <select id="addOpeningType" class="form-select form-select-sm">
-                        <option value="window">Window</option>
-                        <option value="door">Door</option>
-                        <option value="sliding_door">Sliding Door</option>
-                        <option value="picture">Picture Window</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label>Series</label>
-                    <select id="addSeries" class="form-select form-select-sm" onchange="loadConfigs(this.value)">${seriesOpts}</select>
-                </div>
-                <div class="col-md-2">
-                    <label>Configuration</label>
-                    <select id="addConfig" class="form-select form-select-sm">
-                        <option value="">— Select —</option>
-                    </select>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-1">
+                    <label>Qty</label>
+                    <input type="number" id="addQty" class="form-control form-control-sm" value="1" min="1">
                 </div>
                 <div class="col-md-1">
                     <label>Width</label>
@@ -436,10 +413,18 @@ function renderMeasureDetail(data) {
                     <label>Height</label>
                     <input type="text" id="addHeight" class="form-control form-control-sm" placeholder='60 3/8'>
                 </div>
-            </div>
-            <div class="row g-2 mt-1">
                 <div class="col-md-2">
-                    <label>Frame</label>
+                    <label>Series</label>
+                    <select id="addSeries" class="form-select form-select-sm" onchange="loadConfigs(this.value)">${seriesOpts}</select>
+                </div>
+                <div class="col-md-2">
+                    <label>Unit (Configuration)</label>
+                    <select id="addConfig" class="form-select form-select-sm">
+                        <option value="">— Select —</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Frame Type</label>
                     <select id="addFrame" class="form-select form-select-sm">
                         <option value="">— Select —</option>
                         <option value='Retrofit 1 3/4"'>Retrofit 1 3/4"</option>
@@ -450,40 +435,8 @@ function renderMeasureDetail(data) {
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label>Glass</label>
-                    <select id="addGlass" class="form-select form-select-sm">
-                        <option value="">— Select —</option>
-                        <option value="LE3/CLR">LE3/CLR</option>
-                        <option value="CLR/CLR">CLR/CLR</option>
-                        <option value="LE3/LAM">LE3/LAM</option>
-                        <option value="CLR/LAM">CLR/LAM</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label>Tempered</label>
-                    <select id="addTempered" class="form-select form-select-sm">
-                        <option value="">None</option>
-                        <option value="All">All</option>
-                        <option value="Select">Select</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label>Grid Pattern</label>
-                    <select id="addGridPattern" class="form-select form-select-sm">
-                        <option value="">None</option>
-                        <option value="Colonial">Colonial</option>
-                        <option value="Marginal-12">Marginal-12</option>
-                        <option value="Marginal-18">Marginal-18</option>
-                        <option value="Queen">Queen</option>
-                    </select>
-                </div>
-                <div class="col-md-1">
-                    <label>Qty</label>
-                    <input type="number" id="addQty" class="form-control form-control-sm" value="1" min="1">
-                </div>
-                <div class="col-md-3">
-                    <label>Existing Condition</label>
-                    <input type="text" id="addCondition" class="form-control form-control-sm" placeholder="e.g. Aluminum single pane, rotted">
+                    <label>Reference</label>
+                    <input type="text" id="addRoom" class="form-control form-control-sm" placeholder="e.g. Living Room">
                 </div>
             </div>
             <div class="row g-2 mt-1">
@@ -496,7 +449,61 @@ function renderMeasureDetail(data) {
                 </div>
             </div>
         </div>
+
+        {{-- Grid Toggle Section --}}
+        <h6 class="section-title"><i class="bi bi-grid-3x3"></i> Grids</h6>
+        <div class="tm-add-form">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <label class="fw-semibold" style="font-size:.85rem;">Does this project have grids?</label>
+                <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" name="hasGrids" id="gridsYes" value="yes" ${m.has_grids ? 'checked' : ''} onchange="toggleGridFields()">
+                    <label class="form-check-label" for="gridsYes" style="font-size:.85rem;">Yes</label>
+                </div>
+                <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" name="hasGrids" id="gridsNo" value="no" ${!m.has_grids ? 'checked' : ''} onchange="toggleGridFields()">
+                    <label class="form-check-label" for="gridsNo" style="font-size:.85rem;">No</label>
+                </div>
+            </div>
+            <div id="gridFieldsWrap" style="display:${m.has_grids ? 'block' : 'none'};">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label>Grid List</label>
+                        <select id="gridList" class="form-select form-select-sm" onchange="saveGridSettings(${m.id})">
+                            <option value="">— Select —</option>
+                            <option value="SDL" ${m.grid_list === 'SDL' ? 'selected' : ''}>SDL (Simulated Divided Lite)</option>
+                            <option value="GBG" ${m.grid_list === 'GBG' ? 'selected' : ''}>GBG (Grids Between Glass)</option>
+                            <option value="TDL" ${m.grid_list === 'TDL' ? 'selected' : ''}>TDL (True Divided Lite)</option>
+                            <option value="Flat" ${m.grid_list === 'Flat' ? 'selected' : ''}>Flat Grid</option>
+                            <option value="Contour" ${m.grid_list === 'Contour' ? 'selected' : ''}>Contour Grid</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Grid Pattern</label>
+                        <select id="gridPattern" class="form-select form-select-sm" onchange="saveGridSettings(${m.id})">
+                            <option value="">— Select —</option>
+                            <option value="Colonial" ${m.grid_pattern === 'Colonial' ? 'selected' : ''}>Colonial</option>
+                            <option value="Marginal-12" ${m.grid_pattern === 'Marginal-12' ? 'selected' : ''}>Marginal-12</option>
+                            <option value="Marginal-18" ${m.grid_pattern === 'Marginal-18' ? 'selected' : ''}>Marginal-18</option>
+                            <option value="Queen" ${m.grid_pattern === 'Queen' ? 'selected' : ''}>Queen</option>
+                            <option value="Diamond" ${m.grid_pattern === 'Diamond' ? 'selected' : ''}>Diamond</option>
+                            <option value="Prairie" ${m.grid_pattern === 'Prairie' ? 'selected' : ''}>Prairie</option>
+                            <option value="Custom" ${m.grid_pattern === 'Custom' ? 'selected' : ''}>Custom</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ` : `
+        ${m.has_grids ? `
+        <h6 class="section-title"><i class="bi bi-grid-3x3"></i> Grids</h6>
+        <div class="tm-add-form">
+            <div class="row g-2">
+                <div class="col-md-4"><label>Grid List</label><div class="fw-semibold">${m.grid_list || '—'}</div></div>
+                <div class="col-md-4"><label>Grid Pattern</label><div class="fw-semibold">${m.grid_pattern || '—'}</div></div>
+            </div>
+        </div>
         ` : ''}
+        `}
 
         <h6 class="section-title"><i class="bi bi-image"></i> Site Photos</h6>
         ${photosHtml}
@@ -542,42 +549,32 @@ function loadConfigs(seriesId) {
 }
 
 function addItem(measureId) {
-    const room = document.getElementById('addRoom')?.value?.trim();
-    const openingType = document.getElementById('addOpeningType')?.value;
-    const seriesId = document.getElementById('addSeries')?.value || null;
-    const seriesType = document.getElementById('addConfig')?.value || null;
+    const qty = parseInt(document.getElementById('addQty')?.value || 1);
     const width = document.getElementById('addWidth')?.value?.trim();
     const height = document.getElementById('addHeight')?.value?.trim();
+    const seriesId = document.getElementById('addSeries')?.value || null;
+    const seriesType = document.getElementById('addConfig')?.value || null;
     const frame = document.getElementById('addFrame')?.value;
-    const glass = document.getElementById('addGlass')?.value;
-    const tempered = document.getElementById('addTempered')?.value;
-    const gridPattern = document.getElementById('addGridPattern')?.value;
-    const qty = parseInt(document.getElementById('addQty')?.value || 1);
-    const condition = document.getElementById('addCondition')?.value?.trim();
+    const room = document.getElementById('addRoom')?.value?.trim();
     const notes = document.getElementById('addNotes')?.value?.trim();
 
     // Build description from series + config
     const seriesEl = document.getElementById('addSeries');
     const seriesName = seriesEl?.options[seriesEl.selectedIndex]?.text || '';
-    const desc = [seriesName, seriesType].filter(Boolean).join(' — ') || openingType;
+    const desc = [seriesName, seriesType].filter(Boolean).join(' — ') || 'Opening';
 
     fetch(`/installer/tech-measures/${measureId}/item`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
         body: JSON.stringify({
             room_label: room,
-            opening_type: openingType,
             description: desc,
             series_id: seriesId,
             series_type: seriesType,
-            width: parseFloat(width) || null,
-            height: parseFloat(height) || null,
+            width: width || null,
+            height: height || null,
             qty: qty,
             frame_type: frame,
-            glass_type: glass,
-            tempered: tempered,
-            grid_pattern: gridPattern,
-            existing_condition: condition,
             notes: notes,
         })
     })
@@ -587,6 +584,35 @@ function addItem(measureId) {
         else alert(data.error || 'Failed to add item.');
     })
     .catch(() => alert('Failed to add item.'));
+}
+
+function toggleGridFields() {
+    const isYes = document.getElementById('gridsYes')?.checked;
+    const wrap = document.getElementById('gridFieldsWrap');
+    if (wrap) wrap.style.display = isYes ? 'block' : 'none';
+    // Auto-save the toggle
+    if (currentMeasureId) saveGridSettings(currentMeasureId);
+}
+
+function saveGridSettings(measureId) {
+    const hasGrids = document.getElementById('gridsYes')?.checked ? 1 : 0;
+    const gridList = document.getElementById('gridList')?.value || null;
+    const gridPattern = document.getElementById('gridPattern')?.value || null;
+
+    fetch(`/installer/tech-measures/${measureId}/grids`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ has_grids: hasGrids, grid_list: gridList, grid_pattern: gridPattern })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && currentMeasureData) {
+            currentMeasureData.measure.has_grids = hasGrids;
+            currentMeasureData.measure.grid_list = gridList;
+            currentMeasureData.measure.grid_pattern = gridPattern;
+        }
+    })
+    .catch(() => {});
 }
 
 function removeItem(measureId, itemId) {

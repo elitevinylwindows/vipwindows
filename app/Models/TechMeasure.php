@@ -24,12 +24,16 @@ class TechMeasure extends Model
         'started_at',
         'completed_at',
         'notes',
+        'has_grids',
+        'grid_list',
+        'grid_pattern',
         'created_by',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'has_grids' => 'boolean',
     ];
 
     public function calendarEvent()
