@@ -193,8 +193,31 @@ function renderDetail(data) {
     const job = data.job;
     const body = document.getElementById('sjDetailBody');
     const title = document.getElementById('sjDetailTitle');
+    const toolbar = document.getElementById('sjToolbarActions');
 
     title.innerHTML = `<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${e.service_color}; margin-right:6px;"></span> ${escHtml(e.customer_name || e.title)}`;
+
+    // Toolbar actions — clock in/out + complete
+    let actions = '';
+    if (e.is_clocked_in) {
+        actions += `<span class="badge bg-primary me-2" style="font-size:.75rem;"><i class="bi bi-clock me-1"></i><span id="elapsedTime">--:--</span></span>`;
+        actions += `<button class="btn btn-sm btn-warning" onclick="clockOut(${e.id})"><i class="bi bi-stop-circle me-1"></i>Clock Out</button> `;
+    } else if (e.event_status !== 'completed') {
+        actions += `<button class="btn btn-sm btn-info text-white" onclick="clockIn(${e.id})"><i class="bi bi-play-circle me-1"></i>Clock In</button> `;
+    }
+    if (e.event_status !== 'completed') {
+        actions += `<button class="btn btn-sm btn-success" onclick="completeService(${e.id})"><i class="bi bi-check-lg me-1"></i>Complete</button> `;
+    }
+    if (e.event_status === 'completed' && e.total_time_minutes > 0) {
+        const hrs = Math.floor(e.total_time_minutes / 60), mins = e.total_time_minutes % 60;
+        actions = `<span class="badge bg-success me-2" style="font-size:.75rem;"><i class="bi bi-check-circle me-1"></i>Total: ${hrs}h ${mins}m</span>` + actions;
+    }
+    toolbar.innerHTML = actions;
+
+    // Start elapsed timer if clocked in
+    if (e.is_clocked_in && e.active_since) {
+        startElapsedTimer(new Date(e.active_since));
+    }
 
     let html = `
         <div class="sj-info-grid">
@@ -205,6 +228,7 @@ function renderDetail(data) {
             <div class="sj-info-card"><div class="label">Date</div><div class="value">${escHtml(e.event_date || '—')}${e.event_time ? ' @ ' + escHtml(e.event_time) : ''}</div></div>
             <div class="sj-info-card"><div class="label">Crew</div><div class="value">${escHtml(e.crew_name)}</div></div>
             <div class="sj-info-card"><div class="label">Status</div><div class="value"><span class="badge bg-${e.event_status === 'completed' ? 'success' : e.event_status === 'rescheduled' ? 'secondary' : 'primary'}">${escHtml(e.event_status?.replace('_',' ') || 'scheduled')}</span></div></div>
+            ${e.total_time_minutes > 0 ? `<div class="sj-info-card"><div class="label">Time Logged</div><div class="value">${Math.floor(e.total_time_minutes / 60)}h ${e.total_time_minutes % 60}m</div></div>` : ''}
         </div>
     `;
 
@@ -253,6 +277,66 @@ function escHtml(str) {
     const d = document.createElement('div');
     d.textContent = str;
     return d.innerHTML;
+}
+
+function clockIn(eventId) {
+    fetch(`/installer/service-jobs/${eventId}/clock-in`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) loadEvent(eventId);
+        else alert(data.error || 'Failed to clock in.');
+    })
+    .catch(() => alert('Failed to clock in.'));
+}
+
+function clockOut(eventId) {
+    fetch(`/installer/service-jobs/${eventId}/clock-out`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            loadEvent(eventId);
+        }
+        else alert(data.error || 'Failed to clock out.');
+    })
+    .catch(() => alert('Failed to clock out.'));
+}
+
+function completeService(eventId) {
+    if (!confirm('Mark this service as complete? Any active timers will be stopped.')) return;
+    fetch(`/installer/service-jobs/${eventId}/complete`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) loadEvent(eventId);
+        else alert(data.error || 'Failed to complete.');
+    })
+    .catch(() => alert('Failed to complete.'));
+}
+
+// Elapsed timer for active clock-in
+let elapsedInterval = null;
+function startElapsedTimer(startDate) {
+    if (elapsedInterval) clearInterval(elapsedInterval);
+    function update() {
+        const now = new Date();
+        const diff = Math.floor((now - startDate) / 1000);
+        const hrs = Math.floor(diff / 3600);
+        const mins = Math.floor((diff % 3600) / 60);
+        const secs = diff % 60;
+        const el = document.getElementById('elapsedTime');
+        if (el) el.textContent = `${hrs}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+    }
+    update();
+    elapsedInterval = setInterval(update, 1000);
 }
 
 // Auto-open first card
