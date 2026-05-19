@@ -98,6 +98,7 @@
     .cell-job.s-booking { background: rgba(111,66,193,.15); color: #4a1d96; }
     .cell-job.s-booking-confirmed { background: rgba(23,162,184,.15); color: #0c5460; }
     .cal-cell .cell-more { font-size: .6rem; color: var(--vip-accent); font-weight: 600; margin-top: 1px; }
+    .cell-job.s-event { font-size: .65rem; }
 
     /* Availability modal */
     .avail-day-row { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid rgba(0,0,0,.05); }
