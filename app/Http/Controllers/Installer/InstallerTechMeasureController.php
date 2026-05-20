@@ -156,6 +156,9 @@ class InstallerTechMeasureController extends Controller
         $job = $this->findOrCreateTimeTrackingJob($measure);
 
         if ($job) {
+            // Mark the job as completed
+            $job->update(['status' => 'completed']);
+
             $clockOutTime = now();
             $clockInFallback = $measure->started_at ?? $measure->created_at;
 

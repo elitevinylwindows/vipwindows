@@ -144,7 +144,18 @@
                         </td>
                         <td>
                             @php
-                                $svcName = $log->job?->service?->name ?? '—';
+                                $svcName = $log->job?->service?->name;
+                                // If no service linked, derive from job number prefix
+                                if (!$svcName) {
+                                    $jobNum = $log->job?->job_number ?? '';
+                                    $svcName = match(true) {
+                                        str_starts_with($jobNum, 'TM-') => 'Tech Measure',
+                                        str_starts_with($jobNum, 'IJ-') => 'Installation',
+                                        str_starts_with($jobNum, 'SV-') => 'Service',
+                                        str_starts_with($jobNum, 'RP-') => 'Repair',
+                                        default => '—',
+                                    };
+                                }
                                 $svcBadge = match(true) {
                                     str_contains(strtolower($svcName), 'measure') => 'bg-purple text-white',
                                     str_contains(strtolower($svcName), 'install') => 'bg-primary',

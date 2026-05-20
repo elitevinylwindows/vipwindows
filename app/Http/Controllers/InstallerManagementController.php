@@ -41,18 +41,25 @@ class InstallerManagementController extends Controller
     {
         $installer = VipUser::where('role', 'installer')->findOrFail($id);
 
-        // Get installer stats
+        // Get installer stats — use time logs to include crew-based assignments
         try {
-            $jobCount = \App\Models\Job::where('assigned_to', $installer->id)->count();
-        } catch (\Exception $e) { $jobCount = 0; }
+            // Count unique jobs this installer has time logs for
+            $jobIds = JobTimeLog::where('user_id', $installer->id)->pluck('job_id')->unique();
+            $jobCount = $jobIds->count();
+            $completedJobCount = \App\Models\Job::whereIn('id', $jobIds)->where('status', 'completed')->count();
+            $activeJobCount = \App\Models\Job::whereIn('id', $jobIds)->whereIn('status', ['scheduled', 'in_progress'])->count();
 
-        try {
-            $completedJobCount = \App\Models\Job::where('assigned_to', $installer->id)->where('status', 'completed')->count();
-        } catch (\Exception $e) { $completedJobCount = 0; }
-
-        try {
-            $activeJobCount = \App\Models\Job::where('assigned_to', $installer->id)->whereIn('status', ['scheduled', 'in_progress'])->count();
-        } catch (\Exception $e) { $activeJobCount = 0; }
+            // Also count directly assigned jobs not in time logs
+            $directJobs = \App\Models\Job::where('assigned_to', $installer->id)->pluck('id');
+            $allJobIds = $jobIds->merge($directJobs)->unique();
+            $jobCount = $allJobIds->count();
+            $completedJobCount = \App\Models\Job::whereIn('id', $allJobIds)->where('status', 'completed')->count();
+            $activeJobCount = \App\Models\Job::whereIn('id', $allJobIds)->whereIn('status', ['scheduled', 'in_progress'])->count();
+        } catch (\Exception $e) {
+            $jobCount = 0;
+            $completedJobCount = 0;
+            $activeJobCount = 0;
+        }
 
         // Get assigned services
         try {
