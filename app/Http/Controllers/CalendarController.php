@@ -125,11 +125,6 @@ class CalendarController extends Controller
         $validated['created_by'] = Auth::id();
         $validated['installation_types'] = $validated['installation_types'] ?? null;
 
-        // Auto-set title to customer name when provided (so calendar chip matches tech measure)
-        if (!empty($validated['customer_name']) && $validated['customer_name'] !== 'Customer') {
-            $validated['title'] = $validated['customer_name'];
-        }
-
         // Auto-set color from selected service (fallback to gold)
         if (!empty($validated['service_id'])) {
             $svcColor = Service::where('id', $validated['service_id'])->value('color');
@@ -483,7 +478,7 @@ class CalendarController extends Controller
                 'assigned_to' => $event->crew_id
                     ? Crew::find($event->crew_id)?->members()->first()?->id
                     : $existing->assigned_to,
-                'customer_name' => $event->customer_name ?: $existing->customer_name,
+                'customer_name' => $event->customer_name ?: $event->title ?: $existing->customer_name,
                 'customer_email' => $event->customer_email ?: $existing->customer_email,
                 'customer_phone' => $event->customer_phone ?: $existing->customer_phone,
                 'address' => $event->address ?: $existing->address,
@@ -491,10 +486,10 @@ class CalendarController extends Controller
             return;
         }
 
-        // Create new TechMeasure
+        // Create new TechMeasure — use event title as customer name fallback
         TechMeasure::create([
             'calendar_event_id' => $event->id,
-            'customer_name' => $event->customer_name,
+            'customer_name' => $event->customer_name ?: $event->title,
             'customer_email' => $event->customer_email,
             'customer_phone' => $event->customer_phone,
             'address' => $event->address,

@@ -158,7 +158,7 @@ class TechMeasureController extends Controller
 
         $measure = TechMeasure::create([
             'calendar_event_id' => $event->id,
-            'customer_name' => $event->customer_name,
+            'customer_name' => $event->customer_name ?: $event->title,
             'customer_email' => $event->customer_email,
             'customer_phone' => $event->customer_phone,
             'address' => $event->address,
