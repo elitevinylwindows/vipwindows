@@ -621,6 +621,44 @@
         new bootstrap.Modal(document.getElementById('editInstallerModal')).show();
     });
 
+    // ── Approve pay for a time log ───────────────────────
+    window.approvePay = function(logId, btn) {
+        if (!confirm('Approve this payment?')) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+        fetch(`/admin/installers/approve-pay/${logId}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Replace button with Approved badge
+                btn.outerHTML = '<span class="badge bg-success" style="font-size:.6rem;">Approved</span>';
+                // Reload the installer detail to refresh pay totals
+                if (activeInstallerId) {
+                    const activeItem = document.querySelector(`.ins-item[data-id="${activeInstallerId}"]`);
+                    if (activeItem) insLoad(new Event('click'), activeItem);
+                }
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Approve';
+                alert(data.message || 'Failed to approve payment.');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Approve';
+            alert('Error approving payment. Please try again.');
+        });
+    };
+
     // ── Delete installer ──────────────────────────────────
     document.getElementById('insDeleteBtn').addEventListener('click', function() {
         if (!activeInstallerId || !confirm('Remove this installer? This cannot be undone.')) return;
