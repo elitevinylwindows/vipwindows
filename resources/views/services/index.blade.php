@@ -49,74 +49,91 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="fw-bold mb-1"><i class="bi bi-wrench me-2"></i>Services</h4>
-            <p class="text-muted small mb-0">4 core services. Tech Measure, Service, and Repair are billed hourly. Installation is billed per unit with defined install types below.</p>
+            <p class="text-muted small mb-0">Define the services your company offers, set pricing, and configure installer pay rates.</p>
         </div>
+        <button class="btn btn-vip" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+            <i class="bi bi-plus-circle me-1"></i> Add Service
+        </button>
     </div>
 
     {{-- Service Cards Grid --}}
-    <div class="svc-grid mb-4">
-        @foreach($services as $service)
-            <div class="svc-card">
-                <div class="svc-card-header">
-                    <span class="svc-dot" style="background:{{ $service->color ?? '#0d6efd' }}"></span>
-                    <h6>{{ $service->name }}</h6>
-                    <span class="badge {{ $service->is_active ? 'bg-success' : 'bg-secondary' }} ms-auto">
-                        {{ $service->is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                </div>
-                <div class="svc-card-body">
-                    @if($service->description)
-                        <p class="text-muted small mb-3">{{ $service->description }}</p>
-                    @endif
+    @if($services->count())
+        <div class="svc-grid mb-4">
+            @foreach($services as $service)
+                <div class="svc-card">
+                    <div class="svc-card-header">
+                        <span class="svc-dot" style="background:{{ $service->color ?? '#0d6efd' }}"></span>
+                        <h6>{{ $service->name }}</h6>
+                        <span class="badge {{ $service->is_active ? 'bg-success' : 'bg-secondary' }} ms-auto">
+                            {{ $service->is_active ? 'Active' : 'Inactive' }}
+                        </span>
+                    </div>
+                    <div class="svc-card-body">
+                        @if($service->description)
+                            <p class="text-muted small mb-3">{{ $service->description }}</p>
+                        @endif
 
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <div class="svc-field">
-                                <label>Billing</label>
-                                <div class="val">{{ ucwords(str_replace('_', ' ', $service->unit)) }}</div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="svc-field">
+                                    <label>Billing</label>
+                                    <div class="val">{{ ucwords(str_replace('_', ' ', $service->unit)) }}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="svc-field">
-                                <label>Hourly Rate</label>
-                                <div class="val gold">${{ number_format($service->base_price, 2) }}</div>
+                            <div class="col-6">
+                                <div class="svc-field">
+                                    <label>Base Price</label>
+                                    <div class="val gold">${{ number_format($service->base_price, 2) }}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="svc-field">
-                                <label>Installer Pay</label>
-                                <div class="val red">
-                                    @if($service->installer_pay_type === 'percentage')
-                                        {{ number_format($service->installer_pay, 1) }}%
-                                    @else
-                                        ${{ number_format($service->installer_pay, 2) }}
-                                    @endif
-                                    <span class="text-muted" style="font-size:.7rem; font-weight:400;">{{ str_replace('_', ' ', $service->installer_pay_type) }}</span>
+                            <div class="col-6">
+                                <div class="svc-field">
+                                    <label>Installer Pay</label>
+                                    <div class="val red">
+                                        @if($service->installer_pay_type === 'percentage')
+                                            {{ number_format($service->installer_pay, 1) }}%
+                                        @else
+                                            ${{ number_format($service->installer_pay, 2) }}
+                                        @endif
+                                        <span class="text-muted" style="font-size:.7rem; font-weight:400;">{{ str_replace('_', ' ', $service->installer_pay_type) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="svc-field">
+                                    <label>Profit</label>
+                                    @php
+                                        $profit = $service->installer_pay_type === 'percentage'
+                                            ? $service->base_price - ($service->base_price * $service->installer_pay / 100)
+                                            : $service->base_price - $service->installer_pay;
+                                    @endphp
+                                    <div class="val green">${{ number_format($profit, 2) }}</div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <div class="svc-field">
-                                <label>Profit / hr</label>
-                                @php
-                                    $profit = $service->installer_pay_type === 'percentage'
-                                        ? $service->base_price - ($service->base_price * $service->installer_pay / 100)
-                                        : $service->base_price - $service->installer_pay;
-                                @endphp
-                                <div class="val green">${{ number_format($profit, 2) }}</div>
-                            </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="editService({{ $service->id }})">
+                                <i class="bi bi-pencil me-1"></i> Edit
+                            </button>
+                            <form method="POST" action="{{ route('admin.services.destroy', $service->id) }}" class="d-inline" onsubmit="return confirm('Delete this service? This cannot be undone.')">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
                         </div>
                     </div>
-
-                    <div class="text-end mt-2">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="editService({{ $service->id }})">
-                            <i class="bi bi-pencil me-1"></i> Edit
-                        </button>
-                    </div>
                 </div>
-            </div>
-        @endforeach
-    </div>
+            @endforeach
+        </div>
+    @else
+        <div class="text-center py-5 mb-4" style="background:#fff; border-radius:.75rem; box-shadow:0 1px 6px rgba(0,0,0,.06);">
+            <i class="bi bi-wrench fs-1 d-block mb-2 text-muted"></i>
+            <p class="text-muted mb-3">No services defined yet. Add your first service to get started.</p>
+            <button class="btn btn-vip" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+                <i class="bi bi-plus-circle me-1"></i> Add Service
+            </button>
+        </div>
+    @endif
 
     {{-- Installation Types Section --}}
     <div class="install-types-section">
@@ -202,6 +219,76 @@
                 @endif
             </div>
         </div>
+    </div>
+</div>
+
+{{-- Add Service Modal --}}
+<div class="modal fade" id="addServiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ route('admin.services.store') }}">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle me-1"></i> Add Service</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-8">
+                            <label class="form-label">Service Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required placeholder="e.g. Tech Measure, Window Install, Repair">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Color</label>
+                            <input type="color" name="color" class="form-control form-control-color" value="#0d6efd">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Optional description..."></textarea>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Base Price <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="base_price" class="form-control" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Installer Pay</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="installer_pay" class="form-control" step="0.01" min="0" value="0">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Billing Unit</label>
+                            <select name="unit" class="form-select">
+                                <option value="per_hour">Per Hour</option>
+                                <option value="per_job">Per Job</option>
+                                <option value="per_unit">Per Unit</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Installer Pay Type</label>
+                            <select name="installer_pay_type" class="form-select">
+                                <option value="per_hour">Per Hour</option>
+                                <option value="per_job">Per Job</option>
+                                <option value="per_unit">Per Unit</option>
+                                <option value="percentage">Percentage</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Sort Order</label>
+                            <input type="number" name="sort_order" class="form-control" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-vip"><i class="bi bi-plus-circle me-1"></i> Add Service</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 

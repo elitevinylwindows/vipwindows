@@ -41,13 +41,7 @@ return new class extends Migration
             });
         }
 
-        // Seed default services
-        DB::table('vip_services')->insertOrIgnore([
-            ['name' => 'Door Install',    'code' => 'DOOR_INSTALL',    'description' => 'Full door installation service', 'base_price' => 350.00, 'cost_price' => 200.00, 'unit' => 'per_job', 'is_active' => true, 'sort_order' => 1, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Window Install',  'code' => 'WIN_INSTALL',     'description' => 'Full window installation service', 'base_price' => 250.00, 'cost_price' => 150.00, 'unit' => 'per_job', 'is_active' => true, 'sort_order' => 2, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Consultation',    'code' => 'CONSULTATION',    'description' => 'On-site or virtual consultation', 'base_price' => 75.00, 'cost_price' => 0.00, 'unit' => 'per_job', 'is_active' => true, 'sort_order' => 3, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Labor',           'code' => 'LABOR',           'description' => 'General labor charges', 'base_price' => 65.00, 'cost_price' => 35.00, 'unit' => 'per_hour', 'is_active' => true, 'sort_order' => 4, 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        // No default services — admin defines their own
     }
 
     public function down(): void
