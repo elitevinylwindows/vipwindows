@@ -417,8 +417,7 @@ function renderMeasureDetail(data) {
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
                 <td class="text-center text-nowrap">
                     <button class="btn btn-sm text-primary p-0 me-1" onclick="editItemFromData(${m.id}, ${item.id})" title="Edit"><i class="bi bi-pencil" style="font-size:.75rem;"></i></button>
-                    <button class="btn btn-sm text-primary p-0 me-1" onclick="uploadItemPhoto(${m.id}, ${item.id})" title="Add Photo"><i class="bi bi-camera" style="font-size:.75rem;"></i></button>
-                    <button class="btn btn-sm text-danger p-0" onclick="removeItem(${m.id}, ${item.id})" title="Remove"><i class="bi bi-x-lg" style="font-size:.65rem;"></i></button>
+                    <button class="btn btn-sm text-primary p-0" onclick="uploadItemPhoto(${m.id}, ${item.id})" title="Add Photo"><i class="bi bi-camera" style="font-size:.75rem;"></i></button>
                 </td>
             </tr>`;
         });
@@ -779,8 +778,51 @@ function toggleGridFields() {
     const isYes = document.getElementById('gridsYes')?.checked;
     const wrap = document.getElementById('gridFieldsWrap');
     if (wrap) wrap.style.display = isYes ? 'block' : 'none';
-    // Auto-save the toggle
-    if (currentMeasureId) saveGridSettings(currentMeasureId);
+}
+
+function saveInstallerFrameAndGrids(measureId, section) {
+    const btn = event?.target?.closest('button') || event?.target;
+    if (section === 'frame') {
+        const frameType = document.getElementById('globalFrame')?.value || null;
+        const retrofitBottom = document.getElementById('frameAlt1')?.checked ? 1 : 0;
+        const blockBottom = document.getElementById('frameAlt2')?.checked ? 1 : 0;
+        fetch(`/installer/tech-measures/${measureId}/notes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ frame_type: frameType, retrofit_bottom_only: retrofitBottom, block_frame_bottom: blockBottom })
+        }).then(r => r.json()).then(data => {
+            if (data.success && currentMeasureData) {
+                currentMeasureData.measure.frame_type = frameType;
+                currentMeasureData.measure.retrofit_bottom_only = retrofitBottom;
+                currentMeasureData.measure.block_frame_bottom = blockBottom;
+            }
+            flashInstallerBtn(btn);
+        }).catch(() => alert('Failed to save.'));
+    } else {
+        const hasGrids = document.getElementById('gridsYes')?.checked ? 1 : 0;
+        const gridList = document.getElementById('gridList')?.value || null;
+        const gridPattern = document.getElementById('gridPattern')?.value || null;
+        fetch(`/installer/tech-measures/${measureId}/grids`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ has_grids: hasGrids, grid_list: gridList, grid_pattern: gridPattern })
+        }).then(r => r.json()).then(data => {
+            if (data.success && currentMeasureData) {
+                currentMeasureData.measure.has_grids = hasGrids;
+                currentMeasureData.measure.grid_list = gridList;
+                currentMeasureData.measure.grid_pattern = gridPattern;
+            }
+            flashInstallerBtn(btn);
+        }).catch(() => alert('Failed to save.'));
+    }
+}
+
+function flashInstallerBtn(btn) {
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Saved!';
+    btn.classList.replace('btn-outline-success', 'btn-success');
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.replace('btn-success', 'btn-outline-success'); }, 1500);
 }
 
 function saveGridSettings(measureId) {
