@@ -189,6 +189,7 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
 
     // Attendance (admin view)
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/backfill', [AttendanceController::class, 'backfillTimeLogs'])->name('attendance.backfill');
 
     // Email
     Route::get('/email/compose', [EmailController::class, 'compose'])->name('email.compose');

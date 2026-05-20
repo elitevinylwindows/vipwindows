@@ -78,6 +78,12 @@
                 </select>
             </form>
             <a href="{{ route('admin.attendance.index') }}" class="btn btn-sm btn-outline-primary">This Month</a>
+            <form method="POST" action="{{ route('admin.attendance.backfill') }}" class="d-inline ms-2" onsubmit="return confirm('This will create time logs for completed tech measures that have no records. Continue?')">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Create time logs for completed tech measures with no clock records">
+                    <i class="bi bi-arrow-repeat me-1"></i>Backfill Pay
+                </button>
+            </form>
         </div>
     </div>
 
