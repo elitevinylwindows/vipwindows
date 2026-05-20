@@ -58,7 +58,14 @@ class Message extends Model
 
     public function attachmentUrl(): ?string
     {
-        return $this->attachment ? asset('storage/' . $this->attachment) : null;
+        if (!$this->attachment) return null;
+
+        // Voice notes need to be streamed through a controller for correct MIME type
+        if ($this->message_type === 'voice') {
+            return url('/messages/audio/' . $this->id);
+        }
+
+        return asset('storage/' . $this->attachment);
     }
 
     public function formattedSize(): string

@@ -87,6 +87,9 @@ Route::middleware('guest:vip')->group(function () {
 
 Route::middleware('auth:vip')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Audio streaming for voice notes (accessible by both admin and installer)
+    Route::get('/messages/audio/{messageId}', [\App\Http\Controllers\Admin\MessageController::class, 'streamAudio'])->name('messages.audio');
 });
 
 // ─── Customer area ────────────────────────────────────────────

@@ -75,9 +75,18 @@ class MessageController extends Controller
         if ($request->hasFile('voice_note')) {
             $file = $request->file('voice_note');
             $path = $file->store('messages/voice/' . $conversation->id, 'public');
+
+            // Determine MIME type — PHP's finfo often fails on webm/ogg
+            $mimeType = $file->getMimeType();
+            if (!$mimeType || $mimeType === 'application/octet-stream') {
+                $ext = strtolower($file->getClientOriginalExtension());
+                $audioMimeMap = ['webm' => 'audio/webm', 'ogg' => 'audio/ogg', 'mp4' => 'audio/mp4', 'm4a' => 'audio/mp4', 'wav' => 'audio/wav'];
+                $mimeType = $audioMimeMap[$ext] ?? 'audio/webm';
+            }
+
             $data['attachment'] = $path;
             $data['attachment_name'] = 'Voice message';
-            $data['attachment_type'] = $file->getMimeType();
+            $data['attachment_type'] = $mimeType;
             $data['attachment_size'] = $file->getSize();
             $data['message_type'] = 'voice';
         }
@@ -168,6 +177,43 @@ class MessageController extends Controller
             ->count();
 
         return response()->json(['count' => $count]);
+    }
+
+    /**
+     * Stream a voice note audio file with correct headers.
+     */
+    public function streamAudio($messageId)
+    {
+        $message = Message::findOrFail($messageId);
+
+        if (!$message->attachment || !Storage::disk('public')->exists($message->attachment)) {
+            abort(404, 'Audio file not found.');
+        }
+
+        $fullPath = Storage::disk('public')->path($message->attachment);
+        $fileSize = Storage::disk('public')->size($message->attachment);
+
+        // Determine correct MIME type — PHP's finfo often fails on webm
+        $mimeType = $message->attachment_type;
+        if (!$mimeType || $mimeType === 'application/octet-stream') {
+            $ext = pathinfo($message->attachment, PATHINFO_EXTENSION);
+            $mimeMap = [
+                'webm' => 'audio/webm',
+                'ogg'  => 'audio/ogg',
+                'mp4'  => 'audio/mp4',
+                'm4a'  => 'audio/mp4',
+                'wav'  => 'audio/wav',
+                'mp3'  => 'audio/mpeg',
+            ];
+            $mimeType = $mimeMap[$ext] ?? 'audio/webm';
+        }
+
+        return response()->file($fullPath, [
+            'Content-Type' => $mimeType,
+            'Content-Length' => $fileSize,
+            'Accept-Ranges' => 'bytes',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 
     private function formatMessage(Message $m, int $myId): array

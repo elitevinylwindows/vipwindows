@@ -95,9 +95,18 @@ class InstallerMessageController extends Controller
             if ($request->hasFile('voice_note')) {
                 $file = $request->file('voice_note');
                 $path = $file->store('messages/voice/' . $conversation->id, 'public');
+
+                // Determine MIME type — PHP's finfo often fails on webm/ogg
+                $mimeType = $file->getMimeType();
+                if (!$mimeType || $mimeType === 'application/octet-stream') {
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    $audioMimeMap = ['webm' => 'audio/webm', 'ogg' => 'audio/ogg', 'mp4' => 'audio/mp4', 'm4a' => 'audio/mp4', 'wav' => 'audio/wav'];
+                    $mimeType = $audioMimeMap[$ext] ?? 'audio/webm';
+                }
+
                 $data['attachment'] = $path;
                 $data['attachment_name'] = 'Voice message';
-                $data['attachment_type'] = $file->getMimeType();
+                $data['attachment_type'] = $mimeType;
                 $data['attachment_size'] = $file->getSize();
                 $data['message_type'] = 'voice';
             } elseif ($request->hasFile('attachment')) {
