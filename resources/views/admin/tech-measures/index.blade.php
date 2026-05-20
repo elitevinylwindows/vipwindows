@@ -217,7 +217,7 @@
                             <i class="bi bi-plus-lg me-1"></i> Add Line Item
                         </button>
                         <div class="text-end mt-2">
-                            <strong style="font-size:.85rem;">Installation Total: $<span id="jobGrandTotal">0.00</span></strong>
+                            <strong style="font-size:.85rem;">Installation Total: $<span id="jobLineTotal">0.00</span></strong>
                         </div>
                     </div>
                 </div>
@@ -247,6 +247,11 @@
                             <strong style="font-size:.85rem;">Measurements Total: $<span id="jobMeasurementsTotal">0.00</span></strong>
                         </div>
                     </div>
+                </div>
+
+                {{-- Grand Total --}}
+                <div class="text-end mb-3 pe-2">
+                    <strong style="font-size:1rem; color:var(--vip-accent);">Grand Total: $<span id="jobGrandTotal">0.00</span></strong>
                 </div>
 
                 {{-- Section 3: Schedule --}}
