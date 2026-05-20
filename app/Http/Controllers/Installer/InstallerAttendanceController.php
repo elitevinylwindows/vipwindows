@@ -39,6 +39,7 @@ class InstallerAttendanceController extends Controller
         // Stats for the month
         $completedLogs = $logs->whereNotNull('clock_out');
         $totalMinutes  = $completedLogs->sum('total_minutes');
+        $totalEarnings = $completedLogs->sum('earnings');
         $totalDays     = $completedLogs->map(fn($l) => $l->clock_in->format('Y-m-d'))->unique()->count();
         $avgMinutes    = $totalDays > 0 ? round($totalMinutes / $totalDays) : 0;
         $totalJobs     = $completedLogs->pluck('job_id')->unique()->count();
@@ -53,7 +54,7 @@ class InstallerAttendanceController extends Controller
 
         return view('installer.attendance.index', compact(
             'active', 'logs', 'month', 'start', 'end',
-            'totalMinutes', 'totalDays', 'avgMinutes', 'totalJobs',
+            'totalMinutes', 'totalEarnings', 'totalDays', 'avgMinutes', 'totalJobs',
             'serviceBreakdown'
         ));
     }

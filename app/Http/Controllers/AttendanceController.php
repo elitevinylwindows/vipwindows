@@ -41,14 +41,16 @@ class AttendanceController extends Controller
             ->map(function ($userLogs) {
                 $user = $userLogs->first()->user;
                 $totalMin = $userLogs->sum('total_minutes');
+                $totalEarnings = $userLogs->sum('earnings');
                 $days = $userLogs->pluck(fn($l) => $l->clock_in->format('Y-m-d'))->unique()->count();
                 $jobCount = $userLogs->pluck('job_id')->unique()->count();
                 return [
-                    'user'          => $user,
-                    'total_minutes' => $totalMin,
-                    'total_days'    => $days,
-                    'total_jobs'    => $jobCount,
-                    'avg_minutes'   => $days > 0 ? round($totalMin / $days) : 0,
+                    'user'           => $user,
+                    'total_minutes'  => $totalMin,
+                    'total_earnings' => $totalEarnings,
+                    'total_days'     => $days,
+                    'total_jobs'     => $jobCount,
+                    'avg_minutes'    => $days > 0 ? round($totalMin / $days) : 0,
                 ];
             })
             ->sortByDesc('total_minutes');

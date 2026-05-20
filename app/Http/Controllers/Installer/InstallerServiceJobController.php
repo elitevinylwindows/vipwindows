@@ -184,15 +184,39 @@ class InstallerServiceJobController extends Controller
         $clockOut = now();
         $totalMinutes = $active->clock_in->diffInMinutes($clockOut);
 
+        // Calculate earnings from service pay rate
+        $earnings = 0;
+        $service = $event->service ?? $job->service;
+        if ($service && $service->installer_pay > 0) {
+            switch ($service->installer_pay_type) {
+                case 'per_hour':
+                    $earnings = round(($totalMinutes / 60) * $service->installer_pay, 2);
+                    break;
+                case 'per_job':
+                    $earnings = $service->installer_pay;
+                    break;
+                case 'percentage':
+                    $earnings = round($service->base_price * ($service->installer_pay / 100), 2);
+                    break;
+                default: // per_unit
+                    $earnings = $service->installer_pay;
+                    break;
+            }
+        }
+
         $active->update([
             'clock_out'     => $clockOut,
             'total_minutes' => $totalMinutes,
+            'earnings'      => $earnings,
         ]);
+
+        $payMsg = $earnings > 0 ? ' Pay: $' . number_format($earnings, 2) : '';
 
         return response()->json([
             'success' => true,
             'total_minutes' => $totalMinutes,
-            'message' => 'Clocked out. ' . floor($totalMinutes / 60) . 'h ' . ($totalMinutes % 60) . 'm logged.',
+            'earnings' => $earnings,
+            'message' => 'Clocked out. ' . floor($totalMinutes / 60) . 'h ' . ($totalMinutes % 60) . 'm logged.' . $payMsg,
         ]);
     }
 
