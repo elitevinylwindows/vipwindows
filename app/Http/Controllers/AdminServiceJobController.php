@@ -17,26 +17,8 @@ class AdminServiceJobController extends Controller
     {
         $status = $request->input('status', 'all');
 
-        $query = CalendarEvent::with(['service', 'crew'])
-            ->where(function ($q) {
-                $q->where('event_status', '!=', 'rescheduled')
-                  ->orWhereNull('event_status');
-            })
-            ->orderByDesc('event_date');
-
-        if ($status === 'upcoming') {
-            $query->where('event_date', '>=', today())
-                  ->where(function ($q) {
-                      $q->where('event_status', 'scheduled')
-                        ->orWhereNull('event_status');
-                  });
-        } elseif ($status === 'completed') {
-            $query->where('event_status', 'completed');
-        } elseif ($status === 'today') {
-            $query->whereDate('event_date', today());
-        }
-
-        $events = $query->paginate(50);
+        // Page starts empty — admin will define services later
+        $events = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
 
         return view('admin.service-jobs.index', compact('events', 'status'));
     }
