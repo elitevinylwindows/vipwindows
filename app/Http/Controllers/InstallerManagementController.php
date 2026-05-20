@@ -70,58 +70,67 @@ class InstallerManagementController extends Controller
         }
 
         // ─── Time-based pay from job_time_logs ───
-        $monthStart = Carbon::now()->startOfMonth();
-        $monthEnd = Carbon::now()->endOfMonth();
+        $thisMonthPay = 0;
+        $thisMonthMinutes = 0;
+        $allTimePay = 0;
+        $allTimeMinutes = 0;
+        $monthlyPay = collect();
+        $recentTimeLogs = collect();
 
-        $thisMonthPay = JobTimeLog::where('user_id', $installer->id)
-            ->whereNotNull('clock_out')
-            ->whereBetween('clock_in', [$monthStart, $monthEnd])
-            ->sum('earnings');
+        try {
+            $monthStart = Carbon::now()->startOfMonth();
+            $monthEnd = Carbon::now()->endOfMonth();
 
-        $thisMonthMinutes = JobTimeLog::where('user_id', $installer->id)
-            ->whereNotNull('clock_out')
-            ->whereBetween('clock_in', [$monthStart, $monthEnd])
-            ->sum('total_minutes');
+            $thisMonthPay = JobTimeLog::where('user_id', $installer->id)
+                ->whereNotNull('clock_out')
+                ->whereBetween('clock_in', [$monthStart, $monthEnd])
+                ->sum('earnings');
 
-        $allTimePay = JobTimeLog::where('user_id', $installer->id)
-            ->whereNotNull('clock_out')
-            ->sum('earnings');
+            $thisMonthMinutes = JobTimeLog::where('user_id', $installer->id)
+                ->whereNotNull('clock_out')
+                ->whereBetween('clock_in', [$monthStart, $monthEnd])
+                ->sum('total_minutes');
 
-        $allTimeMinutes = JobTimeLog::where('user_id', $installer->id)
-            ->whereNotNull('clock_out')
-            ->sum('total_minutes');
+            $allTimePay = JobTimeLog::where('user_id', $installer->id)
+                ->whereNotNull('clock_out')
+                ->sum('earnings');
 
-        // Monthly breakdown (last 6 months)
-        $monthlyPay = JobTimeLog::where('user_id', $installer->id)
-            ->whereNotNull('clock_out')
-            ->where('clock_in', '>=', Carbon::now()->subMonths(6)->startOfMonth())
-            ->select(
-                DB::raw("DATE_FORMAT(clock_in, '%Y-%m') as month"),
-                DB::raw('SUM(earnings) as total_earnings'),
-                DB::raw('SUM(total_minutes) as total_minutes'),
-                DB::raw('COUNT(DISTINCT job_id) as total_jobs')
-            )
-            ->groupBy('month')
-            ->orderByDesc('month')
-            ->get();
+            $allTimeMinutes = JobTimeLog::where('user_id', $installer->id)
+                ->whereNotNull('clock_out')
+                ->sum('total_minutes');
 
-        // Recent time logs
-        $recentTimeLogs = JobTimeLog::where('user_id', $installer->id)
-            ->whereNotNull('clock_out')
-            ->with(['job.service'])
-            ->orderByDesc('clock_in')
-            ->take(10)
-            ->get()
-            ->map(fn($l) => [
-                'date' => $l->clock_in->format('M d, Y'),
-                'clock_in' => $l->clock_in->format('g:i A'),
-                'clock_out' => $l->clock_out->format('g:i A'),
-                'total_minutes' => $l->total_minutes,
-                'earnings' => $l->earnings,
-                'job_number' => $l->job?->job_number ?? '—',
-                'service_name' => $l->job?->service?->name ?? '—',
-                'service_color' => $l->job?->service?->color ?? '#6c757d',
-            ]);
+            $monthlyPay = JobTimeLog::where('user_id', $installer->id)
+                ->whereNotNull('clock_out')
+                ->where('clock_in', '>=', Carbon::now()->subMonths(6)->startOfMonth())
+                ->select(
+                    DB::raw("DATE_FORMAT(clock_in, '%Y-%m') as month"),
+                    DB::raw('SUM(earnings) as total_earnings'),
+                    DB::raw('SUM(total_minutes) as total_minutes'),
+                    DB::raw('COUNT(DISTINCT job_id) as total_jobs')
+                )
+                ->groupBy('month')
+                ->orderByDesc('month')
+                ->get();
+
+            $recentTimeLogs = JobTimeLog::where('user_id', $installer->id)
+                ->whereNotNull('clock_out')
+                ->with(['job.service'])
+                ->orderByDesc('clock_in')
+                ->take(10)
+                ->get()
+                ->map(fn($l) => [
+                    'date' => $l->clock_in->format('M d, Y'),
+                    'clock_in' => $l->clock_in->format('g:i A'),
+                    'clock_out' => $l->clock_out->format('g:i A'),
+                    'total_minutes' => $l->total_minutes,
+                    'earnings' => $l->earnings,
+                    'job_number' => $l->job?->job_number ?? '—',
+                    'service_name' => $l->job?->service?->name ?? '—',
+                    'service_color' => $l->job?->service?->color ?? '#6c757d',
+                ]);
+        } catch (\Exception $e) {
+            // job_time_logs table may not exist yet
+        }
 
         return response()->json([
             'installer' => $installer,
