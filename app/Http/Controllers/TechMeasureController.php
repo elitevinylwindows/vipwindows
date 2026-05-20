@@ -477,6 +477,7 @@ class TechMeasureController extends Controller
         ]);
 
         // Generate estimate PDF page and merge with uploaded PDF
+        $estimateError = null;
         try {
             $estimateService = new EstimatePdfService();
             $mergedPdfPath = $estimateService->generateAndMerge($job);
@@ -484,8 +485,8 @@ class TechMeasureController extends Controller
                 $pdfPath = $mergedPdfPath; // Use merged PDF for email attachment
             }
         } catch (\Exception $e) {
-            \Log::warning("Estimate PDF generation failed: " . $e->getMessage());
-            // Continue without the estimate page — the uploaded PDF still exists
+            $estimateError = $e->getMessage();
+            \Log::error("Estimate PDF generation failed: " . $e->getMessage());
         }
 
         // Send email notification to customer
@@ -536,6 +537,9 @@ class TechMeasureController extends Controller
         }
 
         $message = "Job {$jobNumber} & Invoice {$invoiceNumber} created successfully.";
+        if ($estimateError) {
+            $message .= " (Estimate PDF failed: {$estimateError})";
+        }
         if ($emailSent) {
             $message .= " Notification sent to {$job->customer_email}.";
         } elseif (empty($job->customer_email)) {
