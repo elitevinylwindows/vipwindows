@@ -532,14 +532,20 @@
                         <th style="text-align:left;padding:4px 6px;font-size:.65rem;text-transform:uppercase;color:#888;">Service</th>
                         <th style="text-align:center;padding:4px 6px;font-size:.65rem;text-transform:uppercase;color:#888;">Duration</th>
                         <th style="text-align:right;padding:4px 6px;font-size:.65rem;text-transform:uppercase;color:#888;">Pay</th>
+                        <th style="text-align:center;padding:4px 6px;font-size:.65rem;text-transform:uppercase;color:#888;">Status</th>
                     </tr></thead><tbody>`;
             pay.recent_logs.forEach(l => {
+                const isPending = !l.pay_status || l.pay_status === 'pending';
+                const statusHtml = isPending
+                    ? `<button class="btn btn-sm btn-outline-success" style="font-size:.65rem;padding:1px 8px;" onclick="approvePay(${l.id}, this)"><i class="bi bi-check-lg me-1"></i>Approve</button>`
+                    : `<span class="badge bg-success" style="font-size:.6rem;">Approved</span>`;
                 html += `<tr style="border-bottom:1px solid rgba(0,0,0,.04);">
                     <td style="padding:5px 6px;">${esc(l.date)}</td>
                     <td style="padding:5px 6px;font-weight:600;">${esc(l.job_number)}</td>
                     <td style="padding:5px 6px;"><span class="badge" style="background:${l.service_color};font-size:.6rem;">${esc(l.service_name)}</span></td>
                     <td style="padding:5px 6px;text-align:center;font-weight:600;">${fmtHM(l.total_minutes)}</td>
                     <td style="padding:5px 6px;text-align:right;font-weight:700;color:#198754;">${l.earnings > 0 ? '$'+Number(l.earnings).toFixed(2) : '<span style="color:#aaa;">$0.00</span>'}</td>
+                    <td style="padding:5px 6px;text-align:center;">${statusHtml}</td>
                 </tr>`;
             });
             html += `</tbody></table></div>`;
