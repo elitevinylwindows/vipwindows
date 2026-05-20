@@ -414,11 +414,14 @@
         const i = data.installer;
         const s = data.stats;
         const services = data.services || [];
+        const pay = data.pay || {};
         const since = i.created_at ? new Date(i.created_at).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : '—';
         const address = [i.address, i.city, i.state, i.zip].filter(Boolean).join(', ') || '—';
         const statusBadge = (i.status || 'active') === 'active'
             ? '<span class="badge bg-success">Active</span>'
             : '<span class="badge bg-danger">Suspended</span>';
+
+        const fmtHM = (mins) => { const h = Math.floor(mins/60), m = mins%60; return h+'h '+m+'m'; };
 
         let html = `
             <div class="ins-detail-header">
@@ -434,7 +437,80 @@
                 <div class="ins-stat-card"><div class="sv">${s.jobs}</div><div class="sl">Jobs Assigned</div></div>
                 <div class="ins-stat-card"><div class="sv">${s.invoices}</div><div class="sl">Invoices Created</div></div>
             </div>
+        `;
 
+        // ─── Pay Overview ───
+        if (pay.all_time > 0 || pay.this_month > 0) {
+            html += `
+                <div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;margin-top:4px;">
+                    <i class="bi bi-wallet2 me-1"></i> Pay Overview
+                </div>
+                <div class="ins-stat-cards" style="margin-bottom:1rem;">
+                    <div class="ins-stat-card" style="background:linear-gradient(135deg,#198754,#157347);color:#fff;">
+                        <div class="sv">$${Number(pay.this_month).toFixed(2)}</div>
+                        <div class="sl" style="color:rgba(255,255,255,.7);">This Month · ${fmtHM(pay.this_month_minutes || 0)}</div>
+                    </div>
+                    <div class="ins-stat-card" style="background:linear-gradient(135deg,#6f42c1,#59359a);color:#fff;">
+                        <div class="sv">$${Number(pay.all_time).toFixed(2)}</div>
+                        <div class="sl" style="color:rgba(255,255,255,.7);">All Time · ${fmtHM(pay.all_time_minutes || 0)}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ─── Monthly Breakdown ───
+        if (pay.monthly && pay.monthly.length > 0) {
+            html += `<div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;">
+                <i class="bi bi-bar-chart me-1"></i> Monthly Breakdown
+            </div>
+            <div class="p-3 bg-light rounded border mb-3">
+                <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+                    <thead><tr style="border-bottom:2px solid rgba(0,0,0,.08);">
+                        <th style="text-align:left;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Month</th>
+                        <th style="text-align:center;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Jobs</th>
+                        <th style="text-align:center;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Hours</th>
+                        <th style="text-align:right;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Earnings</th>
+                    </tr></thead><tbody>`;
+            pay.monthly.forEach(m => {
+                const monthName = new Date(m.month + '-01').toLocaleDateString('en-US', {year:'numeric', month:'short'});
+                html += `<tr style="border-bottom:1px solid rgba(0,0,0,.04);">
+                    <td style="padding:6px 8px;font-weight:600;">${monthName}</td>
+                    <td style="padding:6px 8px;text-align:center;">${m.total_jobs}</td>
+                    <td style="padding:6px 8px;text-align:center;">${fmtHM(m.total_minutes)}</td>
+                    <td style="padding:6px 8px;text-align:right;font-weight:700;color:#198754;">$${Number(m.total_earnings).toFixed(2)}</td>
+                </tr>`;
+            });
+            html += `</tbody></table></div>`;
+        }
+
+        // ─── Recent Time Logs ───
+        if (pay.recent_logs && pay.recent_logs.length > 0) {
+            html += `<div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;">
+                <i class="bi bi-clock-history me-1"></i> Recent Time Logs
+            </div>
+            <div class="p-3 bg-light rounded border mb-3">
+                <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                    <thead><tr style="border-bottom:2px solid rgba(0,0,0,.08);">
+                        <th style="text-align:left;padding:4px 6px;font-size:.65rem;text-transform:uppercase;color:#888;">Date</th>
+                        <th style="text-align:left;padding:4px 6px;font-size:.65rem;text-transform:uppercase;color:#888;">Job</th>
+                        <th style="text-align:left;padding:4px 6px;font-size:.65rem;text-transform:uppercase;color:#888;">Service</th>
+                        <th style="text-align:center;padding:4px 6px;font-size:.65rem;text-transform:uppercase;color:#888;">Duration</th>
+                        <th style="text-align:right;padding:4px 6px;font-size:.65rem;text-transform:uppercase;color:#888;">Pay</th>
+                    </tr></thead><tbody>`;
+            pay.recent_logs.forEach(l => {
+                html += `<tr style="border-bottom:1px solid rgba(0,0,0,.04);">
+                    <td style="padding:5px 6px;">${esc(l.date)}</td>
+                    <td style="padding:5px 6px;font-weight:600;">${esc(l.job_number)}</td>
+                    <td style="padding:5px 6px;"><span class="badge" style="background:${l.service_color};font-size:.6rem;">${esc(l.service_name)}</span></td>
+                    <td style="padding:5px 6px;text-align:center;font-weight:600;">${fmtHM(l.total_minutes)}</td>
+                    <td style="padding:5px 6px;text-align:right;font-weight:700;color:#198754;">${l.earnings > 0 ? '$'+Number(l.earnings).toFixed(2) : '<span style="color:#aaa;">$0.00</span>'}</td>
+                </tr>`;
+            });
+            html += `</tbody></table></div>`;
+        }
+
+        // ─── Contact Info ───
+        html += `
             <div class="ins-info-grid">
                 <div class="ins-info-card"><div class="label">Email</div><div class="value">${esc(i.email)}</div></div>
                 <div class="ins-info-card"><div class="label">Phone</div><div class="value">${esc(i.phone || '—')}</div></div>
