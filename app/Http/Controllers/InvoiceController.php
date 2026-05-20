@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Job;
+use App\Models\Setting;
+use App\Models\TechMeasure;
 use App\Models\VipQuote as Quote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class InvoiceController extends Controller
 {
@@ -113,10 +117,47 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::with(['items', 'creator', 'quote'])->findOrFail($id);
 
+        // Find linked job → tech measure → PDF
+        $pdfUrl = null;
+        $uploadedPdfUrl = null;
+        $linkedJob = Job::where('invoice_id', $invoice->id)->first();
+
+        if ($linkedJob) {
+            $techMeasure = TechMeasure::where('job_id', $linkedJob->id)->first();
+            if ($techMeasure && $techMeasure->job_data) {
+                $jobData = json_decode($techMeasure->job_data, true);
+                $pdfPath = $jobData['pdf_path'] ?? null;
+                $originalPdfPath = $jobData['original_pdf_path'] ?? ($jobData['pdf_path'] ?? null);
+
+                // The merged/estimate PDF
+                if ($pdfPath && Storage::disk('public')->exists($pdfPath)) {
+                    $pdfUrl = asset('storage/' . $pdfPath);
+                }
+            }
+        }
+
+        // Load company settings for the estimate preview
+        $settings = Setting::pluck('value', 'key')->toArray();
+
         return response()->json([
             'invoice' => $invoice,
             'items' => $invoice->items,
             'creator' => $invoice->creator,
+            'pdf_url' => $pdfUrl,
+            'job' => $linkedJob ? [
+                'id' => $linkedJob->id,
+                'job_number' => $linkedJob->job_number,
+                'title' => $linkedJob->title,
+                'status' => $linkedJob->status,
+            ] : null,
+            'settings' => [
+                'company_name' => $settings['company_name'] ?? 'VIP Windows Inc.',
+                'company_phone' => $settings['company_phone'] ?? '',
+                'company_address' => $settings['company_address'] ?? '',
+                'company_city' => $settings['company_city'] ?? '',
+                'company_state' => $settings['company_state'] ?? '',
+                'company_zip' => $settings['company_zip'] ?? '',
+            ],
         ]);
     }
 
