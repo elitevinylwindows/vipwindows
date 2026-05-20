@@ -456,29 +456,39 @@
             </div>
         `;
 
-        // ─── Pay by Service Type ───
-        if (pay.by_service && pay.by_service.length > 0) {
-            html += `<div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;">
-                <i class="bi bi-pie-chart me-1"></i> Pay by Service Type
-            </div>
-            <div class="p-3 bg-light rounded border mb-3">
-                <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
-                    <thead><tr style="border-bottom:2px solid rgba(0,0,0,.08);">
-                        <th style="text-align:left;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Service</th>
-                        <th style="text-align:center;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Jobs</th>
-                        <th style="text-align:center;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Hours</th>
-                        <th style="text-align:right;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Earnings</th>
-                    </tr></thead><tbody>`;
-            pay.by_service.forEach(bs => {
-                html += `<tr style="border-bottom:1px solid rgba(0,0,0,.04);">
-                    <td style="padding:6px 8px;"><span class="badge" style="background:${bs.service_color};font-size:.7rem;">${esc(bs.service_name)}</span></td>
-                    <td style="padding:6px 8px;text-align:center;">${bs.total_jobs}</td>
-                    <td style="padding:6px 8px;text-align:center;">${fmtHM(bs.total_minutes)}</td>
-                    <td style="padding:6px 8px;text-align:right;font-weight:700;color:#198754;">$${Number(bs.total_earnings).toFixed(2)}</td>
-                </tr>`;
-            });
-            html += `</tbody></table></div>`;
-        }
+        // ─── Pay by Service Type (always show 4 categories) ───
+        const svcCategories = [
+            { name: 'Tech Measure', color: '#6f42c1', icon: 'bi-rulers' },
+            { name: 'Installation', color: '#0d6efd', icon: 'bi-tools' },
+            { name: 'Service',      color: '#198754', icon: 'bi-wrench' },
+            { name: 'Repair',       color: '#dc3545', icon: 'bi-bandaid' },
+        ];
+        const byService = pay.by_service || [];
+
+        html += `<div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;">
+            <i class="bi bi-pie-chart me-1"></i> Pay by Service Type
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">`;
+        svcCategories.forEach(cat => {
+            // Match by partial name (case-insensitive)
+            const match = byService.find(bs => bs.service_name && bs.service_name.toLowerCase().includes(cat.name.toLowerCase().split(' ')[0]));
+            const amt = match ? Number(match.total_earnings) : 0;
+            const jobs = match ? match.total_jobs : 0;
+            const mins = match ? match.total_minutes : 0;
+            html += `<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:.5rem;padding:.75rem 1rem;border-left:4px solid ${cat.color};">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.3px;"><i class="bi ${cat.icon} me-1"></i>${cat.name}</div>
+                        <div style="font-size:1.15rem;font-weight:800;color:${cat.color};margin-top:2px;">$${amt.toFixed(2)}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:.72rem;color:#888;">${jobs} job${jobs!==1?'s':''}</div>
+                        <div style="font-size:.72rem;color:#888;">${fmtHM(mins)}</div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
 
         // ─── Monthly Breakdown ───
         if (pay.monthly && pay.monthly.length > 0) {
