@@ -558,8 +558,15 @@ function renderMeasureDetail(data) {
         <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type</h6>
         <div class="tm-info-grid">
             <div class="tm-info-card"><div class="label">Frame Type</div><div class="value">${escHtml(m.frame_type)}</div></div>
-            ${m.retrofit_bottom_only ? `<div class="tm-info-card"><div class="label">Frame Bottom</div><div class="value">Yes</div></div>` : ''}
-            ${m.block_frame_bottom ? `<div class="tm-info-card"><div class="label">Block Frame Bottom</div><div class="value">Yes</div></div>` : ''}
+            ${m.retrofit_bottom_only ? `<div class="tm-info-card"><div class="label">${
+                m.frame_type.indexOf('1 3/4') >= 0 ? 'Retrofit 2 1/2" Frame Bottom' :
+                m.frame_type.indexOf('2 1/2') >= 0 ? 'Retrofit 1 3/4" Frame Bottom' :
+                m.frame_type === 'Block' ? 'Retrofit 1 3/4" Frame Bottom' :
+                'Retrofit 2 1/2" Frame Bottom'
+            }</div><div class="value">Yes</div></div>` : ''}
+            ${m.block_frame_bottom ? `<div class="tm-info-card"><div class="label">${
+                m.frame_type === 'Block' ? 'Retrofit 2 1/2" Frame Bottom' : 'Block Frame Bottom'
+            }</div><div class="value">Yes</div></div>` : ''}
         </div>` : ''}
         <h6 class="section-title"><i class="bi bi-grid-3x3"></i> Grids</h6>
         <div class="tm-info-grid">

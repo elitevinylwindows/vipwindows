@@ -537,17 +537,20 @@ function renderDetail(data) {
             </div>
         </div>`;
     } else {
-        // Read-only for converted
+        // Read-only for converted — compute checkbox labels based on frame type
         let fgReadonly = '';
+        let alt1Lbl = 'Retrofit 2 1/2" Frame Bottom', alt2Lbl = 'Block Frame Bottom';
         if (m.frame_type) {
+            if (m.frame_type.indexOf('1 3/4') >= 0) { alt1Lbl = 'Retrofit 2 1/2" Frame Bottom'; alt2Lbl = 'Block Frame Bottom'; }
+            else if (m.frame_type.indexOf('2 1/2') >= 0) { alt1Lbl = 'Retrofit 1 3/4" Frame Bottom'; alt2Lbl = 'Block Frame Bottom'; }
+            else if (m.frame_type === 'Block') { alt1Lbl = 'Retrofit 1 3/4" Frame Bottom'; alt2Lbl = 'Retrofit 2 1/2" Frame Bottom'; }
             fgReadonly += `<div class="tm-info-card"><div class="label">Frame Type</div><div class="value">${escHtml(m.frame_type)}</div></div>`;
         }
         if (m.retrofit_bottom_only) {
-            let lbl = (m.frame_type && m.frame_type.toLowerCase().includes('block')) ? 'Block Frame Bottom' : 'Retrofit 2 1/2" Frame Bottom';
-            fgReadonly += `<div class="tm-info-card"><div class="label">${lbl}</div><div class="value">Yes</div></div>`;
+            fgReadonly += `<div class="tm-info-card"><div class="label">${alt1Lbl}</div><div class="value">Yes</div></div>`;
         }
         if (m.block_frame_bottom) {
-            fgReadonly += `<div class="tm-info-card"><div class="label">Block Frame Bottom</div><div class="value">Yes</div></div>`;
+            fgReadonly += `<div class="tm-info-card"><div class="label">${alt2Lbl}</div><div class="value">Yes</div></div>`;
         }
         fgReadonly += `<div class="tm-info-card"><div class="label">Grids</div><div class="value">${m.has_grids ? 'Yes' : 'No'}</div></div>`;
         if (m.has_grids) {
