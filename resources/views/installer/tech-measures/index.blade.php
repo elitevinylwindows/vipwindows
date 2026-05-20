@@ -731,6 +731,8 @@ function saveFrameType(measureId) {
     .catch(() => {});
 }
 
+let lastFrameSelection = null;
+
 function updateFrameBottomOptions() {
     const selected = document.getElementById('globalFrame')?.value || '';
     const alt1Label = document.getElementById('frameAlt1Label');
@@ -738,8 +740,13 @@ function updateFrameBottomOptions() {
     const alt1Cb = document.getElementById('frameAlt1');
     const alt2Cb = document.getElementById('frameAlt2');
     if (!alt1Label || !alt2Label) return;
-    if (alt1Cb) alt1Cb.checked = false;
-    if (alt2Cb) alt2Cb.checked = false;
+
+    // Only uncheck when user actively changes the dropdown, not on initial load
+    if (lastFrameSelection !== null && lastFrameSelection !== selected) {
+        if (alt1Cb) alt1Cb.checked = false;
+        if (alt2Cb) alt2Cb.checked = false;
+    }
+    lastFrameSelection = selected;
 
     if (selected.indexOf('1 3/4') >= 0) {
         alt1Label.textContent = 'Retrofit 2 1/2" Frame Bottom';
