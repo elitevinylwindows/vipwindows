@@ -478,7 +478,7 @@ class CalendarController extends Controller
                 'assigned_to' => $event->crew_id
                     ? Crew::find($event->crew_id)?->members()->first()?->id
                     : $existing->assigned_to,
-                'customer_name' => $event->customer_name ?: $event->title ?: $existing->customer_name,
+                'customer_name' => $event->customer_name ?: $existing->customer_name,
                 'customer_email' => $event->customer_email ?: $existing->customer_email,
                 'customer_phone' => $event->customer_phone ?: $existing->customer_phone,
                 'address' => $event->address ?: $existing->address,
@@ -486,10 +486,10 @@ class CalendarController extends Controller
             return;
         }
 
-        // Create new TechMeasure — use event title as customer name fallback
+        // Create new TechMeasure
         TechMeasure::create([
             'calendar_event_id' => $event->id,
-            'customer_name' => $event->customer_name ?: $event->title,
+            'customer_name' => $event->customer_name,
             'customer_email' => $event->customer_email,
             'customer_phone' => $event->customer_phone,
             'address' => $event->address,

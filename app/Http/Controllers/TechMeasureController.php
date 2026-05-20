@@ -158,7 +158,7 @@ class TechMeasureController extends Controller
 
         $measure = TechMeasure::create([
             'calendar_event_id' => $event->id,
-            'customer_name' => $event->customer_name ?: $event->title,
+            'customer_name' => $event->customer_name,
             'customer_email' => $event->customer_email,
             'customer_phone' => $event->customer_phone,
             'address' => $event->address,
@@ -290,7 +290,7 @@ class TechMeasureController extends Controller
      */
     public function convertToQuote(Request $request, $id)
     {
-        $measure = TechMeasure::with('items')->findOrFail($id);
+        $measure = TechMeasure::with(['items', 'calendarEvent'])->findOrFail($id);
 
         if ($measure->status === 'converted') {
             return response()->json(['error' => 'This tech measure has already been converted to a job.'], 422);
@@ -329,11 +329,14 @@ class TechMeasureController extends Controller
         $scheduledDate = $request->input('scheduled_date');
         $jobStatus = $scheduledDate ? 'scheduled' : 'pending';
 
+        // Use the calendar event title as the job name (matches what's shown on the calendar)
+        $jobName = $measure->calendarEvent?->title ?: $measure->customer_name;
+
         // Create the Job record
         $job = Job::create([
             'job_number'         => $jobNumber,
             'service_id'         => $installService?->id,
-            'customer_name'      => $measure->customer_name,
+            'customer_name'      => $jobName,
             'customer_email'     => $measure->customer_email,
             'customer_phone'     => $measure->customer_phone,
             'install_address'    => $measure->address,
