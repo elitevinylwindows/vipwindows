@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\JobNotification;
 use App\Models\EmailTemplate;
 use App\Models\Job;
+use App\Models\TechMeasure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -71,13 +72,21 @@ class EmailTemplateController extends Controller
         $data = $this->buildPlaceholderData($job);
         $rendered = $template->render($data);
 
+        // Look up the PDF from the linked tech measure
+        $pdfPath = null;
+        $techMeasure = TechMeasure::where('job_id', $job->id)->first();
+        if ($techMeasure && $techMeasure->job_data) {
+            $jobData = json_decode($techMeasure->job_data, true);
+            $pdfPath = $jobData['pdf_path'] ?? null;
+        }
+
         Mail::to($job->customer_email)->send(
-            new JobNotification($rendered['subject'], $rendered['body'], $job->customer_name)
+            new JobNotification($rendered['subject'], $rendered['body'], $job->customer_name, $pdfPath)
         );
 
         return response()->json([
             'success' => true,
-            'message' => "\"{$template->name}\" sent to {$job->customer_email}.",
+            'message' => "\"{$template->name}\" sent to {$job->customer_email}." . ($pdfPath ? ' (PDF attached)' : ''),
         ]);
     }
 

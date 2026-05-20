@@ -513,7 +513,7 @@ class TechMeasureController extends Controller
                 }
 
                 Mail::to($job->customer_email)->send(
-                    new JobNotification($emailSubject, $emailBody, $job->customer_name ?? 'Customer')
+                    new JobNotification($emailSubject, $emailBody, $job->customer_name ?? 'Customer', $pdfPath)
                 );
                 $emailSent = true;
             } catch (\Exception $e) {
