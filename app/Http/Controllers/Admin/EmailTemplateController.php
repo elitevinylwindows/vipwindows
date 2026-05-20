@@ -91,6 +91,49 @@ class EmailTemplateController extends Controller
     }
 
     /**
+     * Send the estimate PDF to the customer.
+     */
+    public function sendEstimate(Request $request, $jobId)
+    {
+        $job = Job::findOrFail($jobId);
+
+        if (empty($job->customer_email)) {
+            return response()->json(['error' => 'No customer email on this job.'], 422);
+        }
+
+        // Find the PDF from the linked tech measure
+        $pdfPath = null;
+        $techMeasure = TechMeasure::where('job_id', $job->id)->first();
+        if ($techMeasure && $techMeasure->job_data) {
+            $jobData = json_decode($techMeasure->job_data, true);
+            $pdfPath = $jobData['pdf_path'] ?? null;
+        }
+
+        if (!$pdfPath || !\Storage::disk('public')->exists($pdfPath)) {
+            return response()->json(['error' => 'No estimate PDF found for this job.'], 422);
+        }
+
+        $subject = "Your Estimate — {$job->job_number} — VIP Windows";
+        $body = "Dear {$job->customer_name},\n\n"
+            . "Please find your estimate attached for your upcoming installation.\n\n"
+            . "Job Number: {$job->job_number}\n"
+            . "Address: " . trim(implode(', ', array_filter([
+                $job->install_address, $job->install_city, $job->install_state, $job->install_zip,
+            ]))) . "\n\n"
+            . "If you have any questions or would like to proceed, please don't hesitate to call us at (562) 368-0313.\n\n"
+            . "Best regards,\nVIP Windows";
+
+        Mail::to($job->customer_email)->send(
+            new JobNotification($subject, $body, $job->customer_name ?? 'Customer', $pdfPath)
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Estimate PDF sent to {$job->customer_email}.",
+        ]);
+    }
+
+    /**
      * Preview a rendered template for a specific job.
      */
     public function preview(Request $request)

@@ -260,6 +260,7 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/jobs/{id}/status', [JobController::class, 'updateStatus'])->name('jobs.updateStatus');
     Route::post('/jobs/{id}/note', [JobController::class, 'addNote'])->name('jobs.addNote');
     Route::post('/jobs/{id}/send-email', [EmailTemplateController::class, 'sendJobEmail'])->name('jobs.sendEmail');
+    Route::post('/jobs/{id}/send-estimate', [EmailTemplateController::class, 'sendEstimate'])->name('jobs.sendEstimate');
     Route::delete('/jobs/{id}', [JobController::class, 'destroy'])->name('jobs.destroy');
 
     // Team Members

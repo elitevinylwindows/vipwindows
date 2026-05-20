@@ -345,6 +345,9 @@
                         <button class="btn btn-sm btn-outline-primary send-job-email-btn" data-slug="payment-received" title="Send payment confirmation">
                             <i class="bi bi-credit-card me-1"></i> Payment Received
                         </button>
+                        <button class="btn btn-sm btn-outline-danger" id="sendEstimateBtn" title="Send estimate PDF to customer" onclick="sendEstimate()">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Send Estimate
+                        </button>
                     </div>
                     <div id="emailSendResult" class="small mt-2" style="display:none;"></div>
                 </div>
@@ -785,6 +788,45 @@ document.querySelectorAll('.send-job-email-btn').forEach(btn => {
         });
     });
 });
+
+// Send Estimate (PDF only)
+function sendEstimate() {
+    if (!currentViewJobId) return;
+    const resultDiv = document.getElementById('emailSendResult');
+    const btn = document.getElementById('sendEstimateBtn');
+
+    if (!confirm('Send the estimate PDF to the customer?')) return;
+
+    btn.disabled = true;
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    fetch(`/admin/jobs/${currentViewJobId}/send-estimate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.innerHTML = origHTML;
+        btn.disabled = false;
+        resultDiv.style.display = 'block';
+        if (data.success) {
+            resultDiv.className = 'small mt-2 text-success';
+            resultDiv.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + data.message;
+        } else {
+            resultDiv.className = 'small mt-2 text-danger';
+            resultDiv.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + (data.error || 'Failed to send');
+        }
+        setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
+    })
+    .catch(() => {
+        btn.innerHTML = origHTML;
+        btn.disabled = false;
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'small mt-2 text-danger';
+        resultDiv.textContent = 'Network error. Try again.';
+    });
+}
 
 // Assign job
 document.querySelectorAll('.assign-job-btn').forEach(btn => {
