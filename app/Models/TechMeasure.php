@@ -29,6 +29,8 @@ class TechMeasure extends Model
         'grid_list',
         'grid_pattern',
         'created_by',
+        'retrofit_bottom_only',
+        'block_frame_bottom',
         'converted_at',
         'converted_by',
         'job_data',
@@ -39,6 +41,8 @@ class TechMeasure extends Model
         'completed_at' => 'datetime',
         'converted_at' => 'datetime',
         'has_grids' => 'boolean',
+        'retrofit_bottom_only' => 'boolean',
+        'block_frame_bottom' => 'boolean',
     ];
 
     public function calendarEvent()

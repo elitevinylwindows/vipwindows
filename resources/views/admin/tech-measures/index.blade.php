@@ -989,6 +989,7 @@ function recalcJobTotals() {
         measTotal += parseFloat(inp.value) || 0;
     });
 
+    document.getElementById('jobLineTotal').textContent = lineTotal.toFixed(2);
     document.getElementById('jobMeasurementsTotal').textContent = measTotal.toFixed(2);
     document.getElementById('jobGrandTotal').textContent = (lineTotal + measTotal).toFixed(2);
 }
@@ -1061,7 +1062,7 @@ function submitConvertToJob() {
     })
     .catch(err => {
         console.error('Convert error:', err);
-        alert('Failed to convert. Check console for details.');
+        alert('Failed to convert: ' + (err.message || 'Unknown error'));
     })
     .finally(() => {
         btn.disabled = false;

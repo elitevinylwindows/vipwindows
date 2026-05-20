@@ -232,7 +232,7 @@ class TechMeasureController extends Controller
     public function updateNotes(Request $request, $id)
     {
         $measure = TechMeasure::findOrFail($id);
-        $data = $request->only(['notes', 'frame_type']);
+        $data = $request->only(['notes', 'frame_type', 'retrofit_bottom_only', 'block_frame_bottom']);
         $measure->update($data);
 
         return response()->json(['success' => true]);

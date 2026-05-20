@@ -253,6 +253,12 @@ class InstallerTechMeasureController extends Controller
         if ($request->has('frame_type')) {
             $data['frame_type'] = $request->input('frame_type');
         }
+        if ($request->has('retrofit_bottom_only')) {
+            $data['retrofit_bottom_only'] = $request->boolean('retrofit_bottom_only');
+        }
+        if ($request->has('block_frame_bottom')) {
+            $data['block_frame_bottom'] = $request->boolean('block_frame_bottom');
+        }
 
         if (!empty($data)) {
             $measure->update($data);

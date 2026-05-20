@@ -583,6 +583,9 @@ function renderMeasureDetail(data) {
             ${m.status !== 'converted' ? `<button class="btn btn-sm btn-vip mt-2" onclick="saveNotes(${m.id})"><i class="bi bi-check me-1"></i>Save Notes</button>` : ''}
         </div>
     `;
+
+    // Initialize frame bottom checkbox labels after render
+    setTimeout(() => { updateFrameBottomOptions(); }, 10);
 }
 
 
@@ -711,6 +714,49 @@ function saveFrameType(measureId) {
     .then(data => {
         if (data.success && currentMeasureData) {
             currentMeasureData.measure.frame_type = frameType;
+        }
+    })
+    .catch(() => {});
+}
+
+function updateFrameBottomOptions() {
+    const selected = document.getElementById('globalFrame')?.value || '';
+    const alt1Label = document.getElementById('frameAlt1Label');
+    const alt2Label = document.getElementById('frameAlt2Label');
+    const alt1Cb = document.getElementById('frameAlt1');
+    const alt2Cb = document.getElementById('frameAlt2');
+    if (!alt1Label || !alt2Label) return;
+    if (alt1Cb) alt1Cb.checked = false;
+    if (alt2Cb) alt2Cb.checked = false;
+
+    if (selected.indexOf('1 3/4') >= 0) {
+        alt1Label.textContent = 'Retrofit 2 1/2" Frame Bottom';
+        alt2Label.textContent = 'Block Frame Bottom';
+    } else if (selected.indexOf('2 1/2') >= 0) {
+        alt1Label.textContent = 'Retrofit 1 3/4" Frame Bottom';
+        alt2Label.textContent = 'Block Frame Bottom';
+    } else if (selected === 'Block') {
+        alt1Label.textContent = 'Retrofit 1 3/4" Frame Bottom';
+        alt2Label.textContent = 'Retrofit 2 1/2" Frame Bottom';
+    } else {
+        alt1Label.textContent = 'Retrofit 2 1/2" Frame Bottom';
+        alt2Label.textContent = 'Block Frame Bottom';
+    }
+}
+
+function saveFrameOptions(measureId) {
+    const retrofitBottom = document.getElementById('frameAlt1')?.checked ? 1 : 0;
+    const blockBottom = document.getElementById('frameAlt2')?.checked ? 1 : 0;
+    fetch(`/installer/tech-measures/${measureId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ retrofit_bottom_only: retrofitBottom, block_frame_bottom: blockBottom })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && currentMeasureData) {
+            currentMeasureData.measure.retrofit_bottom_only = retrofitBottom;
+            currentMeasureData.measure.block_frame_bottom = blockBottom;
         }
     })
     .catch(() => {});
