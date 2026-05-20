@@ -69,6 +69,11 @@
         <a href="#" class="settings-tab" data-section="email-templates">
             <i class="bi bi-envelope-paper"></i> Email Templates
         </a>
+
+        <div class="rail-label mt-3">Danger Zone</div>
+        <a href="#" class="settings-tab" data-section="truncate-data">
+            <i class="bi bi-trash3"></i> Truncate Data
+        </a>
     </div>
 
     {{-- Main Content --}}
@@ -485,6 +490,87 @@
             @endif
         </div>
 
+        {{-- ═══════════ TRUNCATE DATA ═══════════ --}}
+        <div class="settings-section" id="section-truncate-data">
+            <h5 class="fw-bold mb-1"><i class="bi bi-trash3 me-2 text-danger"></i>Truncate Data</h5>
+            <p class="text-muted small mb-4">Permanently delete records within a date range. This action <strong>cannot be undone</strong>.</p>
+
+            <div class="card border-danger">
+                <div class="card-body">
+                    {{-- Date Range --}}
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Start Date *</label>
+                            <input type="date" id="truncateStartDate" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">End Date *</label>
+                            <input type="date" id="truncateEndDate" class="form-control" required>
+                        </div>
+                    </div>
+
+                    {{-- Category Checkboxes --}}
+                    <label class="form-label fw-semibold mb-2">Select categories to truncate:</label>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="form-check p-3 border rounded" style="background:#fafaf7;">
+                                <input class="form-check-input truncate-cat" type="checkbox" value="tech_measures" id="trCatTM">
+                                <label class="form-check-label fw-semibold" for="trCatTM">
+                                    <i class="bi bi-rulers me-1"></i> Tech Measures
+                                </label>
+                                <div class="text-muted" style="font-size:.72rem;">Tech measures, items, photos &amp; linked calendar events</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check p-3 border rounded" style="background:#fafaf7;">
+                                <input class="form-check-input truncate-cat" type="checkbox" value="installations" id="trCatInst">
+                                <label class="form-check-label fw-semibold" for="trCatInst">
+                                    <i class="bi bi-tools me-1"></i> Installations
+                                </label>
+                                <div class="text-muted" style="font-size:.72rem;">Jobs, job items, time logs, notes &amp; invoices</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check p-3 border rounded" style="background:#fafaf7;">
+                                <input class="form-check-input truncate-cat" type="checkbox" value="services" id="trCatSvc">
+                                <label class="form-check-label fw-semibold" for="trCatSvc">
+                                    <i class="bi bi-gear me-1"></i> Service Jobs
+                                </label>
+                                <div class="text-muted" style="font-size:.72rem;">Service calendar events &amp; related records</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check p-3 border rounded" style="background:#fafaf7;">
+                                <input class="form-check-input truncate-cat" type="checkbox" value="repairs" id="trCatRep">
+                                <label class="form-check-label fw-semibold" for="trCatRep">
+                                    <i class="bi bi-wrench me-1"></i> Repairs
+                                </label>
+                                <div class="text-muted" style="font-size:.72rem;">Repair calendar events &amp; related records</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Preview --}}
+                    <div id="truncatePreview" class="d-none mb-4">
+                        <div class="alert alert-warning mb-0">
+                            <h6 class="alert-heading mb-2"><i class="bi bi-exclamation-triangle me-1"></i> Records to be deleted:</h6>
+                            <div id="truncatePreviewBody" class="small"></div>
+                        </div>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-warning" onclick="previewTruncate()">
+                            <i class="bi bi-eye me-1"></i> Preview
+                        </button>
+                        <button type="button" class="btn btn-danger" id="truncateBtn" onclick="executeTruncate()" disabled>
+                            <i class="bi bi-trash3 me-1"></i> Delete Records
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 @endsection
@@ -559,6 +645,81 @@ function saveRate(serviceId) {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-x-lg text-danger"></i>';
         alert('Network error.');
+    });
+}
+
+// ── Truncate Data ──
+function getTruncatePayload() {
+    const startDate = document.getElementById('truncateStartDate').value;
+    const endDate = document.getElementById('truncateEndDate').value;
+    const categories = [...document.querySelectorAll('.truncate-cat:checked')].map(c => c.value);
+    return { start_date: startDate, end_date: endDate, categories };
+}
+
+function previewTruncate() {
+    const { start_date, end_date, categories } = getTruncatePayload();
+    if (!start_date || !end_date) { alert('Please select both start and end dates.'); return; }
+    if (categories.length === 0) { alert('Please select at least one category.'); return; }
+    if (start_date > end_date) { alert('Start date must be before end date.'); return; }
+
+    const csrf = document.querySelector('meta[name=csrf-token]').content;
+    fetch('/admin/settings/truncate-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ start_date, end_date, categories }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { alert(data.error); return; }
+        const preview = document.getElementById('truncatePreview');
+        const body = document.getElementById('truncatePreviewBody');
+        let html = '<ul class="mb-0">';
+        let totalCount = 0;
+        data.counts.forEach(c => {
+            html += `<li><strong>${c.label}:</strong> ${c.count} record${c.count !== 1 ? 's' : ''}</li>`;
+            totalCount += c.count;
+        });
+        html += '</ul>';
+        html += `<div class="mt-2 fw-bold">Total: ${totalCount} records</div>`;
+        body.innerHTML = html;
+        preview.classList.remove('d-none');
+        document.getElementById('truncateBtn').disabled = totalCount === 0;
+    })
+    .catch(() => alert('Failed to preview. Please try again.'));
+}
+
+function executeTruncate() {
+    const { start_date, end_date, categories } = getTruncatePayload();
+    if (!start_date || !end_date || categories.length === 0) return;
+
+    const confirmText = `Are you sure you want to permanently delete all selected records from ${start_date} to ${end_date}?\n\nThis CANNOT be undone.`;
+    if (!confirm(confirmText)) return;
+
+    const doubleConfirm = prompt('Type DELETE to confirm:');
+    if (doubleConfirm !== 'DELETE') { alert('Truncation cancelled.'); return; }
+
+    const csrf = document.querySelector('meta[name=csrf-token]').content;
+    const btn = document.getElementById('truncateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Deleting...';
+
+    fetch('/admin/settings/truncate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ start_date, end_date, categories }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Delete Records';
+        btn.disabled = false;
+        if (data.error) { alert(data.error); return; }
+        document.getElementById('truncatePreview').classList.add('d-none');
+        alert(data.message || 'Records deleted successfully.');
+    })
+    .catch(() => {
+        btn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Delete Records';
+        btn.disabled = false;
+        alert('Failed to delete. Please try again.');
     });
 }
 </script>

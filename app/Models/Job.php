@@ -12,7 +12,7 @@ class Job extends Model
     protected $table = 'vip_jobs';
 
     protected $fillable = [
-        'job_number', 'quote_id', 'invoice_id', 'service_id', 'customer_name',
+        'job_number', 'quote_id', 'invoice_id', 'service_id', 'title', 'customer_name',
         'customer_email', 'customer_phone', 'install_address', 'install_city',
         'install_state', 'install_zip', 'description', 'status', 'priority',
         'assigned_to', 'assignment_type', 'crew_id', 'scheduled_date', 'end_date',

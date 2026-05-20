@@ -282,6 +282,8 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::put('/settings/rate/{id}', [SettingsController::class, 'updateRate'])->name('settings.updateRate');
+    Route::post('/settings/truncate-preview', [SettingsController::class, 'truncatePreview'])->name('settings.truncatePreview');
+    Route::post('/settings/truncate', [SettingsController::class, 'truncate'])->name('settings.truncate');
 
     // Service Rates
     Route::get('/settings/rates', [ServiceRateController::class, 'index'])->name('settings.rates');

@@ -329,14 +329,12 @@ class TechMeasureController extends Controller
         $scheduledDate = $request->input('scheduled_date');
         $jobStatus = $scheduledDate ? 'scheduled' : 'pending';
 
-        // Use the calendar event title as the job name (matches what's shown on the calendar)
-        $jobName = $measure->calendarEvent?->title ?: $measure->customer_name;
-
-        // Create the Job record
+        // Create the Job record — title from calendar event for display, customer_name for contact
         $job = Job::create([
             'job_number'         => $jobNumber,
             'service_id'         => $installService?->id,
-            'customer_name'      => $jobName,
+            'title'              => $measure->calendarEvent?->title,
+            'customer_name'      => $measure->customer_name,
             'customer_email'     => $measure->customer_email,
             'customer_phone'     => $measure->customer_phone,
             'install_address'    => $measure->address,

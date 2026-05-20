@@ -181,7 +181,7 @@
                     <div class="day-header"><i class="bi bi-clock me-1"></i> Upcoming Jobs</div>
                     @foreach($upcomingJobs as $uj)
                         <div class="cal-item-card type-job">
-                            <div class="ic-title">{{ $uj->job_number }} — {{ Str::limit($uj->customer_name, 18) }}</div>
+                            <div class="ic-title">{{ $uj->job_number }} — {{ Str::limit($uj->title ?: $uj->customer_name, 18) }}</div>
                             <div class="ic-meta">
                                 <i class="bi bi-calendar me-1"></i>{{ $uj->scheduled_date->format('M d') }}
                                 @if($uj->scheduled_time) @ {{ $uj->scheduled_time }} @endif
@@ -232,7 +232,7 @@
                         $maxShow = 3;
 
                         $allItems = collect();
-                        foreach($dayJobList as $j) { $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => Str::limit($j->customer_name ?: $j->job_number, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . ($j->customer_name ?? ''), 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status, 'service_name' => $j->service?->name, 'is_rescheduled' => (bool) $j->rescheduled_at, 'reschedule_reason' => $j->reschedule_reason, 'rescheduled_from_date' => $j->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $j->rescheduled_from_time]); }
+                        foreach($dayJobList as $j) { $jobDisplayName = $j->title ?: $j->customer_name ?: $j->job_number; $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => Str::limit($jobDisplayName, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . $jobDisplayName, 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status, 'service_name' => $j->service?->name, 'is_rescheduled' => (bool) $j->rescheduled_at, 'reschedule_reason' => $j->reschedule_reason, 'rescheduled_from_date' => $j->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $j->rescheduled_from_time]); }
                         foreach($dayOrderList as $o) { $allItems->push(['type' => 'order', 'id' => $o->id, 'label' => Str::limit($o->customer_name, 10), 'full_label' => $o->customer_name, 'time' => null, 'color' => ($serviceColors[$o->service_type] ?? '#007bff'), 'address' => '', 'status' => $o->status, 'service_name' => $o->service_type]); }
                         foreach($dayEventList as $ev) {
                             // Always use live service color when a service is assigned; fallback to stored color or gold
