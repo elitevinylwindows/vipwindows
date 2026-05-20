@@ -489,7 +489,7 @@ class TechMeasureController extends Controller
             if ($mergedPdfPath) {
                 $pdfPath = $mergedPdfPath; // Use merged PDF for email attachment
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $estimateError = $e->getMessage();
             \Log::error("Estimate PDF generation failed: " . $e->getMessage());
         }

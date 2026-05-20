@@ -193,7 +193,7 @@ class EstimatePdfService
 
             $fpdi->Output('F', $mergedFullPath);
             return $mergedRelPath;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::warning("FPDI merge failed: " . $e->getMessage());
 
             // Fallback: just use the estimate PDF on its own
