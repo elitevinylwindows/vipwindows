@@ -350,15 +350,26 @@ function renderMeasureDetail(data) {
     // Toolbar actions — mirror Jobs pattern
     let actions = '';
 
-    // Show elapsed time since Start Route (when measure is in_progress with started_at)
+    // Show elapsed time if currently clocked in
     if (m.is_clocked_in) {
         actions += `<span class="badge bg-primary me-2" id="elapsedBadge" style="font-size:.75rem;"><i class="bi bi-clock me-1"></i><span id="elapsedTime">--:--</span></span>`;
     }
 
-    // Status transitions (like Jobs)
+    // Show total time tracked (completed sessions)
+    if (m.total_time_minutes > 0 && !m.is_clocked_in) {
+        const th = Math.floor(m.total_time_minutes / 60), tm = m.total_time_minutes % 60;
+        actions += `<span class="badge bg-secondary me-2" style="font-size:.75rem;"><i class="bi bi-clock-history me-1"></i>${th}h ${tm}m total</span>`;
+    }
+
+    // Status transitions with Clock In/Out
     if (m.status === 'pending') {
-        actions += `<button class="btn btn-sm btn-primary" onclick="startMeasure(${m.id})"><i class="bi bi-play-fill me-1"></i>Start</button> `;
+        actions += `<button class="btn btn-sm btn-info text-white" onclick="clockInMeasure(${m.id})"><i class="bi bi-play-circle me-1"></i>Clock In</button> `;
     } else if (m.status === 'in_progress') {
+        if (m.is_clocked_in) {
+            actions += `<button class="btn btn-sm btn-warning" onclick="clockOutMeasure(${m.id})"><i class="bi bi-stop-circle me-1"></i>Clock Out</button> `;
+        } else {
+            actions += `<button class="btn btn-sm btn-info text-white" onclick="clockInMeasure(${m.id})"><i class="bi bi-play-circle me-1"></i>Clock In</button> `;
+        }
         actions += `<button class="btn btn-sm btn-success" onclick="completeMeasure(${m.id})"><i class="bi bi-check-lg me-1"></i>Complete</button> `;
     }
 
@@ -880,6 +891,39 @@ function startMeasure(measureId) {
     .then(r => r.json())
     .then(data => { if (data.success) loadMeasure(measureId); })
     .catch(() => alert('Failed to start.'));
+}
+
+function clockInMeasure(measureId) {
+    fetch(`/installer/tech-measures/${measureId}/clock-in`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            loadMeasure(measureId);
+        } else {
+            alert(data.error || 'Failed to clock in.');
+        }
+    })
+    .catch(() => alert('Failed to clock in.'));
+}
+
+function clockOutMeasure(measureId) {
+    fetch(`/installer/tech-measures/${measureId}/clock-out`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Clocked out.');
+            loadMeasure(measureId);
+        } else {
+            alert(data.error || 'Failed to clock out.');
+        }
+    })
+    .catch(() => alert('Failed to clock out.'));
 }
 
 function completeMeasure(measureId) {

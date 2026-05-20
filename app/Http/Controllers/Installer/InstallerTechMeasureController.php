@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Job;
+use App\Models\JobTimeLog;
+use App\Models\Service;
 use App\Models\TechMeasure;
 use App\Models\TechMeasureItem;
 use App\Models\TechMeasurePhoto;
 use App\Models\VipMasterOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class InstallerTechMeasureController extends Controller
@@ -56,10 +60,24 @@ class InstallerTechMeasureController extends Controller
         $measure = TechMeasure::with(['items.photos', 'photos', 'calendarEvent'])
             ->findOrFail($id);
 
-        // Compute clock-in state from status + started_at
+        // Find linked job for time tracking
+        $job = $this->findTimeTrackingJob($measure);
+        $activeLog = null;
+        $totalTimeMinutes = 0;
+
+        if ($job) {
+            $activeLog = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->first();
+            $totalTimeMinutes = $job->timeLogs()
+                ->where('user_id', $user->id)
+                ->whereNotNull('clock_out')
+                ->sum('total_minutes');
+        }
+
         $measureArray = $measure->toArray();
-        $measureArray['is_clocked_in'] = ($measure->status === 'in_progress' && $measure->started_at);
-        $measureArray['active_since'] = $measure->started_at;
+        $measureArray['is_clocked_in'] = (bool) $activeLog;
+        $measureArray['active_since'] = $activeLog?->clock_in?->toISOString();
+        $measureArray['total_time_minutes'] = $totalTimeMinutes;
+        $measureArray['time_tracking_job_id'] = $job?->id;
 
         return response()->json([
             'measure' => $measureArray,
@@ -133,7 +151,186 @@ class InstallerTechMeasureController extends Controller
 
         $measure->update($data);
 
+        // Auto clock-out any active time logs
+        $job = $this->findTimeTrackingJob($measure);
+        if ($job) {
+            $user = Auth::guard('vip')->user();
+            $activeLog = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->first();
+            if ($activeLog) {
+                $clockOut = now();
+                $totalMinutes = $activeLog->clock_in->diffInMinutes($clockOut);
+                $earnings = $this->calculateEarnings($job, $totalMinutes);
+                $activeLog->update([
+                    'clock_out'     => $clockOut,
+                    'total_minutes' => $totalMinutes,
+                    'earnings'      => $earnings,
+                ]);
+            }
+        }
+
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Clock in to a tech measure (start time tracking).
+     */
+    public function clockIn($id)
+    {
+        $user = Auth::guard('vip')->user();
+        $measure = TechMeasure::with('calendarEvent')->findOrFail($id);
+
+        if (in_array($measure->status, ['completed', 'converted'])) {
+            return response()->json(['error' => 'This measure is already completed.'], 422);
+        }
+
+        // Auto-start the measure if pending
+        if ($measure->status === 'pending') {
+            $measure->update([
+                'status' => 'in_progress',
+                'started_at' => $measure->started_at ?? now(),
+            ]);
+        }
+
+        // Find or create a job for time tracking
+        $job = $this->findOrCreateTimeTrackingJob($measure);
+
+        // Check if already clocked in
+        $active = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->first();
+        if ($active) {
+            return response()->json(['error' => 'You are already clocked in.'], 422);
+        }
+
+        $now = now();
+
+        $log = JobTimeLog::create([
+            'job_id'   => $job->id,
+            'user_id'  => $user->id,
+            'clock_in' => $now,
+        ]);
+
+        // Clock in crew members too
+        if ($measure->crew_id) {
+            $crewMemberIds = DB::table('crew_members')
+                ->where('crew_id', $measure->crew_id)
+                ->pluck('user_id')
+                ->toArray();
+
+            foreach ($crewMemberIds as $memberId) {
+                if ($memberId == $user->id) continue;
+                $memberActive = $job->timeLogs()->where('user_id', $memberId)->whereNull('clock_out')->exists();
+                if (!$memberActive) {
+                    JobTimeLog::create([
+                        'job_id'   => $job->id,
+                        'user_id'  => $memberId,
+                        'clock_in' => $now,
+                    ]);
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Clocked in.',
+        ]);
+    }
+
+    /**
+     * Clock out of a tech measure (stop time tracking).
+     */
+    public function clockOut($id)
+    {
+        $user = Auth::guard('vip')->user();
+        $measure = TechMeasure::with('calendarEvent')->findOrFail($id);
+
+        $job = $this->findTimeTrackingJob($measure);
+        if (!$job) {
+            return response()->json(['error' => 'No time tracking found.'], 422);
+        }
+
+        $active = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->first();
+        if (!$active) {
+            return response()->json(['error' => 'You are not clocked in.'], 422);
+        }
+
+        $clockOut = now();
+        $totalMinutes = $active->clock_in->diffInMinutes($clockOut);
+        $earnings = $this->calculateEarnings($job, $totalMinutes);
+
+        $active->update([
+            'clock_out'     => $clockOut,
+            'total_minutes' => $totalMinutes,
+            'earnings'      => $earnings,
+        ]);
+
+        $payMsg = $earnings > 0 ? ' Pay: $' . number_format($earnings, 2) : '';
+
+        return response()->json([
+            'success' => true,
+            'total_minutes' => $totalMinutes,
+            'earnings' => $earnings,
+            'message' => 'Clocked out. ' . floor($totalMinutes / 60) . 'h ' . ($totalMinutes % 60) . 'm logged.' . $payMsg,
+        ]);
+    }
+
+    /**
+     * Find the job used for time tracking on this tech measure.
+     */
+    private function findTimeTrackingJob(TechMeasure $measure): ?Job
+    {
+        // If already converted to a job, use that
+        if ($measure->job_id) {
+            return Job::find($measure->job_id);
+        }
+
+        // Otherwise look for the auto-created time-tracking job via calendar event
+        $event = $measure->calendarEvent;
+        if (!$event) return null;
+
+        return Job::where('service_id', $event->service_id)
+            ->where('customer_name', $event->customer_name)
+            ->where('scheduled_date', $event->event_date)
+            ->first();
+    }
+
+    /**
+     * Find or create a job for time tracking from the calendar event.
+     */
+    private function findOrCreateTimeTrackingJob(TechMeasure $measure): Job
+    {
+        $existing = $this->findTimeTrackingJob($measure);
+        if ($existing) return $existing;
+
+        $event = $measure->calendarEvent;
+
+        return Job::create([
+            'service_id'     => $event?->service_id,
+            'customer_name'  => $measure->customer_name,
+            'customer_email' => $measure->customer_email,
+            'customer_phone' => $measure->customer_phone,
+            'address'        => $measure->address,
+            'scheduled_date' => $event?->event_date,
+            'status'         => 'in_progress',
+            'job_number'     => 'TM-' . strtoupper(uniqid()),
+            'assigned_to'    => Auth::guard('vip')->id(),
+            'crew_id'        => $measure->crew_id,
+            'notes'          => 'Time tracking for tech measure: ' . $measure->customer_name,
+        ]);
+    }
+
+    /**
+     * Calculate earnings for a clock-out session.
+     */
+    private function calculateEarnings(Job $job, int $totalMinutes): float
+    {
+        $service = $job->service;
+        if (!$service || $service->installer_pay <= 0) return 0;
+
+        return match ($service->installer_pay_type) {
+            'per_hour'   => round(($totalMinutes / 60) * $service->installer_pay, 2),
+            'per_job'    => $service->installer_pay,
+            'percentage' => round($service->base_price * ($service->installer_pay / 100), 2),
+            default      => $service->installer_pay,
+        };
     }
 
     /**

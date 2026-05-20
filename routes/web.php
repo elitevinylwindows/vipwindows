@@ -514,6 +514,8 @@ Route::middleware(['auth:vip', 'installer'])->prefix('installer')->name('install
     Route::get('/tech-measures', [InstallerTechMeasureController::class, 'index'])->name('tech-measures.index');
     Route::get('/tech-measures/{id}', [InstallerTechMeasureController::class, 'show'])->name('tech-measures.show');
     Route::post('/tech-measures/{id}/start', [InstallerTechMeasureController::class, 'start'])->name('tech-measures.start');
+    Route::post('/tech-measures/{id}/clock-in', [InstallerTechMeasureController::class, 'clockIn'])->name('tech-measures.clockIn');
+    Route::post('/tech-measures/{id}/clock-out', [InstallerTechMeasureController::class, 'clockOut'])->name('tech-measures.clockOut');
     Route::post('/tech-measures/{id}/complete', [InstallerTechMeasureController::class, 'complete'])->name('tech-measures.complete');
     Route::post('/tech-measures/{id}/item', [InstallerTechMeasureController::class, 'addItem'])->name('tech-measures.addItem');
     Route::put('/tech-measures/{id}/item/{itemId}', [InstallerTechMeasureController::class, 'updateItem'])->name('tech-measures.updateItem');

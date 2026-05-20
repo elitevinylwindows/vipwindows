@@ -96,7 +96,7 @@
                     <div class="avatar">{{ $initials }}</div>
                     <div>
                         <div class="sum-name">{{ $s['user']->name ?? 'Unknown' }}</div>
-                        <div class="sum-meta">{{ $s['total_jobs'] }} jobs &middot; {{ $s['total_days'] }} days &middot; {{ $h }}h {{ $m }}m total &middot; avg {{ $ah }}h {{ $am }}m/day</div>
+                        <div class="sum-meta">{{ $s['total_jobs'] }} jobs &middot; {{ $s['total_days'] }} days &middot; {{ $h }}h {{ $m }}m total &middot; avg {{ $ah }}h {{ $am }}m/day @if(($s['total_earnings'] ?? 0) > 0)&middot; <span class="text-success fw-semibold">${{ number_format($s['total_earnings'], 2) }}</span>@endif</div>
                     </div>
                 </div>
             @endforeach
@@ -116,6 +116,7 @@
                     <th>Started</th>
                     <th>Ended</th>
                     <th>Duration</th>
+                    <th>Pay</th>
                 </tr>
             </thead>
             <tbody>
@@ -158,9 +159,18 @@
                             @endif
                         </td>
                         <td class="fw-semibold">{{ $dh }}h {{ $dm }}m</td>
+                        <td class="fw-semibold text-success">
+                            @if(($log->earnings ?? 0) > 0)
+                                ${{ number_format($log->earnings, 2) }}
+                            @elseif($isActive)
+                                <span class="text-muted">—</span>
+                            @else
+                                <span class="text-muted">$0.00</span>
+                            @endif
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="text-center text-muted py-4">No job time records for this period.</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted py-4">No job time records for this period.</td></tr>
                 @endforelse
             </tbody>
         </table>

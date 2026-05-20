@@ -90,6 +90,10 @@
             <div class="stat-value">{{ $totalH }}h {{ $totalM }}m</div>
         </div>
         <div class="att-stat-card">
+            <div class="stat-label">Total Earnings</div>
+            <div class="stat-value text-success">${{ number_format($totalEarnings ?? 0, 2) }}</div>
+        </div>
+        <div class="att-stat-card">
             <div class="stat-label">Days Worked</div>
             <div class="stat-value">{{ $totalDays }}</div>
         </div>
@@ -141,6 +145,7 @@
                     <th>Started</th>
                     <th>Ended</th>
                     <th>Duration</th>
+                    <th>Pay</th>
                 </tr>
             </thead>
             <tbody>
@@ -180,9 +185,18 @@
                             @endif
                         </td>
                         <td class="fw-semibold">{{ $dh }}h {{ $dm }}m</td>
+                        <td class="fw-semibold text-success">
+                            @if($log->earnings > 0)
+                                ${{ number_format($log->earnings, 2) }}
+                            @elseif($isActive)
+                                <span class="text-muted">—</span>
+                            @else
+                                <span class="text-muted">$0.00</span>
+                            @endif
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="text-center text-muted py-4">
+                    <tr><td colspan="8" class="text-center text-muted py-4">
                         <i class="bi bi-clock-history d-block mb-2" style="font-size:1.5rem; opacity:.3;"></i>
                         No time tracked this month. Start a route from the calendar to begin tracking.
                     </td></tr>
