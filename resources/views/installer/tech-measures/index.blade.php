@@ -350,12 +350,9 @@ function renderMeasureDetail(data) {
     // Toolbar actions — mirror Jobs pattern
     let actions = '';
 
-    // Clock in / Clock out (like Jobs)
+    // Show elapsed time since Start Route (when measure is in_progress with started_at)
     if (m.is_clocked_in) {
         actions += `<span class="badge bg-primary me-2" id="elapsedBadge" style="font-size:.75rem;"><i class="bi bi-clock me-1"></i><span id="elapsedTime">--:--</span></span>`;
-        actions += `<button class="btn btn-sm btn-warning" onclick="clockOut(${m.id})"><i class="bi bi-stop-circle me-1"></i>Clock Out</button> `;
-    } else if (m.status !== 'completed' && m.status !== 'converted') {
-        actions += `<button class="btn btn-sm btn-info text-white" onclick="clockIn(${m.id})"><i class="bi bi-play-circle me-1"></i>Clock In</button> `;
     }
 
     // Status transitions (like Jobs)

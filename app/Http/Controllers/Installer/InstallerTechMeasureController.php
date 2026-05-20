@@ -56,8 +56,13 @@ class InstallerTechMeasureController extends Controller
         $measure = TechMeasure::with(['items.photos', 'photos', 'calendarEvent'])
             ->findOrFail($id);
 
+        // Compute clock-in state from status + started_at
+        $measureArray = $measure->toArray();
+        $measureArray['is_clocked_in'] = ($measure->status === 'in_progress' && $measure->started_at);
+        $measureArray['active_since'] = $measure->started_at;
+
         return response()->json([
-            'measure' => $measure,
+            'measure' => $measureArray,
             'items' => $measure->items->map(function ($item) {
                 return array_merge($item->toArray(), [
                     'photos' => $item->photos->map(fn($p) => [
