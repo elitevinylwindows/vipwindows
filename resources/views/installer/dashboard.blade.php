@@ -144,6 +144,135 @@
         </div>
     </div>
 
+    {{-- Time-Based Pay (from clock in/out) --}}
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h6 class="text-muted fw-semibold mb-0"><i class="bi bi-clock-history me-1"></i> Time-Based Pay</h6>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">This Month</div>
+                    <h3 class="fw-bold mb-0 text-success">${{ number_format($thisMonthTimePay, 2) }}</h3>
+                    <div class="small text-muted mt-1">
+                        {{ $thisMonthTimeJobs }} job{{ $thisMonthTimeJobs !== 1 ? 's' : '' }} &middot;
+                        {{ intdiv($thisMonthTimeMinutes, 60) }}h {{ $thisMonthTimeMinutes % 60 }}m
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">All Time</div>
+                    <h3 class="fw-bold mb-0" style="color:var(--vip-accent);">${{ number_format($allTimeTimePay, 2) }}</h3>
+                </div>
+            </div>
+        </div>
+        @foreach($monthlyTimePay->take(2) as $mp)
+            <div class="col-lg-3 col-md-6">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">{{ \Carbon\Carbon::parse($mp->month . '-01')->format('F Y') }}</div>
+                        <h4 class="fw-bold mb-0">${{ number_format($mp->total_earnings, 2) }}</h4>
+                        <div class="small text-muted mt-1">
+                            {{ $mp->total_jobs }} job{{ $mp->total_jobs !== 1 ? 's' : '' }} &middot;
+                            {{ intdiv($mp->total_minutes, 60) }}h {{ $mp->total_minutes % 60 }}m
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    {{-- Recent Time Logs --}}
+    @if($recentTimeLogs->isNotEmpty())
+    <div class="card mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="fw-semibold mb-0"><i class="bi bi-clock me-2"></i> Recent Time Logs</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Job</th>
+                            <th>Service</th>
+                            <th>Clock In</th>
+                            <th>Clock Out</th>
+                            <th>Duration</th>
+                            <th class="text-end">Pay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($recentTimeLogs as $tl)
+                            @php
+                                $th = intdiv($tl->total_minutes, 60);
+                                $tm = $tl->total_minutes % 60;
+                            @endphp
+                            <tr>
+                                <td>{{ $tl->clock_in->format('M d, Y') }}</td>
+                                <td class="fw-semibold">{{ $tl->job?->job_number ?? '—' }}</td>
+                                <td>
+                                    @if($tl->job?->service)
+                                        <span class="badge" style="background:{{ $tl->job->service->color ?? '#6c757d' }}; font-size:.65rem;">{{ $tl->job->service->name }}</span>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                                <td>{{ $tl->clock_in->format('g:i A') }}</td>
+                                <td>{{ $tl->clock_out->format('g:i A') }}</td>
+                                <td class="fw-semibold">{{ $th }}h {{ $tm }}m</td>
+                                <td class="text-end fw-bold text-success">
+                                    @if(($tl->earnings ?? 0) > 0)
+                                        ${{ number_format($tl->earnings, 2) }}
+                                    @else
+                                        <span class="text-muted">$0.00</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Monthly History --}}
+    @if($monthlyTimePay->count() > 2)
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <h6 class="fw-semibold mb-0"><i class="bi bi-bar-chart me-2"></i> Monthly Pay History</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Month</th>
+                            <th>Jobs</th>
+                            <th>Hours</th>
+                            <th class="text-end">Earnings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($monthlyTimePay as $mp)
+                            <tr>
+                                <td class="fw-semibold">{{ \Carbon\Carbon::parse($mp->month . '-01')->format('F Y') }}</td>
+                                <td>{{ $mp->total_jobs }}</td>
+                                <td>{{ intdiv($mp->total_minutes, 60) }}h {{ $mp->total_minutes % 60 }}m</td>
+                                <td class="text-end fw-bold text-success">${{ number_format($mp->total_earnings, 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Earnings Breakdown by Job --}}
     @if($recentPaidJobs->isNotEmpty())
     <div class="card mb-4">

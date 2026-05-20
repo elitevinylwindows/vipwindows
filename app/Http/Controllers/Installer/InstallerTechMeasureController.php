@@ -156,36 +156,47 @@ class InstallerTechMeasureController extends Controller
         $job = $this->findOrCreateTimeTrackingJob($measure);
 
         if ($job) {
-            $activeLog = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->first();
+            $clockOutTime = now();
+            $clockInFallback = $measure->started_at ?? $measure->created_at;
 
-            if ($activeLog) {
-                // Clock out the active session
-                $clockOut = now();
-                $totalMinutes = $activeLog->clock_in->diffInMinutes($clockOut);
-                $earnings = $this->calculateEarnings($job, $totalMinutes);
-                $activeLog->update([
-                    'clock_out'     => $clockOut,
-                    'total_minutes' => $totalMinutes,
-                    'earnings'      => $earnings,
-                ]);
-            } else {
-                // No active log — auto-create one from started_at → completed_at
-                $clockIn = $measure->started_at ?? $measure->created_at;
-                $clockOut = now();
-                $totalMinutes = $clockIn->diffInMinutes($clockOut);
-                $earnings = $this->calculateEarnings($job, $totalMinutes);
+            // Collect all user IDs that should get time logs (current user + crew members)
+            $userIds = collect([$user->id]);
+            if ($measure->crew_id) {
+                $crewMemberIds = DB::table('crew_members')
+                    ->where('crew_id', $measure->crew_id)
+                    ->pluck('user_id');
+                $userIds = $userIds->merge($crewMemberIds)->unique();
+            }
 
-                // Only create if no log exists at all for this user+job (avoid duplicates)
-                $existingLog = $job->timeLogs()->where('user_id', $user->id)->exists();
-                if (!$existingLog) {
-                    JobTimeLog::create([
-                        'job_id'        => $job->id,
-                        'user_id'       => $user->id,
-                        'clock_in'      => $clockIn,
-                        'clock_out'     => $clockOut,
+            foreach ($userIds as $userId) {
+                $activeLog = $job->timeLogs()->where('user_id', $userId)->whereNull('clock_out')->first();
+
+                if ($activeLog) {
+                    // Clock out the active session
+                    $totalMinutes = $activeLog->clock_in->diffInMinutes($clockOutTime);
+                    $earnings = $this->calculateEarnings($job, $totalMinutes);
+                    $activeLog->update([
+                        'clock_out'     => $clockOutTime,
                         'total_minutes' => $totalMinutes,
                         'earnings'      => $earnings,
                     ]);
+                } else {
+                    // No active log — auto-create one from started_at → completed_at
+                    $totalMinutes = $clockInFallback->diffInMinutes($clockOutTime);
+                    $earnings = $this->calculateEarnings($job, $totalMinutes);
+
+                    // Only create if no completed log exists for this user+job
+                    $existingLog = $job->timeLogs()->where('user_id', $userId)->whereNotNull('clock_out')->exists();
+                    if (!$existingLog) {
+                        JobTimeLog::create([
+                            'job_id'        => $job->id,
+                            'user_id'       => $userId,
+                            'clock_in'      => $clockInFallback,
+                            'clock_out'     => $clockOutTime,
+                            'total_minutes' => $totalMinutes,
+                            'earnings'      => $earnings,
+                        ]);
+                    }
                 }
             }
         }
