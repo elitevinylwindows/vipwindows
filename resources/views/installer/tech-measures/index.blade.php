@@ -492,24 +492,27 @@ function renderMeasureDetail(data) {
         </div>
 
         {{-- Frame Type — applies to all openings --}}
-        <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type <small class="text-muted fw-normal">(applies to all openings)</small></h6>
+        <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type</h6>
         <div class="tm-add-form mb-3">
             <div class="row g-2 align-items-center">
                 <div class="col-md-4">
-                    <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id}); updateFrameBottomOptions();">
+                    <select id="globalFrame" class="form-select form-select-sm" onchange="updateFrameBottomOptions();">
                         <option value="">— Select Frame Type —</option>
                         ${frameTypeOptions.map(o => `<option value="${escHtml(o.name)}" ${m.frame_type === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
                     </select>
                 </div>
-                <div class="col-md-8 d-flex gap-3">
+                <div class="col-md-6 d-flex gap-3">
                     <div class="form-check form-check-sm mb-0">
-                        <input class="form-check-input" type="checkbox" id="frameAlt1" ${m.retrofit_bottom_only ? 'checked' : ''} onchange="saveFrameOptions(${m.id})">
+                        <input class="form-check-input" type="checkbox" id="frameAlt1" ${m.retrofit_bottom_only ? 'checked' : ''}>
                         <label class="form-check-label small" for="frameAlt1" id="frameAlt1Label">Retrofit 2 1/2" Frame Bottom</label>
                     </div>
                     <div class="form-check form-check-sm mb-0">
-                        <input class="form-check-input" type="checkbox" id="frameAlt2" ${m.block_frame_bottom ? 'checked' : ''} onchange="saveFrameOptions(${m.id})">
+                        <input class="form-check-input" type="checkbox" id="frameAlt2" ${m.block_frame_bottom ? 'checked' : ''}>
                         <label class="form-check-label small" for="frameAlt2" id="frameAlt2Label">Block Frame Bottom</label>
                     </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button class="btn btn-sm btn-outline-success" onclick="saveInstallerFrameAndGrids(${m.id}, 'frame')"><i class="bi bi-check-lg me-1"></i>Save</button>
                 </div>
             </div>
         </div>
@@ -527,19 +530,22 @@ function renderMeasureDetail(data) {
                     <input class="form-check-input" type="radio" name="hasGrids" id="gridsNo" value="no" ${!m.has_grids ? 'checked' : ''} onchange="toggleGridFields()">
                     <label class="form-check-label" for="gridsNo" style="font-size:.85rem;">No</label>
                 </div>
+                <div class="ms-auto">
+                    <button class="btn btn-sm btn-outline-success" onclick="saveInstallerFrameAndGrids(${m.id}, 'grids')"><i class="bi bi-check-lg me-1"></i>Save</button>
+                </div>
             </div>
             <div id="gridFieldsWrap" style="display:${m.has_grids ? 'block' : 'none'};">
                 <div class="row g-2">
                     <div class="col-md-4">
-                        <label>Grid List</label>
-                        <select id="gridList" class="form-select form-select-sm" onchange="saveGridSettings(${m.id})">
+                        <label>Grid Type</label>
+                        <select id="gridList" class="form-select form-select-sm">
                             <option value="">— Select —</option>
                             ${gridOptions.map(o => `<option value="${escHtml(o.name)}" ${m.grid_list === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label>Grid Pattern</label>
-                        <select id="gridPattern" class="form-select form-select-sm" onchange="saveGridSettings(${m.id})">
+                        <select id="gridPattern" class="form-select form-select-sm">
                             <option value="">— Select —</option>
                             ${patternOptions.map(o => `<option value="${escHtml(o.name)}" ${m.grid_pattern === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
                         </select>
@@ -548,15 +554,22 @@ function renderMeasureDetail(data) {
             </div>
         </div>
         ` : `
-        ${m.has_grids ? `
+        {{-- Read-only frame & grids for converted --}}
+        ${m.frame_type ? `
+        <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type</h6>
+        <div class="tm-info-grid">
+            <div class="tm-info-card"><div class="label">Frame Type</div><div class="value">${escHtml(m.frame_type)}</div></div>
+            ${m.retrofit_bottom_only ? `<div class="tm-info-card"><div class="label">Frame Bottom</div><div class="value">Yes</div></div>` : ''}
+            ${m.block_frame_bottom ? `<div class="tm-info-card"><div class="label">Block Frame Bottom</div><div class="value">Yes</div></div>` : ''}
+        </div>` : ''}
         <h6 class="section-title"><i class="bi bi-grid-3x3"></i> Grids</h6>
-        <div class="tm-add-form">
-            <div class="row g-2">
-                <div class="col-md-4"><label>Grid List</label><div class="fw-semibold">${m.grid_list || '—'}</div></div>
-                <div class="col-md-4"><label>Grid Pattern</label><div class="fw-semibold">${m.grid_pattern || '—'}</div></div>
-            </div>
+        <div class="tm-info-grid">
+            <div class="tm-info-card"><div class="label">Grids</div><div class="value">${m.has_grids ? 'Yes' : 'No'}</div></div>
+            ${m.has_grids ? `
+            <div class="tm-info-card"><div class="label">Grid Type</div><div class="value">${escHtml(m.grid_list || '—')}</div></div>
+            <div class="tm-info-card"><div class="label">Grid Pattern</div><div class="value">${escHtml(m.grid_pattern || '—')}</div></div>
+            ` : ''}
         </div>
-        ` : ''}
         `}
 
         <h6 class="section-title"><i class="bi bi-image"></i> Site Photos</h6>
