@@ -43,16 +43,16 @@ class InstallerManagementController extends Controller
 
         // Get installer stats
         try {
-            $quoteCount = \App\Models\Quote::where('entered_by', $installer->name)->count();
-        } catch (\Exception $e) { $quoteCount = 0; }
-
-        try {
             $jobCount = \App\Models\Job::where('assigned_to', $installer->id)->count();
         } catch (\Exception $e) { $jobCount = 0; }
 
         try {
-            $invoiceCount = \App\Models\Invoice::where('entered_by', $installer->name)->count();
-        } catch (\Exception $e) { $invoiceCount = 0; }
+            $completedJobCount = \App\Models\Job::where('assigned_to', $installer->id)->where('status', 'completed')->count();
+        } catch (\Exception $e) { $completedJobCount = 0; }
+
+        try {
+            $activeJobCount = \App\Models\Job::where('assigned_to', $installer->id)->whereIn('status', ['scheduled', 'in_progress'])->count();
+        } catch (\Exception $e) { $activeJobCount = 0; }
 
         // Get assigned services
         try {
@@ -128,8 +128,25 @@ class InstallerManagementController extends Controller
                     'service_name' => $l->job?->service?->name ?? '—',
                     'service_color' => $l->job?->service?->color ?? '#6c757d',
                 ]);
+
+            // Pay breakdown by service type
+            $payByService = JobTimeLog::where('job_time_logs.user_id', $installer->id)
+                ->whereNotNull('job_time_logs.clock_out')
+                ->join('vip_jobs', 'vip_jobs.id', '=', 'job_time_logs.job_id')
+                ->leftJoin('vip_services', 'vip_services.id', '=', 'vip_jobs.service_id')
+                ->select(
+                    DB::raw("COALESCE(vip_services.name, 'Other') as service_name"),
+                    DB::raw("COALESCE(vip_services.color, '#6c757d') as service_color"),
+                    DB::raw('SUM(job_time_logs.earnings) as total_earnings'),
+                    DB::raw('SUM(job_time_logs.total_minutes) as total_minutes'),
+                    DB::raw('COUNT(DISTINCT job_time_logs.job_id) as total_jobs')
+                )
+                ->groupBy('vip_services.id', 'vip_services.name', 'vip_services.color')
+                ->orderByDesc('total_earnings')
+                ->get();
         } catch (\Exception $e) {
             // job_time_logs table may not exist yet
+            $payByService = collect();
         }
 
         return response()->json([
