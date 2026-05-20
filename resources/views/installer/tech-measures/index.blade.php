@@ -494,12 +494,22 @@ function renderMeasureDetail(data) {
         {{-- Frame Type — applies to all openings --}}
         <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type <small class="text-muted fw-normal">(applies to all openings)</small></h6>
         <div class="tm-add-form mb-3">
-            <div class="row g-2 align-items-end">
+            <div class="row g-2 align-items-center">
                 <div class="col-md-4">
-                    <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id})">
+                    <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id}); updateFrameBottomOptions();">
                         <option value="">— Select Frame Type —</option>
                         ${frameTypeOptions.map(o => `<option value="${escHtml(o.name)}" ${m.frame_type === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
                     </select>
+                </div>
+                <div class="col-md-8 d-flex gap-3">
+                    <div class="form-check form-check-sm mb-0">
+                        <input class="form-check-input" type="checkbox" id="frameAlt1" ${m.retrofit_bottom_only ? 'checked' : ''} onchange="saveFrameOptions(${m.id})">
+                        <label class="form-check-label small" for="frameAlt1" id="frameAlt1Label">Retrofit 2 1/2" Frame Bottom</label>
+                    </div>
+                    <div class="form-check form-check-sm mb-0">
+                        <input class="form-check-input" type="checkbox" id="frameAlt2" ${m.block_frame_bottom ? 'checked' : ''} onchange="saveFrameOptions(${m.id})">
+                        <label class="form-check-label small" for="frameAlt2" id="frameAlt2Label">Block Frame Bottom</label>
+                    </div>
                 </div>
             </div>
         </div>
