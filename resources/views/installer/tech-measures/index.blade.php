@@ -813,7 +813,16 @@ function startMeasure(measureId) {
 }
 
 function completeMeasure(measureId) {
-    if (!confirm('Mark this tech measure as complete?')) return;
+    // Check how many openings exist
+    const itemCount = currentMeasureData?.items?.length || 0;
+
+    if (itemCount === 0) {
+        alert('No openings have been entered. Please add at least one opening before completing this tech measure.');
+        return;
+    }
+
+    const label = itemCount === 1 ? '1 opening' : itemCount + ' openings';
+    if (!confirm(`Complete this tech measure with ${label}?`)) return;
 
     // Gather all current frame & grid data to save with completion
     const frameType = document.getElementById('globalFrame')?.value || null;
