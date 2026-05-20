@@ -152,9 +152,9 @@ class InstallerManagementController extends Controller
         return response()->json([
             'installer' => $installer,
             'stats' => [
-                'quotes' => $quoteCount,
                 'jobs' => $jobCount,
-                'invoices' => $invoiceCount,
+                'completed_jobs' => $completedJobCount,
+                'active_jobs' => $activeJobCount,
             ],
             'services' => $assignedServices,
             'pay' => [
@@ -163,6 +163,7 @@ class InstallerManagementController extends Controller
                 'all_time' => round($allTimePay, 2),
                 'all_time_minutes' => $allTimeMinutes,
                 'monthly' => $monthlyPay,
+                'by_service' => $payByService,
                 'recent_logs' => $recentTimeLogs,
             ],
         ]);

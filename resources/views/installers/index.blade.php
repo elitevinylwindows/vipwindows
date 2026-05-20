@@ -433,9 +433,9 @@
             </div>
 
             <div class="ins-stat-cards">
-                <div class="ins-stat-card gold"><div class="sv">${s.quotes}</div><div class="sl">Quotes Created</div></div>
-                <div class="ins-stat-card"><div class="sv">${s.jobs}</div><div class="sl">Jobs Assigned</div></div>
-                <div class="ins-stat-card"><div class="sv">${s.invoices}</div><div class="sl">Invoices Created</div></div>
+                <div class="ins-stat-card gold"><div class="sv">${s.jobs || 0}</div><div class="sl">Total Jobs</div></div>
+                <div class="ins-stat-card"><div class="sv">${s.active_jobs || 0}</div><div class="sl">Active Jobs</div></div>
+                <div class="ins-stat-card"><div class="sv">${s.completed_jobs || 0}</div><div class="sl">Completed</div></div>
             </div>
         `;
 
@@ -455,6 +455,30 @@
                 </div>
             </div>
         `;
+
+        // ─── Pay by Service Type ───
+        if (pay.by_service && pay.by_service.length > 0) {
+            html += `<div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;">
+                <i class="bi bi-pie-chart me-1"></i> Pay by Service Type
+            </div>
+            <div class="p-3 bg-light rounded border mb-3">
+                <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+                    <thead><tr style="border-bottom:2px solid rgba(0,0,0,.08);">
+                        <th style="text-align:left;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Service</th>
+                        <th style="text-align:center;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Jobs</th>
+                        <th style="text-align:center;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Hours</th>
+                        <th style="text-align:right;padding:4px 8px;font-size:.7rem;text-transform:uppercase;color:#888;">Earnings</th>
+                    </tr></thead><tbody>`;
+            pay.by_service.forEach(bs => {
+                html += `<tr style="border-bottom:1px solid rgba(0,0,0,.04);">
+                    <td style="padding:6px 8px;"><span class="badge" style="background:${bs.service_color};font-size:.7rem;">${esc(bs.service_name)}</span></td>
+                    <td style="padding:6px 8px;text-align:center;">${bs.total_jobs}</td>
+                    <td style="padding:6px 8px;text-align:center;">${fmtHM(bs.total_minutes)}</td>
+                    <td style="padding:6px 8px;text-align:right;font-weight:700;color:#198754;">$${Number(bs.total_earnings).toFixed(2)}</td>
+                </tr>`;
+            });
+            html += `</tbody></table></div>`;
+        }
 
         // ─── Monthly Breakdown ───
         if (pay.monthly && pay.monthly.length > 0) {
