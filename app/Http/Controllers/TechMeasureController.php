@@ -18,6 +18,7 @@ use App\Models\TechMeasurePhoto;
 use App\Models\VipMasterOption;
 use App\Models\InstallationType;
 use App\Models\VipUser;
+use App\Services\EstimatePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -474,6 +475,18 @@ class TechMeasureController extends Controller
                 'invoice_number'     => $invoiceNumber,
             ]),
         ]);
+
+        // Generate estimate PDF page and merge with uploaded PDF
+        try {
+            $estimateService = new EstimatePdfService();
+            $mergedPdfPath = $estimateService->generateAndMerge($job);
+            if ($mergedPdfPath) {
+                $pdfPath = $mergedPdfPath; // Use merged PDF for email attachment
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Estimate PDF generation failed: " . $e->getMessage());
+            // Continue without the estimate page — the uploaded PDF still exists
+        }
 
         // Send email notification to customer
         $emailSent = false;
