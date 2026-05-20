@@ -568,7 +568,7 @@ function renderDetail(data) {
         contactBtns += `<a href="tel:${m.customer_phone}" class="btn btn-sm btn-outline-primary me-1" title="Call"><i class="bi bi-telephone me-1"></i>Call</a>`;
     }
     if (m.customer_email) {
-        contactBtns += `<button class="btn btn-sm btn-outline-secondary" onclick="openEmailModal()" title="Send Confirmation"><i class="bi bi-envelope me-1"></i>Send Confirmation</button>`;
+        contactBtns += `<button class="btn btn-sm btn-outline-secondary" onclick="openEmailModal()" title="Email Customer"><i class="bi bi-envelope me-1"></i>Email Customer</button>`;
     }
 
     body.innerHTML = `

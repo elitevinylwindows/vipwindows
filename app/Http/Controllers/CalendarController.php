@@ -125,6 +125,11 @@ class CalendarController extends Controller
         $validated['created_by'] = Auth::id();
         $validated['installation_types'] = $validated['installation_types'] ?? null;
 
+        // Auto-set title to customer name when provided (so calendar chip matches tech measure)
+        if (!empty($validated['customer_name']) && $validated['customer_name'] !== 'Customer') {
+            $validated['title'] = $validated['customer_name'];
+        }
+
         // Auto-set color from selected service (fallback to gold)
         if (!empty($validated['service_id'])) {
             $svcColor = Service::where('id', $validated['service_id'])->value('color');
