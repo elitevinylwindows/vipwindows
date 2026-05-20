@@ -119,11 +119,13 @@ class InstallerManagementController extends Controller
                 ->take(10)
                 ->get()
                 ->map(fn($l) => [
+                    'id' => $l->id,
                     'date' => $l->clock_in->format('M d, Y'),
                     'clock_in' => $l->clock_in->format('g:i A'),
                     'clock_out' => $l->clock_out->format('g:i A'),
                     'total_minutes' => $l->total_minutes,
                     'earnings' => $l->earnings,
+                    'pay_status' => $l->pay_status ?? 'pending',
                     'job_number' => $l->job?->job_number ?? '—',
                     'service_name' => $l->job?->service?->name ?? '—',
                     'service_color' => $l->job?->service?->color ?? '#6c757d',

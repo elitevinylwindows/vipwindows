@@ -162,6 +162,7 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
     Route::get('/installers/{id}', [InstallerManagementController::class, 'show'])->name('installers.show');
     Route::put('/installers/{id}', [InstallerManagementController::class, 'update'])->name('installers.update');
     Route::delete('/installers/{id}', [InstallerManagementController::class, 'destroy'])->name('installers.destroy');
+    Route::post('/installers/approve-pay/{logId}', [InstallerManagementController::class, 'approvePay'])->name('installers.approvePay');
 
     // Crew management
     Route::get('/crews', [CrewController::class, 'index'])->name('crews.index');

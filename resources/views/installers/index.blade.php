@@ -444,14 +444,18 @@
             <div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;margin-top:4px;">
                 <i class="bi bi-wallet2 me-1"></i> Pay Overview
             </div>
-            <div class="ins-stat-cards" style="margin-bottom:1rem;">
-                <div class="ins-stat-card" style="background:linear-gradient(135deg,#198754,#157347);color:#fff;">
-                    <div class="sv">$${Number(pay.this_month || 0).toFixed(2)}</div>
-                    <div class="sl" style="color:rgba(255,255,255,.7);">This Month · ${fmtHM(pay.this_month_minutes || 0)}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:1rem;">
+                <div class="ins-stat-card" style="background:linear-gradient(135deg,#ffc107,#e0a800);color:#000;text-align:center;padding:.75rem;">
+                    <div class="sv" style="font-size:1.1rem;">$${Number(pay.pending || 0).toFixed(2)}</div>
+                    <div class="sl" style="color:rgba(0,0,0,.6);font-size:.65rem;">Pending Approval</div>
                 </div>
-                <div class="ins-stat-card" style="background:linear-gradient(135deg,#6f42c1,#59359a);color:#fff;">
-                    <div class="sv">$${Number(pay.all_time || 0).toFixed(2)}</div>
-                    <div class="sl" style="color:rgba(255,255,255,.7);">All Time · ${fmtHM(pay.all_time_minutes || 0)}</div>
+                <div class="ins-stat-card" style="background:linear-gradient(135deg,#198754,#157347);color:#fff;text-align:center;padding:.75rem;">
+                    <div class="sv" style="font-size:1.1rem;">$${Number(pay.approved || 0).toFixed(2)}</div>
+                    <div class="sl" style="color:rgba(255,255,255,.7);font-size:.65rem;">Approved</div>
+                </div>
+                <div class="ins-stat-card" style="background:linear-gradient(135deg,#6f42c1,#59359a);color:#fff;text-align:center;padding:.75rem;">
+                    <div class="sv" style="font-size:1.1rem;">$${Number(pay.all_time || 0).toFixed(2)}</div>
+                    <div class="sl" style="color:rgba(255,255,255,.7);font-size:.65rem;">All Time · ${fmtHM(pay.all_time_minutes || 0)}</div>
                 </div>
             </div>
         `;
