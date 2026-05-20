@@ -151,12 +151,15 @@ class InstallerTechMeasureController extends Controller
 
         $measure->update($data);
 
-        // Auto clock-out any active time logs
-        $job = $this->findTimeTrackingJob($measure);
+        // Auto clock-out any active time logs OR create a time log if never clocked in
+        $user = Auth::guard('vip')->user();
+        $job = $this->findOrCreateTimeTrackingJob($measure);
+
         if ($job) {
-            $user = Auth::guard('vip')->user();
             $activeLog = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->first();
+
             if ($activeLog) {
+                // Clock out the active session
                 $clockOut = now();
                 $totalMinutes = $activeLog->clock_in->diffInMinutes($clockOut);
                 $earnings = $this->calculateEarnings($job, $totalMinutes);
@@ -165,6 +168,25 @@ class InstallerTechMeasureController extends Controller
                     'total_minutes' => $totalMinutes,
                     'earnings'      => $earnings,
                 ]);
+            } else {
+                // No active log — auto-create one from started_at → completed_at
+                $clockIn = $measure->started_at ?? $measure->created_at;
+                $clockOut = now();
+                $totalMinutes = $clockIn->diffInMinutes($clockOut);
+                $earnings = $this->calculateEarnings($job, $totalMinutes);
+
+                // Only create if no log exists at all for this user+job (avoid duplicates)
+                $existingLog = $job->timeLogs()->where('user_id', $user->id)->exists();
+                if (!$existingLog) {
+                    JobTimeLog::create([
+                        'job_id'        => $job->id,
+                        'user_id'       => $user->id,
+                        'clock_in'      => $clockIn,
+                        'clock_out'     => $clockOut,
+                        'total_minutes' => $totalMinutes,
+                        'earnings'      => $earnings,
+                    ]);
+                }
             }
         }
 
