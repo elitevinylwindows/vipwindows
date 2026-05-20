@@ -102,13 +102,36 @@ class InstallerTechMeasureController extends Controller
     /**
      * Complete a tech measure.
      */
-    public function complete($id)
+    public function complete(Request $request, $id)
     {
         $measure = TechMeasure::findOrFail($id);
-        $measure->update([
+
+        $data = [
             'status' => 'completed',
             'completed_at' => now(),
-        ]);
+        ];
+
+        // Save frame & grid data along with completion
+        if ($request->has('frame_type')) {
+            $data['frame_type'] = $request->input('frame_type');
+        }
+        if ($request->has('retrofit_bottom_only')) {
+            $data['retrofit_bottom_only'] = $request->boolean('retrofit_bottom_only');
+        }
+        if ($request->has('block_frame_bottom')) {
+            $data['block_frame_bottom'] = $request->boolean('block_frame_bottom');
+        }
+        if ($request->has('has_grids')) {
+            $data['has_grids'] = $request->boolean('has_grids');
+        }
+        if ($request->has('grid_list')) {
+            $data['grid_list'] = $request->input('grid_list');
+        }
+        if ($request->has('grid_pattern')) {
+            $data['grid_pattern'] = $request->input('grid_pattern');
+        }
+
+        $measure->update($data);
 
         return response()->json(['success' => true]);
     }

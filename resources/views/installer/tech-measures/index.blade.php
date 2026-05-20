@@ -814,9 +814,26 @@ function startMeasure(measureId) {
 
 function completeMeasure(measureId) {
     if (!confirm('Mark this tech measure as complete?')) return;
+
+    // Gather all current frame & grid data to save with completion
+    const frameType = document.getElementById('globalFrame')?.value || null;
+    const retrofitBottom = document.getElementById('frameAlt1')?.checked ? 1 : 0;
+    const blockBottom = document.getElementById('frameAlt2')?.checked ? 1 : 0;
+    const hasGrids = document.getElementById('gridsYes')?.checked ? 1 : 0;
+    const gridList = document.getElementById('gridList')?.value || null;
+    const gridPattern = document.getElementById('gridPattern')?.value || null;
+
     fetch(`/installer/tech-measures/${measureId}/complete`, {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({
+            frame_type: frameType,
+            retrofit_bottom_only: retrofitBottom,
+            block_frame_bottom: blockBottom,
+            has_grids: hasGrids,
+            grid_list: gridList,
+            grid_pattern: gridPattern,
+        })
     })
     .then(r => r.json())
     .then(data => { if (data.success) loadMeasure(measureId); })
