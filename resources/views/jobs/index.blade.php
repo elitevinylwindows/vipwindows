@@ -184,7 +184,7 @@
                                                     <hr class="my-2">
                                                     <h6 class="text-muted small mb-2">Install Address</h6>
                                                     <div class="mb-3">
-                                                        <input type="text" name="install_address" class="form-control" placeholder="Street Address" value="{{ $job->install_address }}">
+                                                        <input type="text" name="install_address" class="form-control" placeholder="Street Address" value="{{ $job->install_address }}" data-address-autocomplete>
                                                     </div>
                                                     <div class="row">
                                                         <div class="col-md-5 mb-3">
@@ -452,7 +452,7 @@
                     <div class="row g-2">
                         <div class="col-8">
                             <label class="form-label mb-0 small text-muted">Address</label>
-                            <input type="text" name="install_address" class="form-control form-control-sm" placeholder="Street" id="jobInstallAddr">
+                            <input type="text" name="install_address" class="form-control form-control-sm" placeholder="Street" id="jobInstallAddr" data-address-autocomplete>
                         </div>
                         <div class="col-4">
                             <label class="form-label mb-0 small text-muted">Priority</label>

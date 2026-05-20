@@ -261,7 +261,7 @@
                     </div>
                     <hr class="my-2">
                     <h6 class="text-muted small fw-bold mb-2">Address</h6>
-                    <div class="mb-3"><input type="text" name="address" class="form-control" placeholder="Street Address"></div>
+                    <div class="mb-3"><input type="text" name="address" class="form-control" placeholder="Street Address" data-address-autocomplete></div>
                     <div class="row">
                         <div class="col-md-5 mb-3"><input type="text" name="city" class="form-control" placeholder="City"></div>
                         <div class="col-md-4 mb-3"><input type="text" name="state" class="form-control" placeholder="State" value="CA"></div>
@@ -326,7 +326,7 @@
                         <div class="col-md-6 mb-3"><label class="form-label">Website</label><input type="text" name="company_website" id="eWebsite" class="form-control"></div>
                     </div>
                     <hr class="my-2">
-                    <div class="mb-3"><input type="text" name="address" id="eAddress" class="form-control" placeholder="Street Address"></div>
+                    <div class="mb-3"><input type="text" name="address" id="eAddress" class="form-control" placeholder="Street Address" data-address-autocomplete></div>
                     <div class="row">
                         <div class="col-md-5 mb-3"><input type="text" name="city" id="eCity" class="form-control" placeholder="City"></div>
                         <div class="col-md-4 mb-3"><input type="text" name="state" id="eState" class="form-control" placeholder="State"></div>

@@ -108,7 +108,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Address</label>
-                            <input type="text" name="company_address" class="form-control" value="{{ $settings['company_address'] }}">
+                            <input type="text" name="company_address" class="form-control" value="{{ $settings['company_address'] }}" data-address-autocomplete>
                         </div>
                     </div>
                 </div>
@@ -144,6 +144,17 @@
                         <div class="mb-3">
                             <label class="form-label">Estimate Footer Text</label>
                             <textarea name="estimate_footer" class="form-control" rows="3">{{ $settings['estimate_footer'] }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-semibold mb-3"><i class="bi bi-geo-alt me-1"></i> Google Maps / Address Autocomplete</h6>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <label class="form-label">Google Maps API Key</label>
+                            <input type="text" name="google_maps_key" class="form-control" value="{{ $settings['google_maps_key'] }}" placeholder="AIzaSy...">
+                            <div class="form-text">Required for address autocomplete on all forms. Enable the <strong>Places API</strong> in your <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank">Google Cloud Console</a>.</div>
                         </div>
                     </div>
                 </div>

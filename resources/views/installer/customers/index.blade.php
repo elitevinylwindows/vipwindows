@@ -178,7 +178,7 @@
                         </div>
                         <div class="col-6"><label class="form-label">{{ __('installer.email') }} *</label><input type="email" name="email" class="form-control" required></div>
                         <div class="col-6"><label class="form-label">{{ __('installer.phone') }}</label><input type="text" name="phone" class="form-control"></div>
-                        <div class="col-12"><label class="form-label">{{ __('installer.address') }}</label><input type="text" name="address" class="form-control"></div>
+                        <div class="col-12"><label class="form-label">{{ __('installer.address') }}</label><input type="text" name="address" class="form-control" data-address-autocomplete></div>
                         <div class="col-5"><label class="form-label">{{ __('installer.city') }}</label><input type="text" name="city" class="form-control"></div>
                         <div class="col-4"><label class="form-label">{{ __('installer.state') }}</label><input type="text" name="state" class="form-control" value="CA"></div>
                         <div class="col-3"><label class="form-label">{{ __('installer.zip') }}</label><input type="text" name="zip" class="form-control"></div>
@@ -210,7 +210,7 @@
                         </div>
                         <div class="col-6"><label class="form-label">{{ __('installer.email') }} *</label><input type="email" name="email" id="ecEmail" class="form-control" required></div>
                         <div class="col-6"><label class="form-label">{{ __('installer.phone') }}</label><input type="text" name="phone" id="ecPhone" class="form-control"></div>
-                        <div class="col-12"><label class="form-label">{{ __('installer.address') }}</label><input type="text" name="address" id="ecAddress" class="form-control"></div>
+                        <div class="col-12"><label class="form-label">{{ __('installer.address') }}</label><input type="text" name="address" id="ecAddress" class="form-control" data-address-autocomplete></div>
                         <div class="col-5"><label class="form-label">{{ __('installer.city') }}</label><input type="text" name="city" id="ecCity" class="form-control"></div>
                         <div class="col-4"><label class="form-label">{{ __('installer.state') }}</label><input type="text" name="state" id="ecState" class="form-control"></div>
                         <div class="col-3"><label class="form-label">{{ __('installer.zip') }}</label><input type="text" name="zip" id="ecZip" class="form-control"></div>

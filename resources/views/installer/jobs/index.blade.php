@@ -209,7 +209,7 @@
                         <div class="col-12 mt-1"><hr class="border-secondary my-1"></div>
                         <div class="col-8">
                             <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Address</label>
-                            <input type="text" name="install_address" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Street">
+                            <input type="text" name="install_address" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Street" data-address-autocomplete>
                         </div>
                         <div class="col-4">
                             <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Priority</label>
@@ -320,7 +320,7 @@
                     <div class="col-12 mt-1"><hr class="border-secondary my-1"></div>
                     <div class="col-8">
                         <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Address</label>
-                        <input type="text" name="install_address" class="form-control form-control-sm bg-dark text-white border-secondary">
+                        <input type="text" name="install_address" class="form-control form-control-sm bg-dark text-white border-secondary" data-address-autocomplete>
                     </div>
                     <div class="col-4">
                         <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Priority</label>

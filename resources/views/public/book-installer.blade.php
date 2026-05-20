@@ -103,7 +103,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Installation Address</label>
-                            <input type="text" name="install_address" class="form-control form-control-sm" required value="{{ old('install_address') }}">
+                            <input type="text" name="install_address" class="form-control form-control-sm" required value="{{ old('install_address') }}" data-address-autocomplete>
                         </div>
                         <div class="col-4">
                             <label class="form-label small">City</label>

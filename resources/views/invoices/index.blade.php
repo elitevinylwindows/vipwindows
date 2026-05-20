@@ -160,11 +160,11 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Customer Address</label>
-                            <input type="text" name="customer_address" class="form-control form-control-sm">
+                            <input type="text" name="customer_address" class="form-control form-control-sm" data-address-autocomplete>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Billing Address</label>
-                            <input type="text" name="billing_address" class="form-control form-control-sm">
+                            <input type="text" name="billing_address" class="form-control form-control-sm" data-address-autocomplete>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Tax Rate (%)</label>
@@ -216,11 +216,11 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Customer Address</label>
-                            <input type="text" name="customer_address" id="editCustAddress" class="form-control form-control-sm">
+                            <input type="text" name="customer_address" id="editCustAddress" class="form-control form-control-sm" data-address-autocomplete>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Billing Address</label>
-                            <input type="text" name="billing_address" id="editBillingAddress" class="form-control form-control-sm">
+                            <input type="text" name="billing_address" id="editBillingAddress" class="form-control form-control-sm" data-address-autocomplete>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Tax Rate (%)</label>
@@ -492,6 +492,16 @@ function renderInvoiceDetail(data) {
     }
 
     body.innerHTML = `
+        {{-- Invoice Header with Logo --}}
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; padding-bottom:1rem; border-bottom:1px solid rgba(0,0,0,.08);">
+            <img src="/images/invoice-logo.png" alt="VIP Windows" style="height:60px;">
+            <div style="text-align:right;">
+                <div style="font-size:1.4rem; font-weight:800; color:#111;">INVOICE</div>
+                <div style="font-size:.85rem; color:#666;">${escHtml(inv.invoice_number)}</div>
+                <div style="font-size:.75rem; color:#999;">${new Date(inv.created_at).toLocaleDateString()}</div>
+            </div>
+        </div>
+
         {{-- Info Cards Row --}}
         <div class="inv-info-grid">
             <div class="inv-info-card">

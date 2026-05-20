@@ -41,7 +41,7 @@
 
                         <div class="mb-3">
                             <label class="form-label">Street Address</label>
-                            <input type="text" name="address" class="form-control" value="{{ old('address') }}">
+                            <input type="text" name="address" class="form-control" value="{{ old('address') }}" data-address-autocomplete>
                         </div>
                         <div class="row">
                             <div class="col-md-5 mb-3">

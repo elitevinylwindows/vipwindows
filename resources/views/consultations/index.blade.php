@@ -189,7 +189,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Property Address</label>
-                            <input type="text" name="address" id="custAddress" class="form-control" placeholder="For on-site reference">
+                            <input type="text" name="address" id="custAddress" class="form-control" placeholder="For on-site reference" data-address-autocomplete>
                         </div>
                     </div>
 

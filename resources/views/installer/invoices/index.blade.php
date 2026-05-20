@@ -179,7 +179,7 @@
                     <div class="row g-2 mb-2">
                         <div class="col-md-8">
                             <label class="form-label small text-white-50 mb-0">Address</label>
-                            <input type="text" name="customer_address" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Customer address">
+                            <input type="text" name="customer_address" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Customer address" data-address-autocomplete>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small text-white-50 mb-0">Due Date</label>

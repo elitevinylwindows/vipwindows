@@ -312,11 +312,15 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">To (Installer)</label>
+                    <label class="form-label">To</label>
                     <select id="newMsgInstaller" class="form-select form-select-sm">
-                        <option value="">Select installer...</option>
-                        @foreach($installers as $inst)
-                            <option value="{{ $inst->id }}">{{ $inst->name }}</option>
+                        <option value="">Select team member...</option>
+                        @foreach($installers->groupBy('role') as $role => $group)
+                            <optgroup label="{{ ucfirst($role) }}s">
+                                @foreach($group as $inst)
+                                    <option value="{{ $inst->id }}">{{ $inst->name }}</option>
+                                @endforeach
+                            </optgroup>
                         @endforeach
                     </select>
                 </div>

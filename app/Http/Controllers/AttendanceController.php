@@ -42,7 +42,7 @@ class AttendanceController extends Controller
                 $user = $userLogs->first()->user;
                 $totalMin = $userLogs->sum('total_minutes');
                 $totalEarnings = $userLogs->sum('earnings');
-                $days = $userLogs->pluck(fn($l) => $l->clock_in->format('Y-m-d'))->unique()->count();
+                $days = $userLogs->map(fn($l) => $l->clock_in->format('Y-m-d'))->unique()->count();
                 $jobCount = $userLogs->pluck('job_id')->unique()->count();
                 return [
                     'user'           => $user,

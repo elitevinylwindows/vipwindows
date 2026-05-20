@@ -60,6 +60,7 @@ class SettingsController extends Controller
             'cc_fee_amex'           => '2.5',
             'estimate_terms'        => 'Due on receipt',
             'estimate_footer'       => 'If the above prices, specifications and conditions are satisfactory and hereby accepted, the company requires signatures when orders are placed. By signing, customer has agreed Not to cancel the order or put a stop payment on orders that have been paid by Visa, M/C, check and/or cash. Estimate valid only 30 days.',
+            'google_maps_key'       => '',
         ];
 
         $settings = array_merge($defaults, $settings);

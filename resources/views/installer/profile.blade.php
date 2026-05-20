@@ -99,7 +99,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">{{ __('installer.address') }}</label>
-                            <input type="text" name="address" class="form-control" value="{{ old('address', $user->address) }}">
+                            <input type="text" name="address" class="form-control" value="{{ old('address', $user->address) }}" data-address-autocomplete>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">{{ __('installer.city') }}</label>

@@ -272,6 +272,37 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    {{-- Google Places Autocomplete (global) --}}
+    @php
+        $googleMapsKey = \App\Models\Setting::where('key', 'google_maps_key')->value('value') ?: config('services.google.maps_key');
+    @endphp
+    @if($googleMapsKey)
+    <script>
+    function initGooglePlacesGlobal() {
+        document.querySelectorAll('[data-address-autocomplete]:not([data-places-bound])').forEach(function(input) {
+            input.setAttribute('data-places-bound', '1');
+            const autocomplete = new google.maps.places.Autocomplete(input, {
+                types: ['address'],
+                componentRestrictions: { country: 'us' }
+            });
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (!place.formatted_address) return;
+                input.value = place.formatted_address;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+    }
+    // Re-run after modals open (for dynamically shown inputs)
+    document.addEventListener('shown.bs.modal', function() {
+        setTimeout(initGooglePlacesGlobal, 100);
+    });
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsKey }}&libraries=places&callback=initGooglePlacesGlobal" async defer></script>
+    @endif
+
     @stack('scripts')
 </body>
 </html>

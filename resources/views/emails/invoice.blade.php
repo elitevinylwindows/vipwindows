@@ -1,7 +1,6 @@
 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto;">
-    <div style="background: #111; padding: 20px; text-align: center;">
-        <h1 style="color: #c9a84c; margin: 0; font-size: 24px;">VIP Windows</h1>
-        <p style="color: #888; margin: 5px 0 0; font-size: 14px;">Professional Window Installation</p>
+    <div style="background: #fff; padding: 20px; text-align: center; border-bottom: 2px solid #111;">
+        <img src="https://vipwindowsinc.com/images/invoice-logo.png" alt="VIP Windows" style="height: 70px; max-width: 200px;">
     </div>
     <div style="background: #fff; padding: 30px; border: 1px solid #eee;">
         <h2 style="color: #111; margin-top: 0;">Invoice #{{ $invoice->invoice_number }}</h2>

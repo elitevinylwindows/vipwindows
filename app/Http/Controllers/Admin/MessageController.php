@@ -21,8 +21,10 @@ class MessageController extends Controller
             ->orderByDesc('last_message_at')
             ->get();
 
-        $installers = VipUser::where('role', 'installer')
-            ->where('status', 'active')
+        // All active staff for new conversations (admins, technicians, schedulers, installers)
+        $installers = VipUser::where('status', 'active')
+            ->where('id', '!=', $admin->id)
+            ->orderBy('role')
             ->orderBy('name')
             ->get();
 

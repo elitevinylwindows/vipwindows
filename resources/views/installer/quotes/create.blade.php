@@ -211,7 +211,7 @@
                             <div class="col-md-3">
                                 <label class="form-label small mb-0">{{ __('Street') }}</label>
                                 <input type="text" name="billing_address" id="billing_address" class="form-control form-control-sm"
-                                       value="{{ $quote->billing_address ?? old('billing_address') }}">
+                                       value="{{ $quote->billing_address ?? old('billing_address') }}" data-address-autocomplete>
                             </div>
                             <div class="col-md-1">
                                 <label class="form-label small mb-0">{{ __('ZIP') }}</label>

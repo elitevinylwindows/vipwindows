@@ -106,7 +106,7 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Installation Address</label>
                             <input type="text" name="install_address" class="form-control" required
-                                   value="{{ Auth::user()->address }}" placeholder="Street address">
+                                   value="{{ Auth::user()->address }}" placeholder="Street address" data-address-autocomplete>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">City</label>

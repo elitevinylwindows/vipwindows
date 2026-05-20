@@ -117,7 +117,7 @@
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Address</label>
-                                <input type="text" name="address" class="form-control" placeholder="Installation address (optional)">
+                                <input type="text" name="address" class="form-control" placeholder="Installation address (optional)" data-address-autocomplete>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Preferred Platform</label>

@@ -470,7 +470,7 @@
                     <h6 class="text-muted small mb-2">Address</h6>
                     <div class="mb-3">
                         <label class="form-label">Street Address</label>
-                        <input type="text" name="address" class="form-control">
+                        <input type="text" name="address" class="form-control" data-address-autocomplete>
                     </div>
                     <div class="row">
                         <div class="col-md-5 mb-3"><label class="form-label">City</label><input type="text" name="city" class="form-control"></div>
@@ -528,7 +528,7 @@
                     <hr class="my-2">
                     <div class="mb-3">
                         <label class="form-label">Street Address</label>
-                        <input type="text" name="address" id="editAddress" class="form-control">
+                        <input type="text" name="address" id="editAddress" class="form-control" data-address-autocomplete>
                     </div>
                     <div class="row">
                         <div class="col-md-5 mb-3"><label class="form-label">City</label><input type="text" name="city" id="editCity" class="form-control"></div>
