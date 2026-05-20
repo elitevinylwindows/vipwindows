@@ -13,6 +13,7 @@ use App\Models\JobItem;
 use App\Models\JobNote;
 use App\Models\JobTimeLog;
 use App\Models\Service;
+use App\Models\TechMeasure;
 use App\Models\VipUser;
 use App\Mail\ScheduleNotification;
 use Illuminate\Http\Request;
@@ -441,6 +442,19 @@ class InstallerJobController extends Controller
     public function destroy($id)
     {
         $job = Job::where('assigned_to', Auth::id())->findOrFail($id);
+
+        // Reset any linked tech measure back to "completed" so it can be re-converted
+        $linkedMeasure = TechMeasure::where('job_id', $job->id)->first();
+        if ($linkedMeasure) {
+            $linkedMeasure->update([
+                'status'       => 'completed',
+                'converted_at' => null,
+                'converted_by' => null,
+                'job_id'       => null,
+                'job_data'     => null,
+            ]);
+        }
+
         $job->delete();
 
         return response()->json(['success' => true]);
