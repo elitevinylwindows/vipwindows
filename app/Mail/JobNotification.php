@@ -42,9 +42,12 @@ class JobNotification extends Mailable
     public function attachments(): array
     {
         if ($this->pdfPath && \Storage::disk('public')->exists($this->pdfPath)) {
+            // Use the original filename from the path (e.g. "00009 - Tola.pdf")
+            $filename = basename($this->pdfPath);
+
             return [
                 \Illuminate\Mail\Mailables\Attachment::fromStorageDisk('public', $this->pdfPath)
-                    ->as('job-documents.pdf')
+                    ->as($filename)
                     ->withMime('application/pdf'),
             ];
         }
