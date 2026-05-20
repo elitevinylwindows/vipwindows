@@ -475,21 +475,17 @@ function renderDetail(data) {
     let frameGridHtml = '';
     if (m.status !== 'converted') {
         frameGridHtml = `
-        <div class="d-flex align-items-center justify-content-between" style="margin-top:1.5rem;">
-            <h6 class="section-title mb-0"><i class="bi bi-columns-gap"></i> Frame & Grids</h6>
-            <button class="btn btn-sm btn-outline-success px-3" onclick="saveFrameAndGrids(${m.id})"><i class="bi bi-check-lg me-1"></i>Save</button>
-        </div>
-        <div class="card mt-2" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
-            <div class="card-body py-3 px-3">
-                <div class="row g-2 align-items-center mb-3">
+        <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type</h6>
+        <div class="card" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+            <div class="card-body py-2 px-3">
+                <div class="row g-2 align-items-center">
                     <div class="col-md-4">
-                        <label class="form-label small fw-semibold mb-1">Frame Type</label>
                         <select id="globalFrame" class="form-select form-select-sm" onchange="updateFrameBottomOptions();">
                             <option value="">— Select Frame Type —</option>
                             ${frameTypeOptions.map(o => '<option value="' + escHtml(o.name) + '" ' + (m.frame_type === o.name ? 'selected' : '') + '>' + escHtml(o.name) + '</option>').join('')}
                         </select>
                     </div>
-                    <div class="col-md-8 d-flex gap-3 align-items-end" style="padding-bottom:2px;">
+                    <div class="col-md-6 d-flex gap-3">
                         <div class="form-check form-check-sm mb-0">
                             <input class="form-check-input" type="checkbox" id="frameAlt1" ${m.retrofit_bottom_only ? 'checked' : ''}>
                             <label class="form-check-label small" for="frameAlt1" id="frameAlt1Label">Retrofit 2 1/2" Frame Bottom</label>
@@ -499,10 +495,17 @@ function renderDetail(data) {
                             <label class="form-check-label small" for="frameAlt2" id="frameAlt2Label">Block Frame Bottom</label>
                         </div>
                     </div>
+                    <div class="col-md-2 text-end">
+                        <button class="btn btn-sm btn-outline-success" id="btnSaveFrame" onclick="saveFrameAndGrids(${m.id}, 'frame')"><i class="bi bi-check-lg me-1"></i>Save</button>
+                    </div>
                 </div>
-                <hr class="my-2" style="opacity:.1;">
+            </div>
+        </div>
+        <h6 class="section-title"><i class="bi bi-grid-3x3"></i> Grids</h6>
+        <div class="card" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+            <div class="card-body py-2 px-3">
                 <div class="d-flex align-items-center gap-3 mb-2">
-                    <label class="fw-semibold" style="font-size:.85rem;">Grids?</label>
+                    <label class="fw-semibold" style="font-size:.85rem;">Does this project have grids?</label>
                     <div class="form-check form-check-inline mb-0">
                         <input class="form-check-input" type="radio" name="hasGrids" id="gridsYes" value="yes" ${m.has_grids ? 'checked' : ''} onchange="toggleGridFields()">
                         <label class="form-check-label" for="gridsYes" style="font-size:.85rem;">Yes</label>
@@ -511,18 +514,19 @@ function renderDetail(data) {
                         <input class="form-check-input" type="radio" name="hasGrids" id="gridsNo" value="no" ${!m.has_grids ? 'checked' : ''} onchange="toggleGridFields()">
                         <label class="form-check-label" for="gridsNo" style="font-size:.85rem;">No</label>
                     </div>
+                    <div class="ms-auto">
+                        <button class="btn btn-sm btn-outline-success" id="btnSaveGrids" onclick="saveFrameAndGrids(${m.id}, 'grids')"><i class="bi bi-check-lg me-1"></i>Save</button>
+                    </div>
                 </div>
                 <div id="gridFieldsWrap" style="display:${m.has_grids ? 'block' : 'none'};">
                     <div class="row g-2">
                         <div class="col-md-4">
-                            <label class="form-label small fw-semibold mb-1">Grid Type</label>
                             <select id="gridList" class="form-select form-select-sm">
                                 <option value="">— Select —</option>
                                 ${gridOptions.map(o => '<option value="' + escHtml(o.name) + '" ' + (m.grid_list === o.name ? 'selected' : '') + '>' + escHtml(o.name) + '</option>').join('')}
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-semibold mb-1">Grid Pattern</label>
                             <select id="gridPattern" class="form-select form-select-sm">
                                 <option value="">— Select —</option>
                                 ${patternOptions.map(o => '<option value="' + escHtml(o.name) + '" ' + (m.grid_pattern === o.name ? 'selected' : '') + '>' + escHtml(o.name) + '</option>').join('')}
@@ -872,48 +876,50 @@ function toggleGridFields() {
     if (wrap) wrap.style.display = isYes ? 'block' : 'none';
 }
 
-function saveFrameAndGrids(measureId) {
-    const frameType = document.getElementById('globalFrame')?.value || null;
-    const retrofitBottom = document.getElementById('frameAlt1')?.checked ? 1 : 0;
-    const blockBottom = document.getElementById('frameAlt2')?.checked ? 1 : 0;
-    const hasGrids = document.getElementById('gridsYes')?.checked ? 1 : 0;
-    const gridList = document.getElementById('gridList')?.value || null;
-    const gridPattern = document.getElementById('gridPattern')?.value || null;
-
-    // Save frame type + checkboxes
-    fetch(`/admin/tech-measures/${measureId}/notes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-        body: JSON.stringify({ frame_type: frameType, retrofit_bottom_only: retrofitBottom, block_frame_bottom: blockBottom })
-    }).then(r => r.json()).then(data => {
-        if (data.success && currentMeasureData) {
-            currentMeasureData.measure.frame_type = frameType;
-            currentMeasureData.measure.retrofit_bottom_only = retrofitBottom;
-            currentMeasureData.measure.block_frame_bottom = blockBottom;
-        }
-    }).catch(() => {});
-
-    // Save grid settings
-    fetch(`/admin/tech-measures/${measureId}/grids`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-        body: JSON.stringify({ has_grids: hasGrids, grid_list: gridList, grid_pattern: gridPattern })
-    }).then(r => r.json()).then(data => {
-        if (data.success && currentMeasureData) {
-            currentMeasureData.measure.has_grids = hasGrids;
-            currentMeasureData.measure.grid_list = gridList;
-            currentMeasureData.measure.grid_pattern = gridPattern;
-        }
-    }).catch(() => {});
-
-    // Flash the save button green
+function saveFrameAndGrids(measureId, section) {
     const btn = event?.target?.closest('button') || event?.target;
-    if (btn) {
-        const orig = btn.innerHTML;
-        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Saved!';
-        btn.classList.replace('btn-outline-success', 'btn-success');
-        setTimeout(() => { btn.innerHTML = orig; btn.classList.replace('btn-success', 'btn-outline-success'); }, 1500);
+
+    if (section === 'frame') {
+        const frameType = document.getElementById('globalFrame')?.value || null;
+        const retrofitBottom = document.getElementById('frameAlt1')?.checked ? 1 : 0;
+        const blockBottom = document.getElementById('frameAlt2')?.checked ? 1 : 0;
+        fetch(`/admin/tech-measures/${measureId}/notes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ frame_type: frameType, retrofit_bottom_only: retrofitBottom, block_frame_bottom: blockBottom })
+        }).then(r => r.json()).then(data => {
+            if (data.success && currentMeasureData) {
+                currentMeasureData.measure.frame_type = frameType;
+                currentMeasureData.measure.retrofit_bottom_only = retrofitBottom;
+                currentMeasureData.measure.block_frame_bottom = blockBottom;
+            }
+            flashBtn(btn);
+        }).catch(() => alert('Failed to save.'));
+    } else {
+        const hasGrids = document.getElementById('gridsYes')?.checked ? 1 : 0;
+        const gridList = document.getElementById('gridList')?.value || null;
+        const gridPattern = document.getElementById('gridPattern')?.value || null;
+        fetch(`/admin/tech-measures/${measureId}/grids`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ has_grids: hasGrids, grid_list: gridList, grid_pattern: gridPattern })
+        }).then(r => r.json()).then(data => {
+            if (data.success && currentMeasureData) {
+                currentMeasureData.measure.has_grids = hasGrids;
+                currentMeasureData.measure.grid_list = gridList;
+                currentMeasureData.measure.grid_pattern = gridPattern;
+            }
+            flashBtn(btn);
+        }).catch(() => alert('Failed to save.'));
     }
+}
+
+function flashBtn(btn) {
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Saved!';
+    btn.classList.replace('btn-outline-success', 'btn-success');
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.replace('btn-success', 'btn-outline-success'); }, 1500);
 }
 
 function saveGridSettings(measureId) {
