@@ -939,14 +939,57 @@ function saveGridSettings(measureId) {
 
 function saveNotes(measureId) {
     const notes = document.getElementById('generalNotes')?.value;
-    fetch(`/admin/tech-measures/${measureId}/notes`, {
+    return fetch(`/admin/tech-measures/${measureId}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
         body: JSON.stringify({ notes })
-    })
-    .then(r => r.json())
-    .then(data => { if (data.success) alert('Notes saved.'); })
-    .catch(() => alert('Failed to save notes.'));
+    }).then(r => r.json());
+}
+
+function saveAllMeasure(measureId) {
+    const btn = event?.target?.closest('button') || event?.target;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Saving...'; }
+
+    // Gather all data
+    const frameType = document.getElementById('globalFrame')?.value || null;
+    const retrofitBottom = document.getElementById('frameAlt1')?.checked ? 1 : 0;
+    const blockBottom = document.getElementById('frameAlt2')?.checked ? 1 : 0;
+    const hasGrids = document.getElementById('gridsYes')?.checked ? 1 : 0;
+    const gridList = document.getElementById('gridList')?.value || null;
+    const gridPattern = document.getElementById('gridPattern')?.value || null;
+    const notes = document.getElementById('generalNotes')?.value;
+
+    // Fire all saves in parallel
+    Promise.all([
+        fetch(`/admin/tech-measures/${measureId}/notes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ frame_type: frameType, retrofit_bottom_only: retrofitBottom, block_frame_bottom: blockBottom, notes: notes })
+        }).then(r => r.json()),
+        fetch(`/admin/tech-measures/${measureId}/grids`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ has_grids: hasGrids, grid_list: gridList, grid_pattern: gridPattern })
+        }).then(r => r.json())
+    ]).then(([notesRes, gridsRes]) => {
+        if (currentMeasureData) {
+            currentMeasureData.measure.frame_type = frameType;
+            currentMeasureData.measure.retrofit_bottom_only = retrofitBottom;
+            currentMeasureData.measure.block_frame_bottom = blockBottom;
+            currentMeasureData.measure.notes = notes;
+            currentMeasureData.measure.has_grids = hasGrids;
+            currentMeasureData.measure.grid_list = gridList;
+            currentMeasureData.measure.grid_pattern = gridPattern;
+        }
+        if (btn) {
+            btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>All Changes Saved!';
+            btn.classList.replace('btn-success', 'btn-outline-success');
+            setTimeout(() => { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Save All Changes'; btn.classList.replace('btn-outline-success', 'btn-success'); }, 2000);
+        }
+    }).catch(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Save All Changes'; }
+        alert('Failed to save some changes.');
+    });
 }
 
 function uploadItemPhoto(measureId, itemId) {
