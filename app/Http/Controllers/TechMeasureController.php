@@ -292,6 +292,10 @@ class TechMeasureController extends Controller
     {
         $measure = TechMeasure::with('items')->findOrFail($id);
 
+        if ($measure->status === 'converted') {
+            return response()->json(['error' => 'This tech measure has already been converted to a job.'], 422);
+        }
+
         if ($measure->items->isEmpty()) {
             return response()->json(['error' => 'No measurement items to convert.'], 422);
         }
@@ -531,8 +535,8 @@ class TechMeasureController extends Controller
                 );
                 $emailSent = true;
             } catch (\Exception $e) {
-                // Log but don't fail the conversion
-                \Log::warning("Failed to send job creation email for {$jobNumber}: " . $e->getMessage());
+                $emailError = $e->getMessage();
+                \Log::warning("Failed to send job creation email for {$jobNumber}: " . $emailError);
             }
         }
 
@@ -544,6 +548,8 @@ class TechMeasureController extends Controller
             $message .= " Notification sent to {$job->customer_email}.";
         } elseif (empty($job->customer_email)) {
             $message .= " No customer email on file — notification not sent.";
+        } elseif (!empty($emailError)) {
+            $message .= " Email failed: {$emailError}";
         }
 
         return response()->json([

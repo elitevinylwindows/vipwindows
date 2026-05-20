@@ -7,6 +7,7 @@ use App\Mail\JobNotification;
 use App\Models\EmailTemplate;
 use App\Models\Job;
 use App\Models\TechMeasure;
+use App\Services\EstimatePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -101,7 +102,7 @@ class EmailTemplateController extends Controller
             return response()->json(['error' => 'No customer email on this job.'], 422);
         }
 
-        // Find the PDF from the linked tech measure
+        // Find the PDF from the linked tech measure, or generate it
         $pdfPath = null;
         $techMeasure = TechMeasure::where('job_id', $job->id)->first();
         if ($techMeasure && $techMeasure->job_data) {
@@ -109,8 +110,23 @@ class EmailTemplateController extends Controller
             $pdfPath = $jobData['pdf_path'] ?? null;
         }
 
+        // If no PDF exists yet, generate the estimate on the fly
         if (!$pdfPath || !\Storage::disk('public')->exists($pdfPath)) {
-            return response()->json(['error' => 'No estimate PDF found for this job.'], 422);
+            if (!$techMeasure) {
+                return response()->json(['error' => 'No tech measure linked to this job.'], 422);
+            }
+
+            try {
+                $service = new EstimatePdfService();
+                $pdfPath = $service->generateAndMerge($job);
+            } catch (\Exception $e) {
+                \Log::error("Estimate PDF generation failed for job {$job->id}: " . $e->getMessage());
+                return response()->json(['error' => 'Failed to generate estimate PDF: ' . $e->getMessage()], 500);
+            }
+
+            if (!$pdfPath) {
+                return response()->json(['error' => 'Could not generate estimate — no job data on the tech measure.'], 422);
+            }
         }
 
         $subject = "Your Estimate — {$job->job_number} — VIP Windows";
