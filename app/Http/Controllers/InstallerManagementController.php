@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\VipUser;
 use App\Models\Service;
+use App\Models\JobTimeLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class InstallerManagementController extends Controller
 {
