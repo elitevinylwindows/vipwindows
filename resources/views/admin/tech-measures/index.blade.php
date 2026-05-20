@@ -478,12 +478,22 @@ function renderDetail(data) {
         <h6 class="section-title"><i class="bi bi-columns-gap"></i> Frame Type</h6>
         <div class="card" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
             <div class="card-body py-2 px-3">
-                <div class="row g-2">
+                <div class="row g-2 align-items-center">
                     <div class="col-md-4">
-                        <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id})">
+                        <select id="globalFrame" class="form-select form-select-sm" onchange="saveFrameType(${m.id}); updateFrameBottomOptions();">
                             <option value="">— Select Frame Type —</option>
                             ${frameTypeOptions.map(o => '<option value="' + escHtml(o.name) + '" ' + (m.frame_type === o.name ? 'selected' : '') + '>' + escHtml(o.name) + '</option>').join('')}
                         </select>
+                    </div>
+                    <div class="col-md-8 d-flex gap-3">
+                        <div class="form-check form-check-sm mb-0">
+                            <input class="form-check-input" type="checkbox" id="frameAlt1" ${m.retrofit_bottom_only ? 'checked' : ''} onchange="saveFrameOptions(${m.id})">
+                            <label class="form-check-label small" for="frameAlt1" id="frameAlt1Label">Retrofit 2 1/2" Frame Bottom</label>
+                        </div>
+                        <div class="form-check form-check-sm mb-0">
+                            <input class="form-check-input" type="checkbox" id="frameAlt2" ${m.block_frame_bottom ? 'checked' : ''} onchange="saveFrameOptions(${m.id})">
+                            <label class="form-check-label small" for="frameAlt2" id="frameAlt2Label">Block Frame Bottom</label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -601,6 +611,9 @@ function renderDetail(data) {
             </div>
         </div>
     `;
+
+    // Update dynamic frame bottom labels after render
+    setTimeout(() => { updateFrameBottomOptions(); }, 10);
 }
 
 function escHtml(str) {
@@ -795,6 +808,49 @@ function saveFrameType(measureId) {
     .then(r => r.json())
     .then(data => {
         if (data.success && currentMeasureData) currentMeasureData.measure.frame_type = frameType;
+    })
+    .catch(() => {});
+}
+
+function updateFrameBottomOptions() {
+    const selected = document.getElementById('globalFrame')?.value || '';
+    const alt1Label = document.getElementById('frameAlt1Label');
+    const alt2Label = document.getElementById('frameAlt2Label');
+    const alt1Cb = document.getElementById('frameAlt1');
+    const alt2Cb = document.getElementById('frameAlt2');
+    if (!alt1Label || !alt2Label) return;
+    if (alt1Cb) alt1Cb.checked = false;
+    if (alt2Cb) alt2Cb.checked = false;
+
+    if (selected.indexOf('1 3/4') >= 0) {
+        alt1Label.textContent = 'Retrofit 2 1/2" Frame Bottom';
+        alt2Label.textContent = 'Block Frame Bottom';
+    } else if (selected.indexOf('2 1/2') >= 0) {
+        alt1Label.textContent = 'Retrofit 1 3/4" Frame Bottom';
+        alt2Label.textContent = 'Block Frame Bottom';
+    } else if (selected === 'Block') {
+        alt1Label.textContent = 'Retrofit 1 3/4" Frame Bottom';
+        alt2Label.textContent = 'Retrofit 2 1/2" Frame Bottom';
+    } else {
+        alt1Label.textContent = 'Retrofit 2 1/2" Frame Bottom';
+        alt2Label.textContent = 'Block Frame Bottom';
+    }
+}
+
+function saveFrameOptions(measureId) {
+    const retrofitBottom = document.getElementById('frameAlt1')?.checked ? 1 : 0;
+    const blockBottom = document.getElementById('frameAlt2')?.checked ? 1 : 0;
+    fetch(`/admin/tech-measures/${measureId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({ retrofit_bottom_only: retrofitBottom, block_frame_bottom: blockBottom })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && currentMeasureData) {
+            currentMeasureData.measure.retrofit_bottom_only = retrofitBottom;
+            currentMeasureData.measure.block_frame_bottom = blockBottom;
+        }
     })
     .catch(() => {});
 }
