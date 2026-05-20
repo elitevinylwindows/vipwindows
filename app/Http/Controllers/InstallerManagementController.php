@@ -149,6 +149,23 @@ class InstallerManagementController extends Controller
             $payByService = collect();
         }
 
+        // Pending vs approved pay
+        $pendingPay = 0;
+        $approvedPay = 0;
+        try {
+            $pendingPay = JobTimeLog::where('user_id', $installer->id)
+                ->whereNotNull('clock_out')
+                ->where(function ($q) {
+                    $q->where('pay_status', 'pending')->orWhereNull('pay_status');
+                })
+                ->sum('earnings');
+
+            $approvedPay = JobTimeLog::where('user_id', $installer->id)
+                ->whereNotNull('clock_out')
+                ->where('pay_status', 'approved')
+                ->sum('earnings');
+        } catch (\Exception $e) {}
+
         return response()->json([
             'installer' => $installer,
             'stats' => [
@@ -162,11 +179,24 @@ class InstallerManagementController extends Controller
                 'this_month_minutes' => $thisMonthMinutes,
                 'all_time' => round($allTimePay, 2),
                 'all_time_minutes' => $allTimeMinutes,
+                'pending' => round($pendingPay, 2),
+                'approved' => round($approvedPay, 2),
                 'monthly' => $monthlyPay,
                 'by_service' => $payByService,
                 'recent_logs' => $recentTimeLogs,
             ],
         ]);
+    }
+
+    /**
+     * Approve a single time log payment.
+     */
+    public function approvePay(Request $request, $logId)
+    {
+        $log = JobTimeLog::findOrFail($logId);
+        $log->update(['pay_status' => 'approved']);
+
+        return response()->json(['success' => true, 'message' => 'Payment approved.']);
     }
 
     public function store(Request $request)

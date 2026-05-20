@@ -9,7 +9,7 @@ class JobTimeLog extends Model
     protected $table = 'job_time_logs';
 
     protected $fillable = [
-        'job_id', 'user_id', 'clock_in', 'clock_out', 'total_minutes', 'earnings', 'notes',
+        'job_id', 'user_id', 'clock_in', 'clock_out', 'total_minutes', 'earnings', 'pay_status', 'notes',
     ];
 
     protected $casts = [
