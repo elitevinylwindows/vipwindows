@@ -597,6 +597,7 @@ function renderMeasureDetail(data) {
     `;
 
     // Initialize frame bottom checkbox labels after render
+    lastFrameSelection = null;
     setTimeout(() => { updateFrameBottomOptions(); }, 10);
 }
 
