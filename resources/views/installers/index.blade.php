@@ -439,24 +439,22 @@
             </div>
         `;
 
-        // ─── Pay Overview ───
-        if (pay.all_time > 0 || pay.this_month > 0) {
-            html += `
-                <div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;margin-top:4px;">
-                    <i class="bi bi-wallet2 me-1"></i> Pay Overview
+        // ─── Pay Overview (always show) ───
+        html += `
+            <div style="font-size:.7rem;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;margin-top:4px;">
+                <i class="bi bi-wallet2 me-1"></i> Pay Overview
+            </div>
+            <div class="ins-stat-cards" style="margin-bottom:1rem;">
+                <div class="ins-stat-card" style="background:linear-gradient(135deg,#198754,#157347);color:#fff;">
+                    <div class="sv">$${Number(pay.this_month || 0).toFixed(2)}</div>
+                    <div class="sl" style="color:rgba(255,255,255,.7);">This Month · ${fmtHM(pay.this_month_minutes || 0)}</div>
                 </div>
-                <div class="ins-stat-cards" style="margin-bottom:1rem;">
-                    <div class="ins-stat-card" style="background:linear-gradient(135deg,#198754,#157347);color:#fff;">
-                        <div class="sv">$${Number(pay.this_month).toFixed(2)}</div>
-                        <div class="sl" style="color:rgba(255,255,255,.7);">This Month · ${fmtHM(pay.this_month_minutes || 0)}</div>
-                    </div>
-                    <div class="ins-stat-card" style="background:linear-gradient(135deg,#6f42c1,#59359a);color:#fff;">
-                        <div class="sv">$${Number(pay.all_time).toFixed(2)}</div>
-                        <div class="sl" style="color:rgba(255,255,255,.7);">All Time · ${fmtHM(pay.all_time_minutes || 0)}</div>
-                    </div>
+                <div class="ins-stat-card" style="background:linear-gradient(135deg,#6f42c1,#59359a);color:#fff;">
+                    <div class="sv">$${Number(pay.all_time || 0).toFixed(2)}</div>
+                    <div class="sl" style="color:rgba(255,255,255,.7);">All Time · ${fmtHM(pay.all_time_minutes || 0)}</div>
                 </div>
-            `;
-        }
+            </div>
+        `;
 
         // ─── Monthly Breakdown ───
         if (pay.monthly && pay.monthly.length > 0) {
