@@ -136,7 +136,12 @@ class EstimatePdfService
             'total'              => $total,
             'estimateDate'       => now()->format('n/j/Y'),
             'estimateNumber'     => $estimateNumber,
-        ])->setPaper('letter');
+        ])->setPaper('letter')->setOptions([
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'defaultFont' => 'Arial',
+            'dpi' => 96,
+        ]);
 
         // Save the estimate PDF
         $estimateRelPath = 'tech-measures/' . $techMeasure->id . '/estimate-' . time() . '.pdf';

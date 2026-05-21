@@ -4,57 +4,60 @@
     <meta charset="utf-8">
     <title>Estimate — {{ $job->customer_name }}</title>
     <style>
-        @page { margin: 30px 30px 40px 30px; }
+        @page { margin: 40px 50px 40px 50px; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 9pt; margin: 0; padding: 0; }
-        .page { width: 100%; padding: 0; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 8pt; margin: 0; padding: 0; }
+        .page { width: 100%; max-width: 520pt; padding: 0; overflow: hidden; }
 
         /* ── Header ── */
-        .header-table { width: 100%; margin-bottom: 16px; border-collapse: collapse; }
-        .company-info { font-size: 9.5pt; line-height: 1.5; }
-        .company-name { font-weight: bold; font-size: 10.5pt; }
-        .estimate-title { font-size: 20pt; font-weight: bold; text-align: right; }
+        .header-table { width: 100%; margin-bottom: 14px; border-collapse: collapse; }
+        .company-info { font-size: 8.5pt; line-height: 1.4; }
+        .company-name { font-weight: bold; font-size: 9.5pt; }
+        .estimate-title { font-size: 16pt; font-weight: bold; text-align: right; }
         .date-box { margin-top: 4px; }
         .date-box table { border-collapse: collapse; margin-left: auto; }
-        .date-box th, .date-box td { border: 1px solid #000; padding: 2px 10px; font-size: 8.5pt; }
+        .date-box th, .date-box td { border: 1px solid #000; padding: 2px 8px; font-size: 7.5pt; }
         .date-box th { background: #eee; font-weight: bold; }
 
         /* ── Address blocks side-by-side ── */
-        .address-table { width: 100%; margin-bottom: 14px; border-collapse: collapse; }
+        .address-table { width: 100%; margin-bottom: 12px; border-collapse: collapse; }
         .address-table td { vertical-align: top; }
         .addr-box { border: 1px solid #000; }
-        .addr-label { background: #eee; border-bottom: 1px solid #000; padding: 2px 6px; font-weight: bold; font-size: 8.5pt; }
-        .addr-content { padding: 6px; font-size: 9pt; line-height: 1.5; }
+        .addr-label { background: #eee; border-bottom: 1px solid #000; padding: 2px 5px; font-weight: bold; font-size: 7.5pt; }
+        .addr-content { padding: 4px 5px; font-size: 8pt; line-height: 1.4; }
 
         /* ── Reference row ── */
-        .ref-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-        .ref-table th, .ref-table td { border: 1px solid #000; padding: 3px 8px; font-size: 8.5pt; text-align: center; }
+        .ref-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .ref-table th, .ref-table td { border: 1px solid #000; padding: 2px 6px; font-size: 7.5pt; text-align: center; }
         .ref-table th { background: #eee; font-weight: bold; }
 
         /* ── Items table ── */
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        .items-table th { background: #333; color: #fff; padding: 4px 6px; font-size: 8pt; text-align: left; font-weight: bold; border: 1px solid #333; }
-        .items-table td { padding: 3px 6px; font-size: 8.5pt; border: 1px solid #ccc; vertical-align: top; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        .items-table th { background: #333; color: #fff; padding: 3px 5px; font-size: 7pt; text-align: left; font-weight: bold; border: 1px solid #333; }
+        .items-table td { padding: 2px 5px; font-size: 7.5pt; border: 1px solid #ccc; vertical-align: top; word-wrap: break-word; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
 
         /* ── Notice ── */
-        .notice-box { border: 1px solid #999; padding: 6px 10px; font-size: 8pt; line-height: 1.5; display: inline-block; margin-top: 8px; }
+        .notice-box { border: 1px solid #999; padding: 5px 8px; font-size: 7pt; line-height: 1.4; display: inline-block; margin-top: 6px; }
 
         /* ── Footer: Terms + Totals ── */
-        .footer-table { width: 100%; margin-top: 12px; border-collapse: collapse; }
+        .footer-table { width: 100%; margin-top: 10px; border-collapse: collapse; }
         .footer-table td { vertical-align: top; }
-        .terms-text { font-size: 7.5pt; line-height: 1.5; color: #333; padding-right: 15px; }
+        .terms-text { font-size: 6.5pt; line-height: 1.4; color: #333; padding-right: 10px; }
         .totals-box table { border-collapse: collapse; margin-left: auto; }
-        .totals-box td { padding: 2px 12px; font-size: 9.5pt; }
+        .totals-box td { padding: 2px 10px; font-size: 8.5pt; }
         .totals-box .label { font-weight: bold; text-align: left; }
-        .totals-box .total-row td { border-top: 2px solid #000; font-size: 12pt; font-weight: bold; padding-top: 4px; }
+        .totals-box .total-row td { border-top: 2px solid #000; font-size: 10pt; font-weight: bold; padding-top: 3px; }
 
         /* ── Signature ── */
-        .signature-line { margin-top: 25px; font-size: 8.5pt; }
-        .sig-table { width: 55%; border-collapse: collapse; }
-        .sig-table td.sig-label { font-weight: bold; white-space: nowrap; padding-right: 8px; }
+        .signature-line { margin-top: 20px; font-size: 7.5pt; }
+        .sig-table { width: 50%; border-collapse: collapse; }
+        .sig-table td.sig-label { font-weight: bold; white-space: nowrap; padding-right: 6px; }
         .sig-table td.sig-line { border-bottom: 1px solid #000; width: 100%; }
+
+        /* Force all tables to stay within bounds */
+        table { table-layout: fixed; }
     </style>
 </head>
 <body>
