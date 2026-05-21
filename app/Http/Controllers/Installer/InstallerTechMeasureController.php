@@ -57,11 +57,28 @@ class InstallerTechMeasureController extends Controller
     public function show($id)
     {
         $user = Auth::guard('vip')->user();
+        // Fresh load to ensure we get the latest job_id from DB
         $measure = TechMeasure::with(['items.photos', 'photos', 'calendarEvent'])
             ->findOrFail($id);
 
         // Find linked job for time tracking
         $job = $this->findTimeTrackingJob($measure);
+
+        // If findTimeTrackingJob didn't find via job_id, do a broader search:
+        // look for ANY TM- job that has an active (unclosed) time log for this user
+        if (!$job) {
+            $job = Job::where('job_number', 'like', 'TM-%')
+                ->whereHas('timeLogs', function ($q) use ($user) {
+                    $q->where('user_id', $user->id)->whereNull('clock_out');
+                })
+                ->first();
+
+            // Link it if found
+            if ($job) {
+                $measure->update(['job_id' => $job->id]);
+            }
+        }
+
         $activeLog = null;
         $totalTimeMinutes = 0;
 
