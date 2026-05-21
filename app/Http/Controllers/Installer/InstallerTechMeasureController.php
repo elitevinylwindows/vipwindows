@@ -338,7 +338,7 @@ class InstallerTechMeasureController extends Controller
 
         $event = $measure->calendarEvent;
 
-        return Job::create([
+        $job = Job::create([
             'service_id'     => $event?->service_id,
             'customer_name'  => $measure->customer_name,
             'customer_email' => $measure->customer_email,
@@ -351,6 +351,11 @@ class InstallerTechMeasureController extends Controller
             'crew_id'        => $measure->crew_id,
             'notes'          => 'Time tracking for tech measure: ' . $measure->customer_name,
         ]);
+
+        // Link the job back to the tech measure so findTimeTrackingJob always finds it
+        $measure->update(['job_id' => $job->id]);
+
+        return $job;
     }
 
     /**
