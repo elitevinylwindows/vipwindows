@@ -22,7 +22,11 @@ class AttendanceController extends Controller
 
         $selectedUser = $request->input('user_id');
 
+        // Only show installer time logs
+        $installerIds = VipUser::where('role', 'installer')->pluck('id');
+
         $query = JobTimeLog::with(['user', 'job.service'])
+            ->whereIn('user_id', $installerIds)
             ->whereBetween('clock_in', [$start->startOfDay(), $end->endOfDay()])
             ->orderByDesc('clock_in');
 
@@ -32,8 +36,8 @@ class AttendanceController extends Controller
 
         $logs = $query->get();
 
-        // Staff list for filter
-        $staff = VipUser::whereIn('role', ['admin', 'technician', 'installer', 'scheduler'])
+        // Staff list for filter — installers only
+        $staff = VipUser::where('role', 'installer')
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
@@ -58,8 +62,9 @@ class AttendanceController extends Controller
             })
             ->sortByDesc('total_minutes');
 
-        // Currently clocked in (active time logs)
+        // Currently clocked in (active time logs) — installers only
         $activeNow = JobTimeLog::with(['user', 'job.service'])
+            ->whereIn('user_id', $installerIds)
             ->whereNull('clock_out')
             ->orderByDesc('clock_in')
             ->get();
