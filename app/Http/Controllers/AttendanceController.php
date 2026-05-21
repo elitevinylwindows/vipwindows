@@ -126,18 +126,23 @@ class AttendanceController extends Controller
                 ]);
             }
 
-            // Check if a time log already exists for this user+job
-            $exists = JobTimeLog::where('job_id', $job->id)
-                ->where('user_id', $assignedTo)
-                ->exists();
-
-            if ($exists) {
-                $skipped++;
-                continue;
+            // Ensure job is marked completed
+            if ($job->status !== 'completed') {
+                $job->update(['status' => 'completed']);
             }
 
-            // Calculate earnings
+            // Collect all user IDs — assigned user + crew members
+            $userIds = collect([$assignedTo]);
+            if ($measure->crew_id) {
+                $crewMemberIds = \Illuminate\Support\Facades\DB::table('crew_members')
+                    ->where('crew_id', $measure->crew_id)
+                    ->pluck('user_id');
+                $userIds = $userIds->merge($crewMemberIds)->unique();
+            }
+
             $totalMinutes = $measure->started_at->diffInMinutes($measure->completed_at);
+
+            // Calculate earnings
             $earnings = 0;
             $service = $job->service ?? $tmService;
             if ($service && $service->installer_pay > 0) {
@@ -149,17 +154,29 @@ class AttendanceController extends Controller
                 };
             }
 
-            JobTimeLog::create([
-                'job_id'        => $job->id,
-                'user_id'       => $assignedTo,
-                'clock_in'      => $measure->started_at,
-                'clock_out'     => $measure->completed_at,
-                'total_minutes' => $totalMinutes,
-                'earnings'      => $earnings,
-                'notes'         => 'Backfilled from completed tech measure',
-            ]);
+            foreach ($userIds as $userId) {
+                // Check if a time log already exists for this user+job
+                $exists = JobTimeLog::where('job_id', $job->id)
+                    ->where('user_id', $userId)
+                    ->exists();
 
-            $created++;
+                if ($exists) {
+                    $skipped++;
+                    continue;
+                }
+
+                JobTimeLog::create([
+                    'job_id'        => $job->id,
+                    'user_id'       => $userId,
+                    'clock_in'      => $measure->started_at,
+                    'clock_out'     => $measure->completed_at,
+                    'total_minutes' => $totalMinutes,
+                    'earnings'      => $earnings,
+                    'notes'         => 'Backfilled from completed tech measure',
+                ]);
+
+                $created++;
+            }
         }
 
         return redirect()->route('admin.attendance.index')

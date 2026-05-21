@@ -20,8 +20,11 @@ class InstallerDashboardController extends Controller
 
         $totalQuotes = Quote::where('entered_by', $user->name)->count();
         $sentQuotes = Quote::where('entered_by', $user->name)->where('status', 'sent')->count();
-        $activeJobs = Job::where('assigned_to', $user->id)->whereIn('status', ['scheduled', 'in_progress'])->count();
-        $completedJobs = Job::where('assigned_to', $user->id)->where('status', 'completed')->count();
+        // Include jobs assigned directly OR where this user has time logs (crew work)
+        $timeLogJobIds = JobTimeLog::where('user_id', $user->id)->pluck('job_id')->unique();
+        $allMyJobIds = Job::where('assigned_to', $user->id)->pluck('id')->merge($timeLogJobIds)->unique();
+        $activeJobs = Job::whereIn('id', $allMyJobIds)->whereIn('status', ['scheduled', 'in_progress'])->count();
+        $completedJobs = Job::whereIn('id', $allMyJobIds)->where('status', 'completed')->count();
         $pendingInvoices = Invoice::where('created_by', $user->id)->whereIn('status', ['sent', 'partial'])->count();
         $totalEarnings = Invoice::where('created_by', $user->id)->where('status', 'paid')->sum('total');
 
