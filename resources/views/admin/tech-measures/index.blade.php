@@ -50,6 +50,8 @@
     .section-title { font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.5); margin-bottom: .5rem; margin-top: 1.5rem; }
     .item-photos { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
     .item-photo { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer; }
+    #miniCalGrid td:hover > div { background: rgba(201,168,76,.08) !important; }
+    #miniCalDayDetail { background: #fafaf7; border-radius: .4rem; padding: .5rem; border: 1px solid rgba(0,0,0,.06); }
     @media (max-width: 991.98px) { .tm-container { flex-direction: column; height: auto; } .tm-rail { width: 100%; min-width: 100%; max-height: 45vh; } }
 </style>
 @endpush
@@ -168,11 +170,19 @@
                             <option value="">— Select —</option>
                         </select>
                     </div>
-                    <div class="col-6">
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Type</label>
+                        <select id="editItemOpeningType" class="form-select form-select-sm">
+                            <option value="">—</option>
+                            <option value="Window">Window</option>
+                            <option value="Door">Door</option>
+                        </select>
+                    </div>
+                    <div class="col-5">
                         <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Reference</label>
                         <input type="text" id="editItemRoom" class="form-control form-control-sm">
                     </div>
-                    <div class="col-6">
+                    <div class="col-4">
                         <label class="form-label mb-0" style="font-size:.75rem; color:#888;">Notes</label>
                         <input type="text" id="editItemNotes" class="form-control form-control-sm">
                     </div>
@@ -769,6 +779,7 @@ function addItem(measureId) {
     const width = document.getElementById('addWidth')?.value?.trim();
     const height = document.getElementById('addHeight')?.value?.trim();
     const config = document.getElementById('addConfig')?.value || null;
+    const openingType = document.getElementById('addOpeningType')?.value || null;
     const room = document.getElementById('addRoom')?.value?.trim();
     const notes = document.getElementById('addNotes')?.value?.trim();
 
@@ -782,6 +793,7 @@ function addItem(measureId) {
             width: width || null,
             height: height || null,
             qty: qty,
+            opening_type: openingType,
             notes: notes,
         })
     })
@@ -826,6 +838,8 @@ function editItem(measureId, itemId, item) {
         sel.appendChild(opt);
     });
 
+    document.getElementById('editItemOpeningType').value = item.opening_type || '';
+
     new bootstrap.Modal(document.getElementById('editItemModal')).show();
 }
 
@@ -843,6 +857,7 @@ function saveEditItem() {
             height: document.getElementById('editItemHeight').value.trim() || null,
             description: config || null,
             series_type: config,
+            opening_type: document.getElementById('editItemOpeningType').value || null,
             room_label: document.getElementById('editItemRoom').value.trim(),
             notes: document.getElementById('editItemNotes').value.trim(),
         })
@@ -1118,6 +1133,129 @@ function downloadPdf(measureId) {
 let convertJobMeasureId = null;
 let jobLineItemCounter = 0;
 
+// ── Mini Calendar ──
+let miniCalMonth = null; // current month as 'YYYY-MM'
+let miniCalEvents = {};  // date → events array
+
+function miniCalNav(dir) {
+    const [y, m] = miniCalMonth.split('-').map(Number);
+    const d = new Date(y, m - 1 + dir, 1);
+    miniCalMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    loadMiniCalendar();
+}
+
+function loadMiniCalendar() {
+    document.getElementById('miniCalBody').innerHTML = '<tr><td colspan="7" class="text-center py-3"><div class="spinner-border spinner-border-sm text-secondary"></div></td></tr>';
+    document.getElementById('miniCalDayDetail').style.display = 'none';
+
+    fetch(`/admin/calendar/events-json?month=${miniCalMonth}`, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        miniCalEvents = data.events || {};
+        renderMiniCalGrid(data.start, data.end);
+    })
+    .catch(() => {
+        document.getElementById('miniCalBody').innerHTML = '<tr><td colspan="7" class="text-center py-2 text-muted" style="font-size:.75rem;">Failed to load calendar</td></tr>';
+    });
+}
+
+function renderMiniCalGrid(startStr, endStr) {
+    const [y, m] = miniCalMonth.split('-').map(Number);
+    const firstDay = new Date(y, m - 1, 1);
+    const lastDay = new Date(y, m, 0);
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('miniCalTitle').textContent = monthNames[m - 1] + ' ' + y;
+
+    let html = '';
+    let dayOfWeek = firstDay.getDay(); // 0=Sunday
+    let dayNum = 1;
+    const totalDays = lastDay.getDate();
+
+    // Build weeks
+    while (dayNum <= totalDays) {
+        html += '<tr>';
+        for (let col = 0; col < 7; col++) {
+            if ((dayNum === 1 && col < dayOfWeek) || dayNum > totalDays) {
+                html += '<td style="padding:1px;"></td>';
+            } else {
+                const dateStr = y + '-' + String(m).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+                const evts = miniCalEvents[dateStr] || [];
+                const isToday = dateStr === todayStr;
+                const hasEvents = evts.length > 0;
+                const dotColor = hasEvents ? (evts[0].color || '#c9a84c') : 'transparent';
+
+                html += `<td style="padding:1px; text-align:center; vertical-align:top; cursor:${hasEvents ? 'pointer' : 'default'};"
+                    ${hasEvents ? `onclick="showMiniCalDay('${dateStr}')"` : ''}>
+                    <div style="width:28px; height:28px; margin:auto; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+                        ${isToday ? 'background:var(--vip-accent); color:#fff; font-weight:700;' : ''}
+                        ${!isToday && hasEvents ? 'font-weight:600;' : ''}"
+                    >
+                        <span style="font-size:.72rem; line-height:1;">${dayNum}</span>
+                        ${hasEvents ? `<span style="display:flex; gap:1px; margin-top:1px;">${evts.slice(0,3).map(e => `<span style="width:4px;height:4px;border-radius:50%;background:${isToday ? '#fff' : (e.color || '#c9a84c')};"></span>`).join('')}</span>` : ''}
+                    </div>
+                </td>`;
+                dayNum++;
+            }
+        }
+        html += '</tr>';
+    }
+    document.getElementById('miniCalBody').innerHTML = html;
+}
+
+function showMiniCalDay(dateStr) {
+    const evts = miniCalEvents[dateStr] || [];
+    const detail = document.getElementById('miniCalDayDetail');
+    const parts = dateStr.split('-');
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('miniCalDayTitle').textContent = dayNames[d.getDay()] + ', ' + monthNames[d.getMonth()] + ' ' + d.getDate();
+
+    const container = document.getElementById('miniCalDayEvents');
+    if (evts.length === 0) {
+        container.innerHTML = '<p class="text-muted mb-0" style="font-size:.75rem;">No events this day.</p>';
+    } else {
+        container.innerHTML = evts.map(ev => `
+            <div class="d-flex align-items-start gap-2 mb-1 p-1 rounded" style="background:rgba(0,0,0,.02); border-left:3px solid ${ev.color || '#c9a84c'};">
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:.75rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(ev.title || ev.customer || '')}</div>
+                    <div style="font-size:.65rem; color:#888;">
+                        ${ev.time ? `<i class="bi bi-clock me-1"></i>${ev.time}` : ''}
+                        ${ev.service ? `<span class="ms-1"><i class="bi bi-tag me-1"></i>${escHtml(ev.service)}</span>` : ''}
+                        ${ev.crew ? `<span class="ms-1"><i class="bi bi-people me-1"></i>${escHtml(ev.crew)}</span>` : ''}
+                    </div>
+                </div>
+                <button class="btn btn-sm p-0 text-primary" style="font-size:.65rem;" onclick="miniCalSelectDate('${dateStr}', '${escHtml(ev.time || '')}')"><i class="bi bi-arrow-left-circle"></i></button>
+            </div>
+        `).join('');
+    }
+    detail.style.display = 'block';
+
+    // Also allow clicking the date to auto-fill the start date
+    document.getElementById('miniCalDayTitle').innerHTML += ` <button class="btn btn-sm btn-vip py-0 px-2 ms-2" style="font-size:.65rem;" onclick="miniCalSelectDate('${dateStr}')"><i class="bi bi-calendar-check me-1"></i>Use Date</button>`;
+}
+
+function miniCalSelectDate(dateStr, time) {
+    document.getElementById('jobStartDate').value = dateStr;
+    if (time) {
+        // Convert "9:00am" → "09:00"
+        const match = time.match(/(\d+):(\d+)(am|pm)/i);
+        if (match) {
+            let h = parseInt(match[1]);
+            const mins = match[2];
+            const ap = match[3].toLowerCase();
+            if (ap === 'pm' && h < 12) h += 12;
+            if (ap === 'am' && h === 12) h = 0;
+            document.getElementById('jobStartTime').value = String(h).padStart(2, '0') + ':' + mins;
+        }
+    }
+}
+
 function convertToJob(measureId) {
     if (!currentMeasureData) return;
     convertJobMeasureId = measureId;
@@ -1134,9 +1272,9 @@ function convertToJob(measureId) {
             <td class="text-nowrap">${escHtml(item.width) || '—'}</td>
             <td class="text-nowrap">${escHtml(item.height) || '—'}</td>
             <td>${escHtml(item.description) || '—'}</td>
+            <td>${escHtml(item.opening_type) || '—'}</td>
             <td>${escHtml(item.room_label) || '—'}</td>
-            <td style="font-size:.75rem;">${escHtml(item.notes) || ''}</td>
-            <td><input type="number" class="form-control form-control-sm job-measure-price" data-item-id="${item.id}" step="0.01" min="0" placeholder="0.00" oninput="recalcJobTotals()"></td>
+            <td><input type="number" class="form-control form-control-sm job-measure-price" data-item-id="${item.id}" step="0.01" min="0" placeholder="0.00" style="font-size:.78rem;" oninput="recalcJobTotals()"></td>
         </tr>`;
     });
 
@@ -1151,12 +1289,10 @@ function convertToJob(measureId) {
     });
 
     if (Object.keys(typeCounts).length > 0) {
-        // Create a line item for each opening type with pre-selected service
         Object.entries(typeCounts).forEach(([type, qty]) => {
             addJobLineItem(qty, type);
         });
     } else {
-        // No opening types set — add one blank row
         addJobLineItem();
     }
 
@@ -1168,6 +1304,12 @@ function convertToJob(measureId) {
     document.getElementById('jobDuration').value = '';
 
     recalcJobTotals();
+
+    // Initialize mini calendar to current month
+    const now = new Date();
+    miniCalMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    loadMiniCalendar();
+
     new bootstrap.Modal(document.getElementById('convertJobModal')).show();
 }
 
