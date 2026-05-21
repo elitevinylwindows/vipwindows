@@ -99,6 +99,7 @@
     .cell-job.s-booking-confirmed { background: rgba(23,162,184,.15); color: #0c5460; }
     .cal-cell .cell-more { font-size: .6rem; color: var(--vip-accent); font-weight: 600; margin-top: 1px; }
     .cell-job.s-event { font-size: .65rem; }
+    .cell-job .span-badge { font-size: .5rem; opacity: .7; margin-left: 2px; }
 
     /* ── Day View ──────────────────── */
     .cal-day-view { display: none; flex: 1; flex-direction: column; }
@@ -314,15 +315,25 @@
                                         {{ $entry['item']->customer_name ? substr($entry['item']->customer_name, 0, 12) : $entry['item']->job_number }}
                                     </span>
                                 @elseif($entry['type'] === 'event')
-                                    <span class="cell-job s-event" onclick="event.stopPropagation(); showEventPopup({{ $entry['item']->id }})" style="cursor:pointer; background:{{ $entry['item']->color ?? '#c9a84c' }}22; color:{{ $entry['item']->color ?? '#c9a84c' }}; border-left: 2px solid {{ $entry['item']->color ?? '#c9a84c' }};">
-                                        @if(($entry['item']->event_status ?? '') === 'completed')
+                                    @php
+                                        $evItem = $entry['item'];
+                                        $evEndDate = $evItem->end_date;
+                                        $isMultiDay = $evEndDate && $evEndDate->gt($evItem->event_date);
+                                        $dayNum = $isMultiDay ? $evItem->event_date->diffInDays($current) + 1 : 0;
+                                        $totalDays = $isMultiDay ? $evItem->event_date->diffInDays($evEndDate) + 1 : 0;
+                                    @endphp
+                                    <span class="cell-job s-event" onclick="event.stopPropagation(); showEventPopup({{ $evItem->id }})" style="cursor:pointer; background:{{ $evItem->color ?? '#c9a84c' }}22; color:{{ $evItem->color ?? '#c9a84c' }}; border-left: 2px solid {{ $evItem->color ?? '#c9a84c' }};">
+                                        @if(($evItem->event_status ?? '') === 'completed')
                                             <i class="bi bi-check-circle-fill text-success" style="font-size:.55rem;"></i>
-                                        @elseif($entry['item']->rescheduled_at)
+                                        @elseif($evItem->rescheduled_at)
                                             <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:.55rem;"></i>
                                         @else
                                             <i class="bi bi-calendar-event" style="font-size:.55rem;"></i>
                                         @endif
-                                        {{ substr($entry['item']->title, 0, 10) }}
+                                        {{ substr($evItem->title, 0, 10) }}
+                                        @if($isMultiDay)
+                                            <span class="span-badge">{{ $dayNum }}/{{ $totalDays }}</span>
+                                        @endif
                                     </span>
                                 @else
                                     <span class="cell-job s-booking{{ $entry['item']->status === 'confirmed' ? '-confirmed' : '' }}">
@@ -369,6 +380,10 @@
             ];
         }
         foreach ($del as $ev) {
+            $evEndDate = $ev->end_date;
+            $isMultiDay = $evEndDate && $evEndDate->gt($ev->event_date);
+            $dayNum = $isMultiDay ? $ev->event_date->diffInDays($cursorDate) + 1 : 0;
+            $totalDays = $isMultiDay ? $ev->event_date->diffInDays($evEndDate) + 1 : 0;
             $dayItems[] = [
                 'type' => 'event', 'id' => $ev->id,
                 'label' => \Str::limit($ev->title, 12),
@@ -378,6 +393,9 @@
                 'status' => $ev->event_status ?? 'scheduled',
                 'service_name' => $ev->service ? $ev->service->name : null,
                 'customer_name' => $ev->customer_name,
+                'is_multi_day' => $isMultiDay,
+                'day_num' => $dayNum,
+                'total_days' => $totalDays,
             ];
         }
         foreach ($dbl as $b) {
@@ -1338,6 +1356,9 @@ function buildDayItemCard(item) {
     if (item.service_name) meta.push(`<i class="bi bi-tag me-1"></i>${item.service_name}`);
     if (item.customer_name) meta.push(`<i class="bi bi-person me-1"></i>${item.customer_name}`);
 
+    // Multi-day indicator
+    const multiDayBadge = item.is_multi_day ? `<span class="dic-badge" style="background:#6c757d20; color:#6c757d;">Day ${item.day_num}/${item.total_days}</span>` : '';
+
     const clickHandler = item.type === 'job' ? `showJobPopup(${item.id})` :
                          item.type === 'event' ? `showEventPopup(${item.id})` :
                          `showBooking(${item.id})`;
@@ -1348,6 +1369,7 @@ function buildDayItemCard(item) {
             <span class="dic-title">${item.full_label}</span>
             <span class="dic-badge" style="background:${item.color}20; color:${item.color};">${typeBadge}</span>
             ${statusBadge}
+            ${multiDayBadge}
         </div>
         ${meta.length ? '<div class="dic-meta">' + meta.join(' &nbsp;&middot;&nbsp; ') + '</div>' : ''}
     </div>`;

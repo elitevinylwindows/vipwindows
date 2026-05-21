@@ -308,6 +308,10 @@
                         }
                         foreach ($dayEventList as $ev) {
                             $evColor = ($ev->service && $ev->service->color) ? $ev->service->color : ($ev->color ?: '#c9a84c');
+                            $evEndDate = $ev->end_date;
+                            $isMultiDay = $evEndDate && $evEndDate->gt($ev->event_date);
+                            $dayNum = $isMultiDay ? $ev->event_date->diffInDays($current) + 1 : 0;
+                            $totalDays = $isMultiDay ? $ev->event_date->diffInDays($evEndDate) + 1 : 0;
                             $allItems->push([
                                 'type' => 'event', 'id' => $ev->id,
                                 'label' => \Str::limit($ev->title, 10),
@@ -329,6 +333,9 @@
                                 'reschedule_reason' => $ev->reschedule_reason,
                                 'rescheduled_from_date' => $ev->rescheduled_from_date ? $ev->rescheduled_from_date->format('M d, Y') : null,
                                 'rescheduled_from_time' => $ev->rescheduled_from_time,
+                                'is_multi_day' => $isMultiDay,
+                                'day_num' => $dayNum,
+                                'total_days' => $totalDays,
                             ]);
                         }
                     @endphp
@@ -359,6 +366,9 @@
                                         @endif
                                     @endif
                                     {{ $item['label'] }}
+                                    @if(!empty($item['is_multi_day']))
+                                        <span style="font-size:.45rem; opacity:.7; margin-left:1px;">{{ $item['day_num'] }}/{{ $item['total_days'] }}</span>
+                                    @endif
                                 </span>
                             @endforeach
                             @if($allItems->count() > $maxShow)
@@ -420,6 +430,10 @@
         }
         foreach ($del as $ev) {
             $evc = ($ev->service && $ev->service->color) ? $ev->service->color : ($ev->color ?: '#c9a84c');
+            $evEndDate = $ev->end_date;
+            $isMultiDay = $evEndDate && $evEndDate->gt($ev->event_date);
+            $dayNum = $isMultiDay ? $ev->event_date->diffInDays($cursorDate) + 1 : 0;
+            $totalDays = $isMultiDay ? $ev->event_date->diffInDays($evEndDate) + 1 : 0;
             $dayItems[] = [
                 'type' => 'event', 'id' => $ev->id,
                 'label' => \Str::limit($ev->title, 10),
@@ -441,6 +455,9 @@
                 'reschedule_reason' => $ev->reschedule_reason,
                 'rescheduled_from_date' => $ev->rescheduled_from_date ? $ev->rescheduled_from_date->format('M d, Y') : null,
                 'rescheduled_from_time' => $ev->rescheduled_from_time,
+                'is_multi_day' => $isMultiDay,
+                'day_num' => $dayNum,
+                'total_days' => $totalDays,
             ];
         }
         $calendarDataArray[$dk] = $dayItems;
@@ -1115,12 +1132,15 @@ function buildDayItemCard(item) {
     if (item.crew_name) meta.push(`<i class="bi bi-people me-1"></i>${item.crew_name}`);
     if (item.customer_name) meta.push(`<i class="bi bi-person me-1"></i>${item.customer_name}`);
 
+    const multiDayBadge = item.is_multi_day ? `<span class="dic-badge" style="background:#6c757d20; color:#6c757d;">Day ${item.day_num}/${item.total_days}</span>` : '';
+
     return `<div class="day-item-card" style="border-left-color:${item.color};" onclick='openCalItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
         <div class="d-flex align-items-center gap-2 mb-1">
             <i class="bi bi-${icon}" style="color:${item.color}; font-size:.85rem;"></i>
             <span class="dic-title">${item.full_label}</span>
             <span class="dic-badge" style="background:${item.color}20; color:${item.color};">${typeBadge}</span>
             ${statusBadge}
+            ${multiDayBadge}
             ${item.is_rescheduled ? '<i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:.7rem;" title="Rescheduled"></i>' : ''}
         </div>
         ${meta.length ? '<div class="dic-meta">' + meta.join(' &nbsp;&middot;&nbsp; ') + '</div>' : ''}

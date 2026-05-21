@@ -97,17 +97,41 @@ class InstallerJobController extends Controller
         $completed = $jobs->where('status', 'completed')->count();
 
         // Get calendar events assigned to this installer's crews (admin-scheduled events)
+        // Include events that start before the month but end within it (multi-day spanning)
         $crewIds = $this->myCrewIds();
         $calendarEvents = collect();
         if (!empty($crewIds)) {
             $calendarEvents = CalendarEvent::with('service', 'crew')
-                ->whereBetween('event_date', [$startOfMonth, $endOfMonth])
                 ->whereIn('crew_id', $crewIds)
+                ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                    // Events starting within the month
+                    $q->whereBetween('event_date', [$startOfMonth, $endOfMonth])
+                      // OR events starting before but ending within/after the month
+                      ->orWhere(function ($q2) use ($startOfMonth, $endOfMonth) {
+                          $q2->where('event_date', '<', $startOfMonth)
+                              ->where('end_date', '>=', $startOfMonth);
+                      });
+                })
                 ->orderBy('event_date')
                 ->orderBy('event_time')
                 ->get();
         }
-        $eventsByDate = $calendarEvents->groupBy(fn($e) => $e->event_date->format('Y-m-d'));
+
+        // Build eventsByDate — expand multi-day events across all dates they span
+        $eventsByDate = collect();
+        foreach ($calendarEvents as $ev) {
+            $evStart = $ev->event_date->copy();
+            $evEnd = $ev->end_date ? $ev->end_date->copy() : $evStart->copy();
+            $cursor = $evStart->copy();
+            while ($cursor <= $evEnd) {
+                $dk = $cursor->format('Y-m-d');
+                if (!$eventsByDate->has($dk)) {
+                    $eventsByDate[$dk] = collect();
+                }
+                $eventsByDate[$dk]->push($ev);
+                $cursor->addDay();
+            }
+        }
 
         // Get bookings for this month
         $bookings = InstallerBooking::where('installer_id', Auth::id())

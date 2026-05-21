@@ -62,12 +62,33 @@ class CalendarController extends Controller
 
         $scheduledJobs = $allJobs->groupBy(fn($j) => $j->scheduled_date->format('Y-m-d'));
 
-        // Calendar events (standalone, not from jobs)
-        $calendarEvents = CalendarEvent::with('service', 'crew')
-            ->whereBetween('event_date', [$startOfMonth, $endOfMonth])
+        // Calendar events (standalone, not from jobs) — includes multi-day spanning
+        $calendarEventsRaw = CalendarEvent::with('service', 'crew')
+            ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('event_date', [$startOfMonth, $endOfMonth])
+                  ->orWhere(function ($q2) use ($startOfMonth) {
+                      $q2->where('event_date', '<', $startOfMonth)
+                          ->where('end_date', '>=', $startOfMonth);
+                  });
+            })
             ->orderBy('event_date')
-            ->get()
-            ->groupBy(fn($e) => $e->event_date->format('Y-m-d'));
+            ->get();
+
+        // Expand multi-day events across all dates they span
+        $calendarEvents = collect();
+        foreach ($calendarEventsRaw as $ev) {
+            $evStart = $ev->event_date->copy();
+            $evEnd = $ev->end_date ? $ev->end_date->copy() : $evStart->copy();
+            $cursor = $evStart->copy();
+            while ($cursor <= $evEnd) {
+                $dk = $cursor->format('Y-m-d');
+                if (!$calendarEvents->has($dk)) {
+                    $calendarEvents[$dk] = collect();
+                }
+                $calendarEvents[$dk]->push($ev);
+                $cursor->addDay();
+            }
+        }
 
         // Stats
         $totalJobs = $allJobs->count();
@@ -78,7 +99,7 @@ class CalendarController extends Controller
             ->whereBetween('scheduled_date', [$startOfMonth, $endOfMonth])
             ->count();
         $totalOrders = $scheduledOrders->flatten()->count();
-        $totalEvents = CalendarEvent::whereBetween('event_date', [$startOfMonth, $endOfMonth])->count();
+        $totalEvents = $calendarEventsRaw->count();
 
         // Availability for the modal
         $availability = AdminAvailability::orderBy('day_of_week')->get()->keyBy('day_of_week');
