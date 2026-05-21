@@ -446,6 +446,8 @@
 // ── Job data for popup ──
 @php
     $jobsJson = $jobs->map(function($j) {
+        // Find linked tech measure for this job
+        $jobTm = \App\Models\TechMeasure::where('job_id', $j->id)->first();
         return [
             'id' => $j->id,
             'job_number' => $j->job_number,
@@ -464,6 +466,7 @@
             'description' => $j->description,
             'is_rescheduled' => (bool) $j->rescheduled_at,
             'reschedule_reason' => $j->reschedule_reason,
+            'tech_measure_id' => $jobTm?->id ?? null,
         ];
     })->keyBy('id');
 
@@ -730,7 +733,7 @@ function showEventPopup(eventId) {
     // Determine if this is a tech measure event
     const isTechMeasureEvent = (ev.service_name || '').toLowerCase().includes('measure') || (ev.title || '').toLowerCase().includes('measure');
     const techMeasureId = ev.tech_measure_id || null;
-    const eventDetailUrl = isTechMeasureEvent ? (techMeasureId ? `/installer/tech-measures/${techMeasureId}` : `/installer/tech-measures`) : null;
+    const eventDetailUrl = isTechMeasureEvent ? (techMeasureId ? `/installer/tech-measures?focus=${techMeasureId}&from=calendar` : `/installer/tech-measures`) : null;
     const tmStatus = ev.tech_measure_status;
 
     // Check actual status to decide which button to show
@@ -824,7 +827,7 @@ function advanceEventStep(eventId, mapsUrl, detailUrl, techMeasureId) {
     if (step === 0) {
         // Step 1: Open Google Maps & start the tech measure clock
         window.open(mapsUrl, '_blank');
-        if (techMeasureId) startTechMeasure(techMeasureId);
+        if (techMeasureId) startTechMeasure(techMeasureId, eventId);
         // Advance to "Arrived at Location"
         evtSteps[eventId] = 1;
         btn.className = 'btn btn-warning w-100';
@@ -850,12 +853,60 @@ function advanceEventStep(eventId, mapsUrl, detailUrl, techMeasureId) {
 }
 
 // Start a tech measure (set status to in_progress, start the clock)
-function startTechMeasure(techMeasureId) {
+function startTechMeasure(techMeasureId, eventId) {
     if (!techMeasureId) return;
     const csrfToken = document.querySelector('meta[name=csrf-token]').content;
+
+    // Also clock in (which creates a JobTimeLog)
     fetch(`/installer/tech-measures/${techMeasureId}/start`, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+    }).then(() => {
+        // Now clock in to start the time log
+        return fetch(`/installer/tech-measures/${techMeasureId}/clock-in`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+        });
+    }).then(r => r.json()).then(data => {
+        if (data.success && eventId) {
+            // Update local eventsData so the popup shows the running timer
+            const ev = eventsData[eventId];
+            if (ev) {
+                ev.is_clocked_in = true;
+                ev.active_since = new Date().toISOString();
+                ev.tech_measure_status = 'in_progress';
+            }
+
+            // If the popup is currently open, inject the timer live
+            const popupEl = document.getElementById('popupElapsedTime');
+            if (!popupEl) {
+                // Add the clock display to the popup body
+                const bodyEl = document.getElementById('eventPopupBody');
+                if (bodyEl) {
+                    const timerDiv = document.createElement('div');
+                    timerDiv.className = 'alert alert-primary py-2 px-3 mb-3 d-flex align-items-center justify-content-between';
+                    timerDiv.style.fontSize = '.85rem';
+                    timerDiv.innerHTML = `<span><i class="bi bi-clock-fill me-1"></i> <strong>Clocked In</strong></span>
+                        <span class="badge bg-primary" id="popupElapsedTime" style="font-size:.8rem;">0h 00m 00s</span>`;
+                    bodyEl.insertBefore(timerDiv, bodyEl.firstChild);
+                }
+            }
+
+            // Start the live timer
+            if (popupTimerInterval) clearInterval(popupTimerInterval);
+            const startDate = new Date();
+            function updateTimer() {
+                const now = new Date();
+                const diff = Math.floor((now - startDate) / 1000);
+                const hrs = Math.floor(diff / 3600);
+                const mins = Math.floor((diff % 3600) / 60);
+                const secs = diff % 60;
+                const el = document.getElementById('popupElapsedTime');
+                if (el) el.textContent = `${hrs}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+            }
+            updateTimer();
+            popupTimerInterval = setInterval(updateTimer, 1000);
+        }
     }).catch(() => {});
 }
 
