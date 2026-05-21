@@ -367,13 +367,19 @@ function loadMeasure(id) {
     fetch(`/installer/tech-measures/${id}`, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) {
+            return r.text().then(txt => { throw new Error('Server ' + r.status + ': ' + txt.substring(0, 200)); });
+        }
+        return r.json();
+    })
     .then(data => {
         currentMeasureData = data;
         renderMeasureDetail(data);
     })
-    .catch(() => {
-        body.innerHTML = '<div class="alert alert-danger m-4">Failed to load measure.</div>';
+    .catch(err => {
+        console.error('loadMeasure error:', err);
+        body.innerHTML = '<div class="alert alert-danger m-4">Failed to load measure. Check console for details.</div>';
     });
 }
 

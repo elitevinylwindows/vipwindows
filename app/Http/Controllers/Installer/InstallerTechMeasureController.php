@@ -79,44 +79,25 @@ class InstallerTechMeasureController extends Controller
             }
         }
 
-        // Auto-clock in: if measure is in_progress but no job/time log exists, create them now
-        // This catches cases where the user navigated directly to tech measures
-        // without going through the calendar Start Route flow
-        if ($measure->status === 'in_progress' && !$job) {
-            $job = $this->findOrCreateTimeTrackingJob($measure);
-            JobTimeLog::create([
-                'job_id'   => $job->id,
-                'user_id'  => $user->id,
-                'clock_in' => $measure->started_at ?? now(),
-            ]);
+        // Auto-clock in: if measure is in_progress but no active time log, create one now
+        // This catches cases where start() was called without clock-in, or user navigated directly
+        if ($measure->status === 'in_progress') {
+            try {
+                if (!$job) {
+                    $job = $this->findOrCreateTimeTrackingJob($measure);
+                }
 
-            // Clock in crew members too
-            if ($measure->crew_id) {
-                $crewMemberIds = DB::table('crew_members')
-                    ->where('crew_id', $measure->crew_id)
-                    ->pluck('user_id')
-                    ->toArray();
-
-                foreach ($crewMemberIds as $memberId) {
-                    if ($memberId == $user->id) continue;
+                $hasActiveLog = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->exists();
+                if (!$hasActiveLog) {
                     JobTimeLog::create([
                         'job_id'   => $job->id,
-                        'user_id'  => $memberId,
+                        'user_id'  => $user->id,
                         'clock_in' => $measure->started_at ?? now(),
                     ]);
                 }
-            }
-        }
-
-        // If measure is in_progress, job exists, but user has no active time log — clock them in
-        if ($measure->status === 'in_progress' && $job) {
-            $hasActiveLog = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->exists();
-            if (!$hasActiveLog) {
-                JobTimeLog::create([
-                    'job_id'   => $job->id,
-                    'user_id'  => $user->id,
-                    'clock_in' => $measure->started_at ?? now(),
-                ]);
+            } catch (\Exception $e) {
+                // Don't let auto-clock-in failure break page load
+                \Log::warning('Auto clock-in failed for measure ' . $id . ': ' . $e->getMessage());
             }
         }
 
@@ -176,36 +157,40 @@ class InstallerTechMeasureController extends Controller
         ]);
 
         // Auto-clock in the user when starting a measure
-        $job = $this->findOrCreateTimeTrackingJob($measure);
+        try {
+            $job = $this->findOrCreateTimeTrackingJob($measure);
 
-        // Only clock in if not already clocked in
-        $alreadyActive = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->exists();
-        if (!$alreadyActive) {
-            JobTimeLog::create([
-                'job_id'   => $job->id,
-                'user_id'  => $user->id,
-                'clock_in' => $now,
-            ]);
+            // Only clock in if not already clocked in
+            $alreadyActive = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->exists();
+            if (!$alreadyActive) {
+                JobTimeLog::create([
+                    'job_id'   => $job->id,
+                    'user_id'  => $user->id,
+                    'clock_in' => $now,
+                ]);
 
-            // Clock in crew members too
-            if ($measure->crew_id) {
-                $crewMemberIds = DB::table('crew_members')
-                    ->where('crew_id', $measure->crew_id)
-                    ->pluck('user_id')
-                    ->toArray();
+                // Clock in crew members too
+                if ($measure->crew_id) {
+                    $crewMemberIds = DB::table('crew_members')
+                        ->where('crew_id', $measure->crew_id)
+                        ->pluck('user_id')
+                        ->toArray();
 
-                foreach ($crewMemberIds as $memberId) {
-                    if ($memberId == $user->id) continue;
-                    $memberActive = $job->timeLogs()->where('user_id', $memberId)->whereNull('clock_out')->exists();
-                    if (!$memberActive) {
-                        JobTimeLog::create([
-                            'job_id'   => $job->id,
-                            'user_id'  => $memberId,
-                            'clock_in' => $now,
-                        ]);
+                    foreach ($crewMemberIds as $memberId) {
+                        if ($memberId == $user->id) continue;
+                        $memberActive = $job->timeLogs()->where('user_id', $memberId)->whereNull('clock_out')->exists();
+                        if (!$memberActive) {
+                            JobTimeLog::create([
+                                'job_id'   => $job->id,
+                                'user_id'  => $memberId,
+                                'clock_in' => $now,
+                            ]);
+                        }
                     }
                 }
             }
+        } catch (\Exception $e) {
+            \Log::warning('Auto clock-in on start() failed for measure ' . $id . ': ' . $e->getMessage());
         }
 
         return response()->json(['success' => true]);
