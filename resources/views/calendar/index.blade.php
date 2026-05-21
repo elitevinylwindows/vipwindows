@@ -278,12 +278,58 @@
                         $maxShow = 3;
 
                         $allItems = collect();
-                        foreach($dayJobList as $j) { $jobDisplayName = $j->title ?: $j->customer_name ?: $j->job_number; $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => Str::limit($jobDisplayName, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . $jobDisplayName, 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status, 'service_name' => $j->service?->name, 'is_rescheduled' => (bool) $j->rescheduled_at, 'reschedule_reason' => $j->reschedule_reason, 'rescheduled_from_date' => $j->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $j->rescheduled_from_time]); }
-                        foreach($dayOrderList as $o) { $allItems->push(['type' => 'order', 'id' => $o->id, 'label' => Str::limit($o->customer_name, 10), 'full_label' => $o->customer_name, 'time' => null, 'color' => ($serviceColors[$o->service_type] ?? '#007bff'), 'address' => '', 'status' => $o->status, 'service_name' => $o->service_type]); }
-                        foreach($dayEventList as $ev) {
-                            // Always use live service color when a service is assigned; fallback to stored color or gold
+                        foreach ($dayJobList as $j) {
+                            $jobDisplayName = $j->title ?: $j->customer_name ?: $j->job_number;
+                            $allItems->push([
+                                'type' => 'job', 'id' => $j->id,
+                                'label' => \Str::limit($jobDisplayName, 10),
+                                'full_label' => ($j->job_number ?? '') . ' — ' . $jobDisplayName,
+                                'time' => $j->scheduled_time,
+                                'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'),
+                                'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '),
+                                'status' => $j->status,
+                                'service_name' => $j->service ? $j->service->name : null,
+                                'is_rescheduled' => (bool) $j->rescheduled_at,
+                                'reschedule_reason' => $j->reschedule_reason,
+                                'rescheduled_from_date' => $j->rescheduled_from_date ? $j->rescheduled_from_date->format('M d, Y') : null,
+                                'rescheduled_from_time' => $j->rescheduled_from_time,
+                            ]);
+                        }
+                        foreach ($dayOrderList as $o) {
+                            $allItems->push([
+                                'type' => 'order', 'id' => $o->id,
+                                'label' => \Str::limit($o->customer_name, 10),
+                                'full_label' => $o->customer_name,
+                                'time' => null,
+                                'color' => ($serviceColors[$o->service_type] ?? '#007bff'),
+                                'address' => '', 'status' => $o->status,
+                                'service_name' => $o->service_type,
+                            ]);
+                        }
+                        foreach ($dayEventList as $ev) {
                             $evColor = ($ev->service && $ev->service->color) ? $ev->service->color : ($ev->color ?: '#c9a84c');
-                            $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'crew_id' => $ev->crew_id, 'crew_name' => $ev->crew?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone, 'installation_types' => $ev->installation_types, 'event_status' => $ev->event_status ?? 'scheduled', 'is_rescheduled' => (bool) $ev->rescheduled_at, 'reschedule_reason' => $ev->reschedule_reason, 'rescheduled_from_date' => $ev->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $ev->rescheduled_from_time]);
+                            $allItems->push([
+                                'type' => 'event', 'id' => $ev->id,
+                                'label' => \Str::limit($ev->title, 10),
+                                'full_label' => $ev->title,
+                                'time' => $ev->event_time, 'end_time' => $ev->end_time,
+                                'color' => $evColor, 'address' => $ev->address,
+                                'description' => $ev->description,
+                                'service_id' => $ev->service_id,
+                                'service_name' => $ev->service ? $ev->service->name : null,
+                                'crew_id' => $ev->crew_id,
+                                'crew_name' => $ev->crew ? $ev->crew->name : null,
+                                'end_date' => $ev->end_date ? $ev->end_date->format('Y-m-d') : null,
+                                'customer_name' => $ev->customer_name,
+                                'customer_email' => $ev->customer_email,
+                                'customer_phone' => $ev->customer_phone,
+                                'installation_types' => $ev->installation_types,
+                                'event_status' => $ev->event_status ?? 'scheduled',
+                                'is_rescheduled' => (bool) $ev->rescheduled_at,
+                                'reschedule_reason' => $ev->reschedule_reason,
+                                'rescheduled_from_date' => $ev->rescheduled_from_date ? $ev->rescheduled_from_date->format('M d, Y') : null,
+                                'rescheduled_from_time' => $ev->rescheduled_from_time,
+                            ]);
                         }
                     @endphp
                     <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}"
@@ -333,30 +379,76 @@
 </div>
 
 {{-- Calendar data for JS day view --}}
+@php
+    $calendarDataArray = [];
+    $cursorDate = $gridStart->copy();
+    $endCursor = $gridEnd->copy()->addDay();
+    while ($cursorDate < $endCursor) {
+        $dk = $cursorDate->format('Y-m-d');
+        $djl = $scheduledJobs[$dk] ?? collect();
+        $dol = $scheduledOrders[$dk] ?? collect();
+        $del = $calendarEvents[$dk] ?? collect();
+
+        $dayItems = [];
+        foreach ($djl as $j) {
+            $jdn = $j->title ?: $j->customer_name ?: $j->job_number;
+            $dayItems[] = [
+                'type' => 'job', 'id' => $j->id,
+                'label' => \Str::limit($jdn, 10),
+                'full_label' => ($j->job_number ?? '') . ' — ' . $jdn,
+                'time' => $j->scheduled_time,
+                'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'),
+                'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '),
+                'status' => $j->status,
+                'service_name' => $j->service ? $j->service->name : null,
+                'is_rescheduled' => (bool) $j->rescheduled_at,
+                'reschedule_reason' => $j->reschedule_reason,
+                'rescheduled_from_date' => $j->rescheduled_from_date ? $j->rescheduled_from_date->format('M d, Y') : null,
+                'rescheduled_from_time' => $j->rescheduled_from_time,
+            ];
+        }
+        foreach ($dol as $o) {
+            $dayItems[] = [
+                'type' => 'order', 'id' => $o->id,
+                'label' => \Str::limit($o->customer_name, 10),
+                'full_label' => $o->customer_name,
+                'time' => null,
+                'color' => ($serviceColors[$o->service_type] ?? '#007bff'),
+                'address' => '', 'status' => $o->status,
+                'service_name' => $o->service_type,
+            ];
+        }
+        foreach ($del as $ev) {
+            $evc = ($ev->service && $ev->service->color) ? $ev->service->color : ($ev->color ?: '#c9a84c');
+            $dayItems[] = [
+                'type' => 'event', 'id' => $ev->id,
+                'label' => \Str::limit($ev->title, 10),
+                'full_label' => $ev->title,
+                'time' => $ev->event_time, 'end_time' => $ev->end_time,
+                'color' => $evc, 'address' => $ev->address,
+                'description' => $ev->description,
+                'service_id' => $ev->service_id,
+                'service_name' => $ev->service ? $ev->service->name : null,
+                'crew_id' => $ev->crew_id,
+                'crew_name' => $ev->crew ? $ev->crew->name : null,
+                'end_date' => $ev->end_date ? $ev->end_date->format('Y-m-d') : null,
+                'customer_name' => $ev->customer_name,
+                'customer_email' => $ev->customer_email,
+                'customer_phone' => $ev->customer_phone,
+                'installation_types' => $ev->installation_types,
+                'event_status' => $ev->event_status ?? 'scheduled',
+                'is_rescheduled' => (bool) $ev->rescheduled_at,
+                'reschedule_reason' => $ev->reschedule_reason,
+                'rescheduled_from_date' => $ev->rescheduled_from_date ? $ev->rescheduled_from_date->format('M d, Y') : null,
+                'rescheduled_from_time' => $ev->rescheduled_from_time,
+            ];
+        }
+        $calendarDataArray[$dk] = $dayItems;
+        $cursorDate->addDay();
+    }
+@endphp
 <script>
-const calendarData = @json(
-    collect($gridStart->copy()->daysUntil($gridEnd->copy()->addDay()))->mapWithKeys(function($date) use ($scheduledJobs, $scheduledOrders, $calendarEvents, $serviceColors, $serviceColorById, $slots) {
-        $dateKey = $date->format('Y-m-d');
-        $dayJobList = $scheduledJobs[$dateKey] ?? collect();
-        $dayOrderList = $scheduledOrders[$dateKey] ?? collect();
-        $dayEventList = $calendarEvents[$dateKey] ?? collect();
-
-        $allItems = collect();
-        foreach($dayJobList as $j) {
-            $jobDisplayName = $j->title ?: $j->customer_name ?: $j->job_number;
-            $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => \Str::limit($jobDisplayName, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . $jobDisplayName, 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status, 'service_name' => $j->service?->name, 'is_rescheduled' => (bool) $j->rescheduled_at, 'reschedule_reason' => $j->reschedule_reason, 'rescheduled_from_date' => $j->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $j->rescheduled_from_time]);
-        }
-        foreach($dayOrderList as $o) {
-            $allItems->push(['type' => 'order', 'id' => $o->id, 'label' => \Str::limit($o->customer_name, 10), 'full_label' => $o->customer_name, 'time' => null, 'color' => ($serviceColors[$o->service_type] ?? '#007bff'), 'address' => '', 'status' => $o->status, 'service_name' => $o->service_type]);
-        }
-        foreach($dayEventList as $ev) {
-            $evColor = ($ev->service && $ev->service->color) ? $ev->service->color : ($ev->color ?: '#c9a84c');
-            $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => \Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'crew_id' => $ev->crew_id, 'crew_name' => $ev->crew?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone, 'installation_types' => $ev->installation_types, 'event_status' => $ev->event_status ?? 'scheduled', 'is_rescheduled' => (bool) $ev->rescheduled_at, 'reschedule_reason' => $ev->reschedule_reason, 'rescheduled_from_date' => $ev->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $ev->rescheduled_from_time]);
-        }
-
-        return [$dateKey => $allItems->values()->toArray()];
-    })->toArray()
-);
+const calendarData = @json($calendarDataArray);
 </script>
 
 {{-- ── Add to Schedule Modal ──────────────────── --}}

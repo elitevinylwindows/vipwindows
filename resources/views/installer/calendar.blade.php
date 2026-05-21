@@ -737,7 +737,7 @@ function showEventPopup(eventId) {
     const tmStatus = ev.tech_measure_status;
 
     // Check actual status to decide which button to show
-    if (ev.event_status === 'completed') {
+    if (ev.event_status === 'completed' || tmStatus === 'completed' || tmStatus === 'converted') {
         // Completed — show view button
         if (eventDetailUrl) {
             routeRow += `<a href="${eventDetailUrl}" class="btn btn-outline-success w-100"><i class="bi bi-check-circle me-1"></i> Completed — View Measure</a>`;
