@@ -116,6 +116,7 @@ Route::middleware(['auth:vip', 'admin'])->prefix('admin')->name('admin.')->group
 
     // Calendar management
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+    Route::get('/calendar/events-json', [CalendarController::class, 'eventsJson'])->name('calendar.eventsJson');
     Route::post('/calendar/slots', [CalendarController::class, 'storeSlot'])->name('calendar.storeSlot');
     Route::put('/calendar/slots/{id}', [CalendarController::class, 'updateSlot'])->name('calendar.updateSlot');
     Route::delete('/calendar/slots/{id}', [CalendarController::class, 'deleteSlot'])->name('calendar.deleteSlot');

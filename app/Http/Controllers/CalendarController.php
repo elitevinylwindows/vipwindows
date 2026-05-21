@@ -119,6 +119,76 @@ class CalendarController extends Controller
     }
 
     /**
+     * JSON API: return calendar events for a given month (used by mini-calendar in modals).
+     */
+    public function eventsJson(Request $request)
+    {
+        $month = $request->input('month', now()->format('Y-m'));
+        $startOfMonth = \Carbon\Carbon::parse($month . '-01')->startOfMonth();
+        $endOfMonth   = $startOfMonth->copy()->endOfMonth();
+
+        $events = CalendarEvent::with('service', 'crew')
+            ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('event_date', [$startOfMonth, $endOfMonth])
+                  ->orWhere(function ($q2) use ($startOfMonth) {
+                      $q2->where('event_date', '<', $startOfMonth)
+                          ->where('end_date', '>=', $startOfMonth);
+                  });
+            })
+            ->orderBy('event_date')
+            ->orderBy('event_time')
+            ->get();
+
+        $jobs = Job::with('service')
+            ->whereNotNull('scheduled_date')
+            ->whereBetween('scheduled_date', [$startOfMonth, $endOfMonth])
+            ->orderBy('scheduled_date')
+            ->get();
+
+        // Build a date → items map
+        $dateMap = [];
+        foreach ($events as $ev) {
+            $evStart = $ev->event_date->copy();
+            $evEnd = $ev->end_date ? $ev->end_date->copy() : $evStart->copy();
+            $cursor = $evStart->copy();
+            while ($cursor <= $evEnd && $cursor <= $endOfMonth) {
+                $dk = $cursor->format('Y-m-d');
+                $dateMap[$dk][] = [
+                    'type' => 'event',
+                    'id' => $ev->id,
+                    'title' => $ev->title,
+                    'time' => $ev->event_time ? \Carbon\Carbon::parse($ev->event_time)->format('g:ia') : null,
+                    'service' => $ev->service->name ?? null,
+                    'color' => $ev->service->color ?? '#c9a84c',
+                    'crew' => $ev->crew->name ?? null,
+                    'customer' => $ev->customer_name,
+                ];
+                $cursor->addDay();
+            }
+        }
+        foreach ($jobs as $job) {
+            $dk = $job->scheduled_date->format('Y-m-d');
+            $dateMap[$dk][] = [
+                'type' => 'job',
+                'id' => $job->id,
+                'title' => $job->customer_name . ' — ' . ($job->service->name ?? 'Job'),
+                'time' => $job->scheduled_time ? \Carbon\Carbon::parse($job->scheduled_time)->format('g:ia') : null,
+                'service' => $job->service->name ?? null,
+                'color' => $job->service->color ?? '#0d6efd',
+                'crew' => null,
+                'customer' => $job->customer_name,
+            ];
+        }
+
+        return response()->json([
+            'month' => $month,
+            'start' => $startOfMonth->format('Y-m-d'),
+            'end' => $endOfMonth->format('Y-m-d'),
+            'events' => $dateMap,
+        ]);
+    }
+
+    /**
      * Store a calendar event (standalone).
      */
     public function storeEvent(Request $request)

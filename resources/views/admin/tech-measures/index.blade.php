@@ -188,107 +188,149 @@
 
 {{-- Convert to Job Modal --}}
 <div class="modal fade" id="convertJobModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog" style="max-width:1100px;">
         <div class="modal-content">
             <div class="modal-header py-2" style="background:linear-gradient(135deg, var(--vip-accent), #a0832a); color:#fff;">
                 <h6 class="modal-title mb-0"><i class="bi bi-tools me-1"></i> Convert to Job</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body py-3">
-                {{-- Section 1: Service Line Items --}}
-                <h6 style="font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.5rem;">
-                    <i class="bi bi-list-check me-1"></i> Service Line Items
-                </h6>
-                <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
-                    <div class="card-body p-2">
-                        <table class="table table-sm table-borderless mb-2" id="jobLineItemsTable">
-                            <thead>
-                                <tr style="font-size:.68rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.4);">
-                                    <th style="width:60px;">Qty</th>
-                                    <th>Service</th>
-                                    <th style="width:120px;">Unit Price</th>
-                                    <th style="width:120px;">Line Total</th>
-                                    <th style="width:40px;"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="jobLineItemsBody"></tbody>
-                        </table>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="addJobLineItem()">
-                            <i class="bi bi-plus-lg me-1"></i> Add Line Item
-                        </button>
-                        <div class="text-end mt-2">
-                            <strong style="font-size:.85rem;">Installation Total: $<span id="jobLineTotal">0.00</span></strong>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Section 2: Measurements with Price --}}
-                <h6 style="font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.5rem;">
-                    <i class="bi bi-rulers me-1"></i> Measurements
-                </h6>
-                <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
-                    <div class="card-body p-2">
-                        <table class="table table-sm table-borderless mb-0">
-                            <thead>
-                                <tr style="font-size:.68rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.4);">
-                                    <th style="width:30px;">#</th>
-                                    <th style="width:40px;">Qty</th>
-                                    <th>Width</th>
-                                    <th>Height</th>
-                                    <th>Unit (Config)</th>
-                                    <th>Reference</th>
-                                    <th>Notes</th>
-                                    <th style="width:120px;">Price</th>
-                                </tr>
-                            </thead>
-                            <tbody id="jobMeasurementsBody"></tbody>
-                        </table>
-                        <div class="text-end mt-2">
-                            <strong style="font-size:.85rem;">Measurements Total: $<span id="jobMeasurementsTotal">0.00</span></strong>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Grand Total --}}
-                <div class="text-end mb-3 pe-2">
-                    <strong style="font-size:1rem; color:var(--vip-accent);">Grand Total: $<span id="jobGrandTotal">0.00</span></strong>
-                </div>
-
-                {{-- Section 3: Schedule --}}
-                <h6 style="font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.5rem;">
-                    <i class="bi bi-calendar-event me-1"></i> Schedule
-                </h6>
-                <div class="card mb-3" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
-                    <div class="card-body p-2">
-                        <div class="row g-2">
-                            <div class="col-md-3">
-                                <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Start Date</label>
-                                <input type="date" id="jobStartDate" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-md-3">
-                                <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Start Time</label>
-                                <input type="time" id="jobStartTime" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-md-3">
-                                <label style="font-size:.65rem; color:#999; text-transform:uppercase;">End Date</label>
-                                <input type="date" id="jobEndDate" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-md-3">
-                                <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Est. Duration</label>
-                                <input type="text" id="jobDuration" class="form-control form-control-sm" placeholder="e.g. 2 days">
+            <div class="modal-body py-3" style="max-height:80vh; overflow-y:auto;">
+                <div class="row g-3">
+                    {{-- LEFT COLUMN: Form --}}
+                    <div class="col-lg-7">
+                        {{-- Service Line Items --}}
+                        <h6 style="font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.4rem;">
+                            <i class="bi bi-list-check me-1"></i> Service Line Items
+                        </h6>
+                        <div class="card mb-2" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                            <div class="card-body p-2">
+                                <table class="table table-sm table-borderless mb-1" id="jobLineItemsTable" style="font-size:.8rem;">
+                                    <thead>
+                                        <tr style="font-size:.62rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.4);">
+                                            <th style="width:50px;">Qty</th>
+                                            <th>Service</th>
+                                            <th style="width:90px;">Price</th>
+                                            <th style="width:90px;">Total</th>
+                                            <th style="width:30px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="jobLineItemsBody"></tbody>
+                                </table>
+                                <button class="btn btn-sm btn-outline-secondary py-0" style="font-size:.75rem;" onclick="addJobLineItem()">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Line
+                                </button>
+                                <div class="text-end mt-1">
+                                    <strong style="font-size:.8rem;">Install Total: $<span id="jobLineTotal">0.00</span></strong>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                {{-- Section 4: PDF Attachment --}}
-                <h6 style="font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.5rem;">
-                    <i class="bi bi-file-earmark-pdf me-1"></i> Attach PDF <span class="text-danger">*</span>
-                </h6>
-                <div class="card" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
-                    <div class="card-body p-2">
-                        <input type="file" id="jobPdfFile" accept=".pdf" class="form-control form-control-sm" required>
-                        <div class="form-text">Upload the tech measure PDF or related documentation. This is required.</div>
+                        {{-- Measurements --}}
+                        <h6 style="font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.4rem;">
+                            <i class="bi bi-rulers me-1"></i> Measurements
+                        </h6>
+                        <div class="card mb-2" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                            <div class="card-body p-2">
+                                <table class="table table-sm table-borderless mb-0" style="font-size:.78rem;">
+                                    <thead>
+                                        <tr style="font-size:.6rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.4);">
+                                            <th style="width:24px;">#</th>
+                                            <th style="width:32px;">Qty</th>
+                                            <th>W</th>
+                                            <th>H</th>
+                                            <th>Config</th>
+                                            <th>Type</th>
+                                            <th>Ref</th>
+                                            <th style="width:80px;">Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="jobMeasurementsBody"></tbody>
+                                </table>
+                                <div class="text-end mt-1">
+                                    <strong style="font-size:.8rem;">Meas. Total: $<span id="jobMeasurementsTotal">0.00</span></strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Grand Total --}}
+                        <div class="text-end mb-2">
+                            <strong style="font-size:.95rem; color:var(--vip-accent);">Grand Total: $<span id="jobGrandTotal">0.00</span></strong>
+                        </div>
+
+                        {{-- Schedule --}}
+                        <h6 style="font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.4rem;">
+                            <i class="bi bi-calendar-event me-1"></i> Schedule
+                        </h6>
+                        <div class="card mb-2" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                    <div class="col-6 col-md-3">
+                                        <label style="font-size:.6rem; color:#999; text-transform:uppercase;">Start Date</label>
+                                        <input type="date" id="jobStartDate" class="form-control form-control-sm" style="font-size:.8rem;">
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <label style="font-size:.6rem; color:#999; text-transform:uppercase;">Start Time</label>
+                                        <input type="time" id="jobStartTime" class="form-control form-control-sm" style="font-size:.8rem;">
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <label style="font-size:.6rem; color:#999; text-transform:uppercase;">End Date</label>
+                                        <input type="date" id="jobEndDate" class="form-control form-control-sm" style="font-size:.8rem;">
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <label style="font-size:.6rem; color:#999; text-transform:uppercase;">Duration</label>
+                                        <input type="text" id="jobDuration" class="form-control form-control-sm" placeholder="e.g. 2 days" style="font-size:.8rem;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- PDF Attachment --}}
+                        <h6 style="font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(0,0,0,.5); margin-bottom:.4rem;">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Attach PDF <span class="text-danger">*</span>
+                        </h6>
+                        <div class="card" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                            <div class="card-body p-2">
+                                <input type="file" id="jobPdfFile" accept=".pdf" class="form-control form-control-sm" required>
+                                <div class="form-text" style="font-size:.7rem;">Upload the tech measure PDF. Required.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- RIGHT COLUMN: Mini Calendar --}}
+                    <div class="col-lg-5">
+                        <div class="card h-100" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                            <div class="card-body p-2">
+                                {{-- Calendar Header --}}
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="miniCalNav(-1)" style="font-size:.75rem;"><i class="bi bi-chevron-left"></i></button>
+                                    <strong id="miniCalTitle" style="font-size:.85rem;"></strong>
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="miniCalNav(1)" style="font-size:.75rem;"><i class="bi bi-chevron-right"></i></button>
+                                </div>
+                                {{-- Calendar Grid --}}
+                                <table class="w-100" style="border-collapse:collapse;" id="miniCalGrid">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">SUN</th>
+                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">MON</th>
+                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">TUE</th>
+                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">WED</th>
+                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">THU</th>
+                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">FRI</th>
+                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">SAT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="miniCalBody"></tbody>
+                                </table>
+                                {{-- Day Detail Panel --}}
+                                <div id="miniCalDayDetail" class="mt-2" style="display:none;">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <strong id="miniCalDayTitle" style="font-size:.8rem;"></strong>
+                                        <button class="btn btn-sm p-0 text-muted" onclick="document.getElementById('miniCalDayDetail').style.display='none'" style="font-size:.7rem;"><i class="bi bi-x-lg"></i></button>
+                                    </div>
+                                    <div id="miniCalDayEvents" style="max-height:200px; overflow-y:auto;"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
