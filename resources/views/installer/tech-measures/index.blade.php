@@ -992,7 +992,16 @@ function completeMeasure(measureId) {
         })
     })
     .then(r => r.json())
-    .then(data => { if (data.success) loadMeasure(measureId); })
+    .then(data => {
+        if (data.success) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('from') === 'calendar') {
+                window.location.href = '{{ route("installer.calendar") }}';
+            } else {
+                loadMeasure(measureId);
+            }
+        }
+    })
     .catch(() => alert('Failed to complete.'));
 }
 

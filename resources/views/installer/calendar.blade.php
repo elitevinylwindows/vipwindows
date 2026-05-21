@@ -100,6 +100,31 @@
     .cal-cell .cell-more { font-size: .6rem; color: var(--vip-accent); font-weight: 600; margin-top: 1px; }
     .cell-job.s-event { font-size: .65rem; }
 
+    /* ── Day View ──────────────────── */
+    .cal-day-view { display: none; flex: 1; flex-direction: column; }
+    .cal-day-view.active { display: flex; }
+    .cal-grid-wrap.hidden { display: none; }
+
+    .day-timeline { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; }
+    .day-hour-row { display: flex; min-height: 60px; border-bottom: 1px solid rgba(0,0,0,.04); }
+    .day-hour-label {
+        width: 70px; min-width: 70px; padding: .5rem .5rem .5rem 0;
+        font-size: .72rem; font-weight: 600; color: rgba(0,0,0,.35);
+        text-align: right; padding-right: 12px; border-right: 2px solid rgba(0,0,0,.06);
+    }
+    .day-hour-items { flex: 1; padding: .35rem .75rem; display: flex; flex-wrap: wrap; gap: .35rem; align-content: flex-start; }
+    .day-item-card {
+        background: #fff; border-radius: .4rem; padding: .5rem .75rem;
+        border-left: 3px solid #c9a84c; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+        cursor: pointer; transition: all .12s; flex: 0 0 auto; max-width: 320px;
+    }
+    .day-item-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.1); transform: translateY(-1px); }
+    .day-item-card .dic-title { font-size: .82rem; font-weight: 600; color: #111; }
+    .day-item-card .dic-meta { font-size: .7rem; color: #888; margin-top: 2px; }
+    .day-item-card .dic-badge { font-size: .6rem; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+    .day-no-items { text-align: center; padding: 3rem 1rem; color: #aaa; }
+    .day-no-items i { font-size: 2.5rem; opacity: .3; }
+
     /* Availability modal */
     .avail-day-row { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid rgba(0,0,0,.05); }
     .avail-day-row .day-label { width: 100px; font-weight: 600; font-size: .85rem; }
@@ -237,12 +262,19 @@
     {{-- Main Calendar --}}
     <div class="cal-main">
         <div class="cal-toolbar">
-            <div class="nav-btns">
-                <a href="{{ route('installer.calendar', ['month' => $prevMonth->month, 'year' => $prevMonth->year]) }}" title="Previous"><i class="bi bi-chevron-left"></i></a>
-                <a href="{{ route('installer.calendar') }}" title="{{ __('installer.today') }}" style="width:auto; padding:0 10px; font-size:.75rem; font-weight:600;">{{ __('installer.today') }}</a>
-                <a href="{{ route('installer.calendar', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}" title="Next"><i class="bi bi-chevron-right"></i></a>
+            <div class="d-flex align-items-center gap-2">
+                <div class="nav-btns" id="monthNavBtns">
+                    <a href="{{ route('installer.calendar', ['month' => $prevMonth->month, 'year' => $prevMonth->year]) }}" title="Previous"><i class="bi bi-chevron-left"></i></a>
+                    <a href="javascript:void(0)" onclick="switchToDayView('{{ $today->format('Y-m-d') }}')" title="{{ __('installer.today') }}" style="width:auto; padding:0 10px; font-size:.75rem; font-weight:600;">{{ __('installer.today') }}</a>
+                    <a href="{{ route('installer.calendar', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}" title="Next"><i class="bi bi-chevron-right"></i></a>
+                </div>
+                <div class="nav-btns" id="dayNavBtns" style="display:none;">
+                    <a href="javascript:void(0)" onclick="dayViewNav(-1)" title="Previous day"><i class="bi bi-chevron-left"></i></a>
+                    <a href="javascript:void(0)" onclick="switchToMonthView()" title="Back to month" style="width:auto; padding:0 10px; font-size:.75rem; font-weight:600;"><i class="bi bi-grid-3x3 me-1"></i>Month</a>
+                    <a href="javascript:void(0)" onclick="dayViewNav(1)" title="Next day"><i class="bi bi-chevron-right"></i></a>
+                </div>
             </div>
-            <h5>{{ $monthLabel }}</h5>
+            <h5 id="calTitle">{{ $monthLabel }}</h5>
             <a href="{{ route('installer.jobs.index') }}" class="btn btn-sm btn-vip"><i class="bi bi-list-ul me-1"></i>{{ __('installer.all_jobs') }}</a>
         </div>
 
@@ -267,7 +299,8 @@
                         foreach($dayEvents as $de) { $allItems->push(['type' => 'event', 'item' => $de]); }
                         foreach($dayBookings as $db) { $allItems->push(['type' => 'booking', 'item' => $db]); }
                     @endphp
-                    <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOtherMonth ? 'other-month' : '' }}">
+                    <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOtherMonth ? 'other-month' : '' }}"
+                         onclick="switchToDayView('{{ $dateKey }}')">
                         <span class="cell-date">{{ $current->day }}</span>
                         <div class="cell-jobs">
                             @foreach($allItems->take($maxShow) as $entry)
@@ -306,8 +339,65 @@
                 @endwhile
             </div>
         </div>
+
+        {{-- Day View (hidden by default) --}}
+        <div class="cal-day-view" id="calDayView">
+            <div class="day-timeline" id="dayTimeline"></div>
+        </div>
     </div>
 </div>
+
+{{-- Calendar data for JS day view --}}
+@php
+    $installerCalData = [];
+    $cursorDate = $monthStart->copy();
+    while ($cursorDate <= $monthEnd) {
+        $dk = $cursorDate->format('Y-m-d');
+        $djl = $jobsByDate->get($dk, collect());
+        $del = $eventsByDate->get($dk, collect());
+        $dbl = $bookingsByDate->get($dk, collect());
+        $dayItems = [];
+        foreach ($djl as $j) {
+            $dayItems[] = [
+                'type' => 'job', 'id' => $j->id,
+                'label' => \Str::limit($j->customer_name ?: $j->job_number, 12),
+                'full_label' => $j->job_number . ' — ' . ($j->customer_name ?: 'No Customer'),
+                'time' => $j->scheduled_time,
+                'color' => '#17a2b8',
+                'status' => $j->status,
+                'service_name' => $j->service ? $j->service->name : null,
+            ];
+        }
+        foreach ($del as $ev) {
+            $dayItems[] = [
+                'type' => 'event', 'id' => $ev->id,
+                'label' => \Str::limit($ev->title, 12),
+                'full_label' => $ev->title,
+                'time' => $ev->event_time, 'end_time' => $ev->end_time,
+                'color' => $ev->color ?: '#c9a84c',
+                'status' => $ev->event_status ?? 'scheduled',
+                'service_name' => $ev->service ? $ev->service->name : null,
+                'customer_name' => $ev->customer_name,
+            ];
+        }
+        foreach ($dbl as $b) {
+            $dayItems[] = [
+                'type' => 'booking', 'id' => $b->id,
+                'label' => \Str::limit($b->customer_name, 12),
+                'full_label' => $b->customer_name . ' — ' . $b->service_type,
+                'time' => $b->booking_time,
+                'color' => $b->status === 'confirmed' ? '#17a2b8' : '#6f42c1',
+                'status' => $b->status,
+                'service_name' => $b->service_type,
+            ];
+        }
+        $installerCalData[$dk] = $dayItems;
+        $cursorDate->addDay();
+    }
+@endphp
+<script>
+const calendarData = @json($installerCalData);
+</script>
 
 {{-- Availability Settings Modal --}}
 <div class="modal fade" id="availabilityModal" tabindex="-1">
@@ -1110,6 +1200,157 @@ function updateBookingStatus(id, status) {
             location.reload();
         }
     });
+}
+
+// ══════════════════════════════════════════════
+// ── Day View Functions ──
+// ══════════════════════════════════════════════
+let currentView = 'month';
+let currentDayDate = null;
+
+function switchToDayView(dateKey) {
+    currentView = 'day';
+    currentDayDate = dateKey;
+
+    document.querySelector('.cal-grid-wrap').classList.add('hidden');
+    document.getElementById('calDayView').classList.add('active');
+    document.getElementById('monthNavBtns').style.display = 'none';
+    document.getElementById('dayNavBtns').style.display = '';
+
+    const d = new Date(dateKey + 'T12:00:00');
+    const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const today = new Date(); today.setHours(12,0,0,0);
+    const isToday = d.toDateString() === today.toDateString();
+    document.getElementById('calTitle').innerHTML = (isToday ? '<span class="badge bg-warning text-dark me-2" style="font-size:.65rem; vertical-align:middle;">TODAY</span>' : '') + d.toLocaleDateString('en-US', opts);
+
+    renderDayView(dateKey);
+}
+
+function switchToMonthView() {
+    currentView = 'month';
+    currentDayDate = null;
+
+    document.querySelector('.cal-grid-wrap').classList.remove('hidden');
+    document.getElementById('calDayView').classList.remove('active');
+    document.getElementById('monthNavBtns').style.display = '';
+    document.getElementById('dayNavBtns').style.display = 'none';
+    document.getElementById('calTitle').textContent = '{{ $monthLabel }}';
+}
+
+function dayViewNav(offset) {
+    if (!currentDayDate) return;
+    const d = new Date(currentDayDate + 'T12:00:00');
+    d.setDate(d.getDate() + offset);
+    const newKey = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    switchToDayView(newKey);
+}
+
+function renderDayView(dateKey) {
+    const timeline = document.getElementById('dayTimeline');
+    const items = calendarData[dateKey] || [];
+
+    if (items.length === 0) {
+        timeline.innerHTML = `
+            <div class="day-no-items">
+                <i class="bi bi-calendar-x"></i>
+                <p class="mt-2 mb-0">Nothing scheduled for this day</p>
+            </div>`;
+        return;
+    }
+
+    const sorted = [...items].sort((a, b) => {
+        const ta = a.time || 'ZZ:ZZ';
+        const tb = b.time || 'ZZ:ZZ';
+        return ta.localeCompare(tb);
+    });
+
+    const hours = {};
+    const noTime = [];
+    sorted.forEach(item => {
+        if (item.time) {
+            const matchAMPM = item.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+            const match24 = item.time.match(/^(\d{1,2}):/);
+            let h = 0;
+            if (matchAMPM) {
+                h = parseInt(matchAMPM[1]);
+                const isPM = matchAMPM[3].toUpperCase() === 'PM';
+                if (isPM && h !== 12) h += 12;
+                if (!isPM && h === 12) h = 0;
+            } else if (match24) {
+                h = parseInt(match24[1]);
+            }
+            const hourKey = String(h).padStart(2, '0') + ':00';
+            if (!hours[hourKey]) hours[hourKey] = [];
+            hours[hourKey].push(item);
+        } else {
+            noTime.push(item);
+        }
+    });
+
+    let html = '';
+
+    if (noTime.length > 0) {
+        html += `<div class="day-hour-row" style="background:rgba(201,168,76,.03);">
+            <div class="day-hour-label" style="font-weight:700; color:rgba(0,0,0,.5);">All Day</div>
+            <div class="day-hour-items">`;
+        noTime.forEach(item => { html += buildDayItemCard(item); });
+        html += `</div></div>`;
+    }
+
+    for (let h = 6; h <= 20; h++) {
+        const hourKey = String(h).padStart(2, '0') + ':00';
+        const hourItems = hours[hourKey] || [];
+        const ampm = h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h - 12) + ' PM';
+        html += `<div class="day-hour-row">
+            <div class="day-hour-label">${ampm}</div>
+            <div class="day-hour-items">`;
+        hourItems.forEach(item => { html += buildDayItemCard(item); });
+        html += `</div></div>`;
+    }
+
+    const outsideHours = {};
+    Object.keys(hours).forEach(k => {
+        const h = parseInt(k);
+        if (h < 6 || h > 20) outsideHours[k] = hours[k];
+    });
+    Object.keys(outsideHours).sort().forEach(hourKey => {
+        const h = parseInt(hourKey);
+        const ampm = h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h - 12) + ' PM';
+        html += `<div class="day-hour-row">
+            <div class="day-hour-label">${ampm}</div>
+            <div class="day-hour-items">`;
+        outsideHours[hourKey].forEach(item => { html += buildDayItemCard(item); });
+        html += `</div></div>`;
+    });
+
+    timeline.innerHTML = html;
+}
+
+function buildDayItemCard(item) {
+    const icon = item.type === 'job' ? 'wrench' : (item.type === 'booking' ? 'bookmark-fill' : 'calendar-event');
+    const typeBadge = item.type === 'job' ? 'Job' : (item.type === 'booking' ? 'Booking' : 'Event');
+    const statusColor = { pending: '#ffc107', scheduled: '#17a2b8', in_progress: '#007bff', completed: '#28a745', confirmed: '#17a2b8', cancelled: '#dc3545' };
+    const sc = statusColor[item.status] || '#6c757d';
+    const statusBadge = item.status ? `<span class="dic-badge" style="background:${sc}20; color:${sc};">${item.status.replace('_',' ')}</span>` : '';
+
+    let meta = [];
+    if (item.time) meta.push(`<i class="bi bi-clock me-1"></i>${item.time}${item.end_time ? ' – ' + item.end_time : ''}`);
+    if (item.service_name) meta.push(`<i class="bi bi-tag me-1"></i>${item.service_name}`);
+    if (item.customer_name) meta.push(`<i class="bi bi-person me-1"></i>${item.customer_name}`);
+
+    const clickHandler = item.type === 'job' ? `showJobPopup(${item.id})` :
+                         item.type === 'event' ? `showEventPopup(${item.id})` :
+                         `showBooking(${item.id})`;
+
+    return `<div class="day-item-card" style="border-left-color:${item.color};" onclick="${clickHandler}">
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <i class="bi bi-${icon}" style="color:${item.color}; font-size:.85rem;"></i>
+            <span class="dic-title">${item.full_label}</span>
+            <span class="dic-badge" style="background:${item.color}20; color:${item.color};">${typeBadge}</span>
+            ${statusBadge}
+        </div>
+        ${meta.length ? '<div class="dic-meta">' + meta.join(' &nbsp;&middot;&nbsp; ') + '</div>' : ''}
+    </div>`;
 }
 </script>
 @endpush
