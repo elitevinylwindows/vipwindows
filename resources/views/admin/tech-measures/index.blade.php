@@ -358,7 +358,6 @@
                                 <div class="mc-day-name">Thu</div>
                                 <div class="mc-day-name">Fri</div>
                                 <div class="mc-day-name">Sat</div>
-                                <div id="miniCalCells"></div>
                             </div>
                             {{-- Day Detail Panel --}}
                             <div id="miniCalDayDetail" class="mt-2" style="display:none;">
@@ -1172,8 +1171,20 @@ function miniCalNav(dir) {
     loadMiniCalendar();
 }
 
+function clearMiniCalCells() {
+    const grid = document.getElementById('miniCalGrid');
+    grid.querySelectorAll('.mc-cell').forEach(c => c.remove());
+}
+
 function loadMiniCalendar() {
-    document.getElementById('miniCalBody').innerHTML = '<tr><td colspan="7" class="text-center py-3"><div class="spinner-border spinner-border-sm text-secondary"></div></td></tr>';
+    clearMiniCalCells();
+    const grid = document.getElementById('miniCalGrid');
+    for (let i = 0; i < 7; i++) {
+        const ph = document.createElement('div');
+        ph.className = 'mc-cell mc-other';
+        ph.style.minHeight = '30px';
+        grid.appendChild(ph);
+    }
     document.getElementById('miniCalDayDetail').style.display = 'none';
 
     fetch(`/admin/calendar/events-json?month=${miniCalMonth}`, {
@@ -1182,57 +1193,86 @@ function loadMiniCalendar() {
     .then(r => r.json())
     .then(data => {
         miniCalEvents = data.events || {};
-        renderMiniCalGrid(data.start, data.end);
+        renderMiniCalGrid();
     })
     .catch(() => {
-        document.getElementById('miniCalBody').innerHTML = '<tr><td colspan="7" class="text-center py-2 text-muted" style="font-size:.75rem;">Failed to load calendar</td></tr>';
+        clearMiniCalCells();
+        const msg = document.createElement('div');
+        msg.className = 'mc-cell';
+        msg.style.gridColumn = '1 / -1';
+        msg.style.textAlign = 'center';
+        msg.style.padding = '1rem';
+        msg.style.fontSize = '.75rem';
+        msg.style.color = '#999';
+        msg.textContent = 'Failed to load';
+        grid.appendChild(msg);
     });
 }
 
-function renderMiniCalGrid(startStr, endStr) {
+function renderMiniCalGrid() {
+    clearMiniCalCells();
+    const grid = document.getElementById('miniCalGrid');
+
     const [y, m] = miniCalMonth.split('-').map(Number);
     const firstDay = new Date(y, m - 1, 1);
     const lastDay = new Date(y, m, 0);
     const today = new Date();
     const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const maxChips = 2;
 
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     document.getElementById('miniCalTitle').textContent = monthNames[m - 1] + ' ' + y;
 
-    let html = '';
-    let dayOfWeek = firstDay.getDay(); // 0=Sunday
-    let dayNum = 1;
+    const dayOfWeek = firstDay.getDay();
     const totalDays = lastDay.getDate();
 
-    // Build weeks
-    while (dayNum <= totalDays) {
-        html += '<tr>';
-        for (let col = 0; col < 7; col++) {
-            if ((dayNum === 1 && col < dayOfWeek) || dayNum > totalDays) {
-                html += '<td style="padding:1px;"></td>';
-            } else {
-                const dateStr = y + '-' + String(m).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
-                const evts = miniCalEvents[dateStr] || [];
-                const isToday = dateStr === todayStr;
-                const hasEvents = evts.length > 0;
-                const dotColor = hasEvents ? (evts[0].color || '#c9a84c') : 'transparent';
-
-                html += `<td style="padding:1px; text-align:center; vertical-align:top; cursor:${hasEvents ? 'pointer' : 'default'};"
-                    ${hasEvents ? `onclick="showMiniCalDay('${dateStr}')"` : ''}>
-                    <div style="width:28px; height:28px; margin:auto; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center;
-                        ${isToday ? 'background:var(--vip-accent); color:#fff; font-weight:700;' : ''}
-                        ${!isToday && hasEvents ? 'font-weight:600;' : ''}"
-                    >
-                        <span style="font-size:.72rem; line-height:1;">${dayNum}</span>
-                        ${hasEvents ? `<span style="display:flex; gap:1px; margin-top:1px;">${evts.slice(0,3).map(e => `<span style="width:4px;height:4px;border-radius:50%;background:${isToday ? '#fff' : (e.color || '#c9a84c')};"></span>`).join('')}</span>` : ''}
-                    </div>
-                </td>`;
-                dayNum++;
-            }
-        }
-        html += '</tr>';
+    // Previous month padding
+    const prevMonthLast = new Date(y, m - 1, 0).getDate();
+    for (let i = dayOfWeek - 1; i >= 0; i--) {
+        const cell = document.createElement('div');
+        cell.className = 'mc-cell mc-other';
+        cell.innerHTML = `<span class="mc-date">${prevMonthLast - i}</span>`;
+        grid.appendChild(cell);
     }
-    document.getElementById('miniCalBody').innerHTML = html;
+
+    // Current month days
+    for (let d = 1; d <= totalDays; d++) {
+        const dateStr = y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        const evts = miniCalEvents[dateStr] || [];
+        const isToday = dateStr === todayStr;
+
+        const cell = document.createElement('div');
+        cell.className = 'mc-cell' + (isToday ? ' mc-today' : '');
+        cell.onclick = () => showMiniCalDay(dateStr);
+
+        let inner = `<span class="mc-date">${d}</span>`;
+        if (evts.length > 0) {
+            inner += '<div class="mc-items">';
+            evts.slice(0, maxChips).forEach(ev => {
+                const color = ev.color || '#c9a84c';
+                const label = ev.title || ev.customer || ev.service || '';
+                inner += `<span class="mc-chip" style="background:${color}20; color:${color};">${escHtml(label)}</span>`;
+            });
+            if (evts.length > maxChips) {
+                inner += `<span class="mc-more">+${evts.length - maxChips} more</span>`;
+            }
+            inner += '</div>';
+        }
+        cell.innerHTML = inner;
+        grid.appendChild(cell);
+    }
+
+    // Next month padding
+    const totalCells = dayOfWeek + totalDays;
+    const remainder = totalCells % 7;
+    if (remainder > 0) {
+        for (let i = 1; i <= 7 - remainder; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'mc-cell mc-other';
+            cell.innerHTML = `<span class="mc-date">${i}</span>`;
+            grid.appendChild(cell);
+        }
+    }
 }
 
 function showMiniCalDay(dateStr) {
