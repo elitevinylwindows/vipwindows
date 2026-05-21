@@ -50,7 +50,41 @@
     .section-title { font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; color: rgba(0,0,0,.5); margin-bottom: .5rem; margin-top: 1.5rem; }
     .item-photos { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
     .item-photo { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer; }
-    #miniCalGrid td:hover > div { background: rgba(201,168,76,.08) !important; }
+    /* ── Mini Calendar (same style as admin calendar) ── */
+    .mc-grid {
+        display: grid; grid-template-columns: repeat(7, 1fr);
+        background: #fff; border-radius: .4rem; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+        overflow: hidden;
+    }
+    .mc-grid .mc-day-name {
+        text-align: center; padding: 4px 2px; font-size: .55rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .8px; color: rgba(0,0,0,.4);
+        background: #fafaf7; border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+    .mc-cell {
+        min-height: 48px; padding: 2px 3px;
+        border-right: 1px solid rgba(0,0,0,.04);
+        border-bottom: 1px solid rgba(0,0,0,.04);
+        cursor: pointer; transition: background .1s;
+    }
+    .mc-cell:nth-child(7n) { border-right: none; }
+    .mc-cell:hover { background: rgba(201,168,76,.06); }
+    .mc-cell.mc-today { background: rgba(201,168,76,.08); }
+    .mc-cell.mc-today:hover { background: rgba(201,168,76,.14); }
+    .mc-cell.mc-other { opacity: .3; }
+    .mc-cell .mc-date {
+        font-size: .65rem; font-weight: 600; color: #333;
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 18px; height: 18px; border-radius: 50%;
+    }
+    .mc-cell.mc-today .mc-date { background: var(--vip-accent); color: #fff; }
+    .mc-cell .mc-items { margin-top: 1px; }
+    .mc-cell .mc-chip {
+        font-size: .48rem; padding: 0px 3px; border-radius: 2px; margin-bottom: 1px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        display: block; font-weight: 600; line-height: 1.4;
+    }
+    .mc-cell .mc-more { font-size: .45rem; color: var(--vip-accent); font-weight: 600; cursor: pointer; }
     #miniCalDayDetail { background: #fafaf7; border-radius: .4rem; padding: .5rem; border: 1px solid rgba(0,0,0,.06); }
     @media (max-width: 991.98px) { .tm-container { flex-direction: column; height: auto; } .tm-rail { width: 100%; min-width: 100%; max-height: 45vh; } }
 </style>
@@ -308,37 +342,31 @@
 
                     {{-- RIGHT COLUMN: Mini Calendar --}}
                     <div class="col-lg-5">
-                        <div class="card h-100" style="border:none; box-shadow:0 1px 4px rgba(0,0,0,.06);">
-                            <div class="card-body p-2">
-                                {{-- Calendar Header --}}
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="miniCalNav(-1)" style="font-size:.75rem;"><i class="bi bi-chevron-left"></i></button>
-                                    <strong id="miniCalTitle" style="font-size:.85rem;"></strong>
-                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="miniCalNav(1)" style="font-size:.75rem;"><i class="bi bi-chevron-right"></i></button>
+                        <div style="background:#fff; border-radius:.5rem; box-shadow:0 1px 4px rgba(0,0,0,.06); padding:.75rem;">
+                            {{-- Calendar Header --}}
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="miniCalNav(-1)" style="font-size:.75rem;"><i class="bi bi-chevron-left"></i></button>
+                                <strong id="miniCalTitle" style="font-size:.85rem;"></strong>
+                                <button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="miniCalNav(1)" style="font-size:.75rem;"><i class="bi bi-chevron-right"></i></button>
+                            </div>
+                            {{-- Calendar Grid --}}
+                            <div class="mc-grid" id="miniCalGrid">
+                                <div class="mc-day-name">Sun</div>
+                                <div class="mc-day-name">Mon</div>
+                                <div class="mc-day-name">Tue</div>
+                                <div class="mc-day-name">Wed</div>
+                                <div class="mc-day-name">Thu</div>
+                                <div class="mc-day-name">Fri</div>
+                                <div class="mc-day-name">Sat</div>
+                                <div id="miniCalCells"></div>
+                            </div>
+                            {{-- Day Detail Panel --}}
+                            <div id="miniCalDayDetail" class="mt-2" style="display:none;">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <strong id="miniCalDayTitle" style="font-size:.8rem;"></strong>
+                                    <button class="btn btn-sm p-0 text-muted" onclick="document.getElementById('miniCalDayDetail').style.display='none'" style="font-size:.7rem;"><i class="bi bi-x-lg"></i></button>
                                 </div>
-                                {{-- Calendar Grid --}}
-                                <table class="w-100" style="border-collapse:collapse;" id="miniCalGrid">
-                                    <thead>
-                                        <tr>
-                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">SUN</th>
-                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">MON</th>
-                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">TUE</th>
-                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">WED</th>
-                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">THU</th>
-                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">FRI</th>
-                                            <th style="text-align:center;font-size:.6rem;color:#aaa;padding:2px;">SAT</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="miniCalBody"></tbody>
-                                </table>
-                                {{-- Day Detail Panel --}}
-                                <div id="miniCalDayDetail" class="mt-2" style="display:none;">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <strong id="miniCalDayTitle" style="font-size:.8rem;"></strong>
-                                        <button class="btn btn-sm p-0 text-muted" onclick="document.getElementById('miniCalDayDetail').style.display='none'" style="font-size:.7rem;"><i class="bi bi-x-lg"></i></button>
-                                    </div>
-                                    <div id="miniCalDayEvents" style="max-height:200px; overflow-y:auto;"></div>
-                                </div>
+                                <div id="miniCalDayEvents" style="max-height:200px; overflow-y:auto;"></div>
                             </div>
                         </div>
                     </div>
