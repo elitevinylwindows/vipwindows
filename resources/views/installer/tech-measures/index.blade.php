@@ -287,6 +287,24 @@ function escHtml(str) {
 
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.tm-card');
+    const urlParams = new URLSearchParams(window.location.search);
+    const focusId = urlParams.get('focus');
+    const fromCalendar = urlParams.get('from') === 'calendar';
+
+    // If coming from calendar, hide the left rail for full-width detail view
+    if (fromCalendar) {
+        const rail = document.querySelector('.tm-rail');
+        if (rail) rail.style.display = 'none';
+        // Add a "Back to Calendar" button in the toolbar
+        const toolbar = document.querySelector('.tm-main-toolbar');
+        if (toolbar) {
+            const backBtn = document.createElement('a');
+            backBtn.href = '{{ route("installer.calendar") }}';
+            backBtn.className = 'btn btn-sm btn-outline-secondary me-2';
+            backBtn.innerHTML = '<i class="bi bi-arrow-left me-1"></i>Back to Calendar';
+            toolbar.insertBefore(backBtn, toolbar.firstChild);
+        }
+    }
 
     // Tab filters
     document.querySelectorAll('.tm-rail-tabs .tab-btn').forEach(btn => {
@@ -295,6 +313,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = new URL(window.location);
             if (status !== 'all') url.searchParams.set('status', status);
             else url.searchParams.delete('status');
+            // Remove calendar params when navigating tabs
+            url.searchParams.delete('focus');
+            url.searchParams.delete('from');
             window.location = url;
         });
     });
@@ -316,7 +337,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    if (cards.length > 0) cards[0].click();
+    // If a specific measure is focused (from calendar or direct link), load it
+    if (focusId) {
+        const targetCard = document.querySelector(`.tm-card[data-id="${focusId}"]`);
+        if (targetCard) {
+            targetCard.click();
+        } else {
+            // Measure not in current page — load directly via AJAX
+            loadMeasure(focusId);
+        }
+    } else if (cards.length > 0) {
+        cards[0].click();
+    }
 });
 
 function loadMeasure(id) {
