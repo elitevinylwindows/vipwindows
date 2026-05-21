@@ -2,236 +2,204 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Estimate — {{ $job->customer_name }}</title>
+    <title>Estimate</title>
     <style>
-        @page { margin: 0; }
-        * { margin: 0; padding: 0; }
+        @page {
+            margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+        }
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Helvetica', 'Arial', sans-serif;
             color: #000;
-            font-size: 8pt;
-            padding: 30px 40px 30px 40px;
+            font-size: 9pt;
+            line-height: 1.3;
+            margin: 0;
+            padding: 0;
         }
 
-        /* ── Master wrapper — hardcoded pixel width ── */
-        .page {
-            width: 535px;
-            overflow: hidden;
-        }
+        table { border-collapse: collapse; }
 
-        /* ── Header ── */
-        .header-table { width: 535px; margin-bottom: 12px; border-collapse: collapse; }
-        .company-info { font-size: 8pt; line-height: 1.4; }
-        .company-name { font-weight: bold; font-size: 9pt; }
-        .estimate-title { font-size: 14pt; font-weight: bold; text-align: right; }
-        .date-box { margin-top: 3px; }
-        .date-box table { border-collapse: collapse; margin-left: auto; width: auto; }
-        .date-box th, .date-box td { border: 1px solid #000; padding: 2px 6px; font-size: 7pt; }
-        .date-box th { background: #eee; font-weight: bold; }
-
-        /* ── Address blocks ── */
-        .address-table { width: 535px; margin-bottom: 10px; border-collapse: collapse; }
-        .address-table td { vertical-align: top; }
-        .addr-box { border: 1px solid #000; }
-        .addr-label { background: #eee; border-bottom: 1px solid #000; padding: 2px 4px; font-weight: bold; font-size: 7pt; }
-        .addr-content { padding: 3px 4px; font-size: 7.5pt; line-height: 1.3; }
-
-        /* ── Reference row ── */
-        .ref-table { width: 535px; border-collapse: collapse; margin-bottom: 8px; }
-        .ref-table th, .ref-table td { border: 1px solid #000; padding: 2px 4px; font-size: 7pt; text-align: center; }
-        .ref-table th { background: #eee; font-weight: bold; }
-
-        /* ── Items table ── */
-        .items-table { width: 535px; border-collapse: collapse; margin-bottom: 6px; }
-        .items-table th { background: #333; color: #fff; padding: 2px 4px; font-size: 6.5pt; text-align: left; font-weight: bold; border: 1px solid #333; }
-        .items-table td { padding: 2px 4px; font-size: 7pt; border: 1px solid #ccc; vertical-align: top; word-wrap: break-word; overflow: hidden; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-
-        /* ── Notice ── */
-        .notice-box { border: 1px solid #999; padding: 4px 6px; font-size: 6.5pt; line-height: 1.3; margin-top: 5px; width: 250px; }
-
-        /* ── Footer ── */
-        .footer-table { width: 535px; margin-top: 8px; border-collapse: collapse; }
-        .footer-table td { vertical-align: top; }
-        .terms-text { font-size: 6pt; line-height: 1.3; color: #333; padding-right: 8px; }
-        .totals-box table { border-collapse: collapse; margin-left: auto; width: auto; }
-        .totals-box td { padding: 2px 8px; font-size: 8pt; }
-        .totals-box .label { font-weight: bold; text-align: left; }
-        .totals-box .total-row td { border-top: 2px solid #000; font-size: 9pt; font-weight: bold; padding-top: 2px; }
-
-        /* ── Signature ── */
-        .signature-line { margin-top: 16px; font-size: 7pt; }
-        .sig-table { width: 260px; border-collapse: collapse; }
-        .sig-table td.sig-label { font-weight: bold; white-space: nowrap; padding-right: 5px; }
-        .sig-table td.sig-line { border-bottom: 1px solid #000; width: 180px; }
+        .text-left { text-align: left; }
+        .bold { font-weight: bold; }
+        .small { font-size: 8pt; }
+        .xsmall { font-size: 7pt; }
     </style>
 </head>
 <body>
-<div class="page">
 
-    {{-- Header --}}
-    <table class="header-table" cellpadding="0" cellspacing="0">
-        <tr>
-            <td style="vertical-align: top; width: 267px;">
-                <div class="company-info">
-                    <div class="company-name">{{ $settings['company_name'] ?? 'VIP Windows Inc.' }}</div>
-                    <div>{{ $settings['company_address'] ?? '4231 Liberty Blvd.' }}</div>
-                    <div>{{ $settings['company_city'] ?? 'South Gate' }}, {{ $settings['company_state'] ?? 'CA' }} {{ $settings['company_zip'] ?? '90280' }}</div>
-                    <div>Phone: {{ $settings['company_phone'] ?? '(562) 368-0313' }}</div>
-                </div>
-            </td>
-            <td style="vertical-align: top; text-align: right; width: 268px;">
-                <div class="estimate-title">Estimate</div>
-                <div class="date-box">
-                    <table>
-                        <tr><th>Date</th><th>Estimate #</th></tr>
-                        <tr>
-                            <td>{{ $estimateDate }}</td>
-                            <td>{{ $estimateNumber }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </td>
-        </tr>
-    </table>
+{{-- ═══════ HEADER ═══════ --}}
+<table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td width="50%" valign="top">
+            <span style="font-weight:bold; font-size:11pt;">{{ $settings['company_name'] ?? 'VIP Windows Inc.' }}</span><br>
+            {{ $settings['company_address'] ?? '4231 Liberty Blvd.' }}<br>
+            {{ $settings['company_city'] ?? 'South Gate' }}, {{ $settings['company_state'] ?? 'CA' }} {{ $settings['company_zip'] ?? '90280' }}<br>
+            Phone: {{ $settings['company_phone'] ?? '(562) 368-0313' }}
+        </td>
+        <td width="50%" valign="top" align="right">
+            <span style="font-size:18pt; font-weight:bold;">Estimate</span><br><br>
+            <table cellpadding="0" cellspacing="0" align="right" style="border:1px solid #000;">
+                <tr>
+                    <td style="background:#eee; border:1px solid #000; padding:2pt 8pt; font-weight:bold; font-size:8pt;">Date</td>
+                    <td style="background:#eee; border:1px solid #000; padding:2pt 8pt; font-weight:bold; font-size:8pt;">Estimate #</td>
+                </tr>
+                <tr>
+                    <td style="border:1px solid #000; padding:2pt 8pt; font-size:8pt; text-align:center;">{{ $estimateDate }}</td>
+                    <td style="border:1px solid #000; padding:2pt 8pt; font-size:8pt; text-align:center;">{{ $estimateNumber }}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 
-    {{-- Address blocks --}}
-    <table class="address-table" cellpadding="0" cellspacing="0">
-        <tr>
-            <td style="width: 255px; vertical-align: top;">
-                <div class="addr-box">
-                    <div class="addr-label">Name / Address</div>
-                    <div class="addr-content">
+<br>
+
+{{-- ═══════ ADDRESS BLOCKS ═══════ --}}
+<table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td width="48%" valign="top">
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #000;">
+                <tr>
+                    <td style="background:#eee; border-bottom:1px solid #000; padding:2pt 5pt; font-weight:bold; font-size:8pt;">Name / Address</td>
+                </tr>
+                <tr>
+                    <td style="padding:4pt 5pt; font-size:8pt; line-height:1.4;">
                         {{ strtoupper($job->customer_name) }}<br>
                         @if($job->install_address){{ strtoupper($job->install_address) }}<br>@endif
                         @if($job->install_city || $job->install_state){{ strtoupper($job->install_city) }}, {{ strtoupper($job->install_state) }} {{ $job->install_zip }}<br>@endif
                         @if($job->customer_phone){{ $job->customer_phone }}@endif
-                    </div>
-                </div>
-            </td>
-            <td style="width: 25px;"></td>
-            <td style="width: 255px; vertical-align: top;">
-                <div class="addr-box">
-                    <div class="addr-label">Job Address</div>
-                    <div class="addr-content">
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td width="4%">&nbsp;</td>
+        <td width="48%" valign="top">
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #000;">
+                <tr>
+                    <td style="background:#eee; border-bottom:1px solid #000; padding:2pt 5pt; font-weight:bold; font-size:8pt;">Job Address</td>
+                </tr>
+                <tr>
+                    <td style="padding:4pt 5pt; font-size:8pt; line-height:1.4;">
                         {{ $job->customer_name }}<br>
                         @if($job->install_address){{ $job->install_address }}<br>@endif
                         @if($job->install_city){{ $job->install_city }}, {{ $job->install_state }} {{ $job->install_zip }}<br>@endif
                         @if($job->customer_phone){{ $job->customer_phone }}@endif
-                    </div>
-                </div>
-            </td>
-        </tr>
-    </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 
-    {{-- Reference row --}}
-    <table class="ref-table" cellpadding="0" cellspacing="0">
-        <tr>
-            <th style="width: 95px;">Reference #</th>
-            <th style="width: 200px;">Customer P.O.</th>
-            <th style="width: 105px;">Terms</th>
-            <th style="width: 135px;">Installation Date</th>
-        </tr>
-        <tr>
-            <td>{{ $estimateNumber }}</td>
-            <td>{{ $job->customer_name }} {{ $job->install_address }}</td>
-            <td>{{ $settings['estimate_terms'] ?? 'Due on receipt' }}</td>
-            <td>{{ $job->scheduled_date ? $job->scheduled_date->format('n/j/Y') : 'TBD' }}</td>
-        </tr>
-    </table>
+<br>
 
-    {{-- Items table --}}
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th style="width: 65px;">Item</th>
-                <th style="width: 270px;">Description</th>
-                <th style="width: 30px;" class="text-center">Qty</th>
-                <th style="width: 70px;" class="text-right">Unit Price</th>
-                <th style="width: 70px;" class="text-right">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if(!empty($installDescription))
-            <tr>
-                <td>WD</td>
-                <td>{{ $installDescription }}</td>
-                <td class="text-center"></td>
-                <td class="text-right">0.00</td>
-                <td class="text-right">0.00</td>
-            </tr>
-            @endif
+{{-- ═══════ REFERENCE ROW ═══════ --}}
+<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #000;">
+    <tr>
+        <td width="18%" style="background:#eee; border:1px solid #000; padding:2pt 5pt; font-weight:bold; font-size:8pt; text-align:center;">Reference #</td>
+        <td width="37%" style="background:#eee; border:1px solid #000; padding:2pt 5pt; font-weight:bold; font-size:8pt; text-align:center;">Customer P.O.</td>
+        <td width="20%" style="background:#eee; border:1px solid #000; padding:2pt 5pt; font-weight:bold; font-size:8pt; text-align:center;">Terms</td>
+        <td width="25%" style="background:#eee; border:1px solid #000; padding:2pt 5pt; font-weight:bold; font-size:8pt; text-align:center;">Installation Date</td>
+    </tr>
+    <tr>
+        <td style="border:1px solid #000; padding:2pt 5pt; font-size:8pt; text-align:center;">{{ $estimateNumber }}</td>
+        <td style="border:1px solid #000; padding:2pt 5pt; font-size:8pt; text-align:center;">{{ $job->customer_name }} {{ $job->install_address }}</td>
+        <td style="border:1px solid #000; padding:2pt 5pt; font-size:8pt; text-align:center;">{{ $settings['estimate_terms'] ?? 'Due on receipt' }}</td>
+        <td style="border:1px solid #000; padding:2pt 5pt; font-size:8pt; text-align:center;">{{ $job->scheduled_date ? $job->scheduled_date->format('n/j/Y') : 'TBD' }}</td>
+    </tr>
+</table>
 
-            @foreach($measureItems as $item)
-            <tr>
-                <td>{{ $item['type'] }}</td>
-                <td>{{ $item['description'] }}</td>
-                <td class="text-center">{{ $item['qty'] }}</td>
-                <td class="text-right">{{ number_format($item['unit_price'], 2) }}</td>
-                <td class="text-right">{{ number_format($item['total'], 2) }}{{ $item['taxable'] ? 'T' : '' }}</td>
-            </tr>
-            @endforeach
+<br>
 
-            @foreach($serviceItems as $item)
-            <tr>
-                <td>{{ $item['type'] }}</td>
-                <td>{{ $item['description'] }} charge</td>
-                <td class="text-center">{{ $item['qty'] }}</td>
-                <td class="text-right">{{ number_format($item['unit_price'], 2) }}</td>
-                <td class="text-right">{{ number_format($item['total'], 2) }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+{{-- ═══════ ITEMS TABLE ═══════ --}}
+<table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td width="12%" style="background:#333; color:#fff; padding:3pt 5pt; font-size:7pt; font-weight:bold; border:1px solid #333;">Item</td>
+        <td width="50%" style="background:#333; color:#fff; padding:3pt 5pt; font-size:7pt; font-weight:bold; border:1px solid #333;">Description</td>
+        <td width="8%" style="background:#333; color:#fff; padding:3pt 5pt; font-size:7pt; font-weight:bold; border:1px solid #333; text-align:center;">Qty</td>
+        <td width="15%" style="background:#333; color:#fff; padding:3pt 5pt; font-size:7pt; font-weight:bold; border:1px solid #333; text-align:right;">Unit Price</td>
+        <td width="15%" style="background:#333; color:#fff; padding:3pt 5pt; font-size:7pt; font-weight:bold; border:1px solid #333; text-align:right;">Total</td>
+    </tr>
+    @if(!empty($installDescription))
+    <tr>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; vertical-align:top;">WD</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; vertical-align:top;">{{ $installDescription }}</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; text-align:center;"></td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; text-align:right;">0.00</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; text-align:right;">0.00</td>
+    </tr>
+    @endif
+    @foreach($measureItems as $item)
+    <tr>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; vertical-align:top;">{{ $item['type'] }}</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; vertical-align:top;">{{ $item['description'] }}</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; text-align:center;">{{ $item['qty'] }}</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; text-align:right;">{{ number_format($item['unit_price'], 2) }}</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; text-align:right;">{{ number_format($item['total'], 2) }}{{ $item['taxable'] ? 'T' : '' }}</td>
+    </tr>
+    @endforeach
+    @foreach($serviceItems as $item)
+    <tr>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; vertical-align:top;">{{ $item['type'] }}</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; vertical-align:top;">{{ $item['description'] }} charge</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; text-align:center;">{{ $item['qty'] }}</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; text-align:right;">{{ number_format($item['unit_price'], 2) }}</td>
+        <td style="border:1px solid #ccc; padding:2pt 5pt; font-size:8pt; text-align:right;">{{ number_format($item['total'], 2) }}</td>
+    </tr>
+    @endforeach
+</table>
 
-    {{-- Notice --}}
-    <div class="notice-box">
-        Lic#{{ $settings['license_number'] ?? '' }}<br><br>
-        NOTICE: CREDIT CARD FEES<br>
-        Visa / MasterCard {{ $settings['cc_fee_visa'] ?? '2' }}%<br>
-        American Express / Discover {{ $settings['cc_fee_amex'] ?? '2.5' }}%
-    </div>
+<br>
 
-    {{-- Terms + Totals --}}
-    <table class="footer-table" cellpadding="0" cellspacing="0">
-        <tr>
-            <td style="width: 295px; vertical-align: top;">
-                <div class="terms-text">
-                    {{ $settings['estimate_footer'] ?? 'If the above prices, specifications and conditions are satisfactory and hereby accepted, the company requires signatures when orders are placed. By signing, customer has agreed Not to cancel the order or put a stop payment on orders that have been paid by Visa, M/C, check and/or cash. Estimate valid only 30 days.' }}
-                </div>
-            </td>
-            <td style="width: 240px; vertical-align: top;">
-                <div class="totals-box">
-                    <table>
-                        <tr>
-                            <td class="label">Subtotal</td>
-                            <td class="text-right">${{ number_format($subtotal, 2) }}</td>
-                        </tr>
-                        <tr>
-                            <td class="label">Sales Tax ({{ $taxRate }}%)</td>
-                            <td class="text-right">${{ number_format($taxAmount, 2) }}</td>
-                        </tr>
-                        <tr class="total-row">
-                            <td class="label">Total</td>
-                            <td class="text-right">${{ number_format($total, 2) }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </td>
-        </tr>
-    </table>
+{{-- ═══════ NOTICE ═══════ --}}
+<table cellpadding="0" cellspacing="0" style="border:1px solid #999;">
+    <tr>
+        <td style="padding:4pt 6pt; font-size:7pt; line-height:1.4;">
+            Lic#{{ $settings['license_number'] ?? '' }}<br><br>
+            NOTICE: CREDIT CARD FEES<br>
+            Visa / MasterCard {{ $settings['cc_fee_visa'] ?? '2' }}%<br>
+            American Express / Discover {{ $settings['cc_fee_amex'] ?? '2.5' }}%
+        </td>
+    </tr>
+</table>
 
-    {{-- Signature --}}
-    <div class="signature-line">
-        <table class="sig-table">
-            <tr>
-                <td class="sig-label">Customer Signature</td>
-                <td class="sig-line">&nbsp;</td>
-            </tr>
-        </table>
-    </div>
+<br>
 
-</div>
+{{-- ═══════ TERMS + TOTALS ═══════ --}}
+<table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td width="55%" valign="top" style="font-size:7pt; line-height:1.4; color:#333; padding-right:10pt;">
+            {{ $settings['estimate_footer'] ?? 'If the above prices, specifications and conditions are satisfactory and hereby accepted, the company requires signatures when orders are placed. By signing, customer has agreed Not to cancel the order or put a stop payment on orders that have been paid by Visa, M/C, check and/or cash. Estimate valid only 30 days.' }}
+        </td>
+        <td width="45%" valign="top" align="right">
+            <table cellpadding="0" cellspacing="0" align="right">
+                <tr>
+                    <td style="padding:2pt 8pt; font-size:9pt; font-weight:bold; text-align:left;">Subtotal</td>
+                    <td style="padding:2pt 8pt; font-size:9pt; text-align:right;">${{ number_format($subtotal, 2) }}</td>
+                </tr>
+                <tr>
+                    <td style="padding:2pt 8pt; font-size:9pt; font-weight:bold; text-align:left;">Sales Tax ({{ $taxRate }}%)</td>
+                    <td style="padding:2pt 8pt; font-size:9pt; text-align:right;">${{ number_format($taxAmount, 2) }}</td>
+                </tr>
+                <tr>
+                    <td style="padding:3pt 8pt; font-size:11pt; font-weight:bold; text-align:left; border-top:2pt solid #000;">Total</td>
+                    <td style="padding:3pt 8pt; font-size:11pt; font-weight:bold; text-align:right; border-top:2pt solid #000;">${{ number_format($total, 2) }}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+<br><br>
+
+{{-- ═══════ SIGNATURE ═══════ --}}
+<table cellpadding="0" cellspacing="0">
+    <tr>
+        <td style="font-size:8pt; font-weight:bold; padding-right:5pt; white-space:nowrap;">Customer Signature</td>
+        <td style="border-bottom:1px solid #000; width:200pt;">&nbsp;</td>
+    </tr>
+</table>
+
 </body>
 </html>

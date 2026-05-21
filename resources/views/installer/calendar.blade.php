@@ -553,7 +553,7 @@ function showJobPopup(jobId) {
     // Determine if it's a tech measure (by service name)
     const isTechMeasure = (job.service_name || '').toLowerCase().includes('measure');
     const detailUrl = isTechMeasure
-        ? `/installer/tech-measures?job=${jobId}`
+        ? (job.tech_measure_id ? `/installer/tech-measures/${job.tech_measure_id}` : `/installer/tech-measures?job=${jobId}`)
         : `/installer/jobs/${jobId}`;
     const detailLabel = isTechMeasure ? 'Tech Measure' : 'Job Details';
 
@@ -729,8 +729,8 @@ function showEventPopup(eventId) {
 
     // Determine if this is a tech measure event
     const isTechMeasureEvent = (ev.service_name || '').toLowerCase().includes('measure') || (ev.title || '').toLowerCase().includes('measure');
-    const eventDetailUrl = isTechMeasureEvent ? `/installer/tech-measures` : null;
     const techMeasureId = ev.tech_measure_id || null;
+    const eventDetailUrl = isTechMeasureEvent ? (techMeasureId ? `/installer/tech-measures/${techMeasureId}` : `/installer/tech-measures`) : null;
     const tmStatus = ev.tech_measure_status;
 
     // Check actual status to decide which button to show

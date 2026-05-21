@@ -74,9 +74,11 @@
         border-right: 1px solid rgba(0,0,0,.04);
         border-bottom: 1px solid rgba(0,0,0,.04);
         transition: background .1s; position: relative;
+        cursor: pointer;
     }
-    .cal-cell:hover { background: rgba(201,168,76,.03); }
+    .cal-cell:hover { background: rgba(201,168,76,.06); }
     .cal-cell.today { background: rgba(201,168,76,.08); }
+    .cal-cell.today:hover { background: rgba(201,168,76,.14); }
     .cal-cell.other-month { opacity: .35; }
     .cal-cell .cell-date {
         font-size: .75rem; font-weight: 600; color: #333;
@@ -101,6 +103,43 @@
     .avail-day-row .form-control, .avail-day-row .form-select { font-size: .82rem; padding: .3rem .5rem; }
     .avail-day-fields { transition: opacity .15s; }
     .avail-day-fields.off { opacity: .3; pointer-events: none; }
+
+    /* ── Day View ──────────────────── */
+    .cal-day-view { display: none; flex: 1; flex-direction: column; }
+    .cal-day-view.active { display: flex; }
+    .cal-grid-wrap.hidden { display: none; }
+
+    .day-view-header {
+        padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,.06);
+        display: flex; align-items: center; justify-content: space-between; background: #fff;
+    }
+    .day-view-header h4 { margin: 0; font-weight: 700; font-size: 1.15rem; }
+    .day-view-header .day-subtitle { font-size: .82rem; color: #888; margin-top: 2px; }
+
+    .day-timeline { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; }
+    .day-hour-row {
+        display: flex; min-height: 60px; border-bottom: 1px solid rgba(0,0,0,.04);
+    }
+    .day-hour-label {
+        width: 70px; min-width: 70px; padding: .5rem .5rem .5rem 0;
+        font-size: .72rem; font-weight: 600; color: rgba(0,0,0,.35);
+        text-align: right; padding-right: 12px; border-right: 2px solid rgba(0,0,0,.06);
+    }
+    .day-hour-items { flex: 1; padding: .35rem .75rem; display: flex; flex-wrap: wrap; gap: .35rem; align-content: flex-start; }
+    .day-item-card {
+        background: #fff; border-radius: .4rem; padding: .5rem .75rem;
+        border-left: 3px solid #c9a84c; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+        cursor: pointer; transition: all .12s; flex: 0 0 auto; max-width: 320px;
+    }
+    .day-item-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.1); transform: translateY(-1px); }
+    .day-item-card .dic-title { font-size: .82rem; font-weight: 600; color: #111; }
+    .day-item-card .dic-meta { font-size: .7rem; color: #888; margin-top: 2px; }
+    .day-item-card .dic-badge { font-size: .6rem; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+
+    .day-no-items {
+        text-align: center; padding: 3rem 1rem; color: #aaa;
+    }
+    .day-no-items i { font-size: 2.5rem; opacity: .3; }
 
     @media (max-width: 991.98px) {
         .cal-container { flex-direction: column; height: auto; }
@@ -203,13 +242,20 @@
 
     {{-- ── Main Calendar Grid ──────────────────── --}}
     <div class="cal-main">
-        <div class="cal-toolbar">
-            <div class="nav-btns">
-                <a href="{{ route('admin.calendar.index', ['month' => $prevMonth->format('Y-m')]) }}" title="Previous"><i class="bi bi-chevron-left"></i></a>
-                <a href="{{ route('admin.calendar.index') }}" title="Today" style="width:auto; padding:0 10px; font-size:.75rem; font-weight:600;">Today</a>
-                <a href="{{ route('admin.calendar.index', ['month' => $nextMonth->format('Y-m')]) }}" title="Next"><i class="bi bi-chevron-right"></i></a>
+        <div class="cal-toolbar" id="calToolbar">
+            <div class="d-flex align-items-center gap-2">
+                <div class="nav-btns" id="monthNavBtns">
+                    <a href="{{ route('admin.calendar.index', ['month' => $prevMonth->format('Y-m')]) }}" title="Previous"><i class="bi bi-chevron-left"></i></a>
+                    <a href="javascript:void(0)" onclick="switchToDayView('{{ $today->format('Y-m-d') }}')" title="Today" style="width:auto; padding:0 10px; font-size:.75rem; font-weight:600;">Today</a>
+                    <a href="{{ route('admin.calendar.index', ['month' => $nextMonth->format('Y-m')]) }}" title="Next"><i class="bi bi-chevron-right"></i></a>
+                </div>
+                <div class="nav-btns" id="dayNavBtns" style="display:none;">
+                    <a href="javascript:void(0)" onclick="dayViewNav(-1)" title="Previous day"><i class="bi bi-chevron-left"></i></a>
+                    <a href="javascript:void(0)" onclick="switchToMonthView()" title="Back to month" style="width:auto; padding:0 10px; font-size:.75rem; font-weight:600;"><i class="bi bi-grid-3x3 me-1"></i>Month</a>
+                    <a href="javascript:void(0)" onclick="dayViewNav(1)" title="Next day"><i class="bi bi-chevron-right"></i></a>
+                </div>
             </div>
-            <h5>{{ $monthLabel }}</h5>
+            <h5 id="calTitle">{{ $monthLabel }}</h5>
             <a href="{{ route('admin.jobs.index') }}" class="btn btn-sm btn-vip"><i class="bi bi-list-ul me-1"></i> All Jobs</a>
         </div>
 
@@ -240,12 +286,13 @@
                             $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'crew_id' => $ev->crew_id, 'crew_name' => $ev->crew?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone, 'installation_types' => $ev->installation_types, 'event_status' => $ev->event_status ?? 'scheduled', 'is_rescheduled' => (bool) $ev->rescheduled_at, 'reschedule_reason' => $ev->reschedule_reason, 'rescheduled_from_date' => $ev->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $ev->rescheduled_from_time]);
                         }
                     @endphp
-                    <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}">
+                    <div class="cal-cell {{ $isToday ? 'today' : '' }} {{ $isOther ? 'other-month' : '' }}"
+                         onclick='onCellClick(@json($allItems), "{{ $dateKey }}")'>
                         <span class="cell-date">{{ $current->day }}</span>
                         <div class="cell-items">
                             @foreach($allItems->take($maxShow) as $idx => $item)
                                 <span class="cell-chip" style="background:{{ $item['color'] }}20; color:{{ $item['color'] }}; cursor:pointer;"
-                                      onclick='openCalItem(@json($item))'>
+                                      onclick='event.stopPropagation(); openCalItem(@json($item))'>
                                     @if($item['type'] === 'job')
                                         @if($item['status'] === 'completed')
                                             <i class="bi bi-check-circle-fill text-success" style="font-size:.5rem;"></i>
@@ -269,7 +316,7 @@
                                 </span>
                             @endforeach
                             @if($allItems->count() > $maxShow)
-                                <span class="cell-more" style="cursor:pointer;" onclick='openDaySummary(@json($allItems), "{{ $dateKey }}")'>+{{ $allItems->count() - $maxShow }} more</span>
+                                <span class="cell-more" style="cursor:pointer;" onclick='event.stopPropagation(); openDaySummary(@json($allItems), "{{ $dateKey }}")'>+{{ $allItems->count() - $maxShow }} more</span>
                             @endif
                         </div>
                     </div>
@@ -277,8 +324,40 @@
                 @endwhile
             </div>
         </div>
+
+        {{-- ── Day View (hidden by default) ──────────────────── --}}
+        <div class="cal-day-view" id="calDayView">
+            <div class="day-timeline" id="dayTimeline"></div>
+        </div>
     </div>
 </div>
+
+{{-- Calendar data for JS day view --}}
+<script>
+const calendarData = @json(
+    collect($gridStart->copy()->daysUntil($gridEnd->copy()->addDay()))->mapWithKeys(function($date) use ($scheduledJobs, $scheduledOrders, $calendarEvents, $serviceColors, $serviceColorById, $slots) {
+        $dateKey = $date->format('Y-m-d');
+        $dayJobList = $scheduledJobs[$dateKey] ?? collect();
+        $dayOrderList = $scheduledOrders[$dateKey] ?? collect();
+        $dayEventList = $calendarEvents[$dateKey] ?? collect();
+
+        $allItems = collect();
+        foreach($dayJobList as $j) {
+            $jobDisplayName = $j->title ?: $j->customer_name ?: $j->job_number;
+            $allItems->push(['type' => 'job', 'id' => $j->id, 'label' => \Str::limit($jobDisplayName, 10), 'full_label' => ($j->job_number ?? '') . ' — ' . $jobDisplayName, 'time' => $j->scheduled_time, 'color' => ($j->service ? ($serviceColorById[$j->service_id] ?? '#17a2b8') : '#17a2b8'), 'address' => trim(($j->install_address ?? '') . ', ' . ($j->install_city ?? '') . ' ' . ($j->install_state ?? ''), ', '), 'status' => $j->status, 'service_name' => $j->service?->name, 'is_rescheduled' => (bool) $j->rescheduled_at, 'reschedule_reason' => $j->reschedule_reason, 'rescheduled_from_date' => $j->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $j->rescheduled_from_time]);
+        }
+        foreach($dayOrderList as $o) {
+            $allItems->push(['type' => 'order', 'id' => $o->id, 'label' => \Str::limit($o->customer_name, 10), 'full_label' => $o->customer_name, 'time' => null, 'color' => ($serviceColors[$o->service_type] ?? '#007bff'), 'address' => '', 'status' => $o->status, 'service_name' => $o->service_type]);
+        }
+        foreach($dayEventList as $ev) {
+            $evColor = ($ev->service && $ev->service->color) ? $ev->service->color : ($ev->color ?: '#c9a84c');
+            $allItems->push(['type' => 'event', 'id' => $ev->id, 'label' => \Str::limit($ev->title, 10), 'full_label' => $ev->title, 'time' => $ev->event_time, 'end_time' => $ev->end_time, 'color' => $evColor, 'address' => $ev->address, 'description' => $ev->description, 'service_id' => $ev->service_id, 'service_name' => $ev->service?->name, 'crew_id' => $ev->crew_id, 'crew_name' => $ev->crew?->name, 'end_date' => $ev->end_date?->format('Y-m-d'), 'customer_name' => $ev->customer_name, 'customer_email' => $ev->customer_email, 'customer_phone' => $ev->customer_phone, 'installation_types' => $ev->installation_types, 'event_status' => $ev->event_status ?? 'scheduled', 'is_rescheduled' => (bool) $ev->rescheduled_at, 'reschedule_reason' => $ev->reschedule_reason, 'rescheduled_from_date' => $ev->rescheduled_from_date?->format('M d, Y'), 'rescheduled_from_time' => $ev->rescheduled_from_time]);
+        }
+
+        return [$dateKey => $allItems->values()->toArray()];
+    })->toArray()
+);
+</script>
 
 {{-- ── Add to Schedule Modal ──────────────────── --}}
 <div class="modal fade" id="addEventModal" tabindex="-1">
@@ -781,6 +860,186 @@ function renderOverrides() {
 // Load overrides when tab is shown
 document.querySelector('a[href="#overridesTab"]')?.addEventListener('shown.bs.tab', loadOverrides);
 
+// ── View state ──
+let currentView = 'month'; // 'month' or 'day'
+let currentDayDate = null;
+
+// ── Cell Click — switch to day view ──
+function onCellClick(items, dateKey) {
+    switchToDayView(dateKey);
+}
+
+// ── Switch to Day View ──
+function switchToDayView(dateKey) {
+    currentView = 'day';
+    currentDayDate = dateKey;
+
+    // Toggle visibility
+    document.querySelector('.cal-grid-wrap').classList.add('hidden');
+    document.getElementById('calDayView').classList.add('active');
+    document.getElementById('monthNavBtns').style.display = 'none';
+    document.getElementById('dayNavBtns').style.display = '';
+
+    // Update title
+    const d = new Date(dateKey + 'T12:00:00');
+    const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const today = new Date(); today.setHours(12,0,0,0);
+    const isToday = d.toDateString() === today.toDateString();
+    document.getElementById('calTitle').innerHTML = (isToday ? '<span class="badge bg-warning text-dark me-2" style="font-size:.65rem; vertical-align:middle;">TODAY</span>' : '') + d.toLocaleDateString('en-US', opts);
+
+    renderDayView(dateKey);
+}
+
+// ── Switch back to Month View ──
+function switchToMonthView() {
+    currentView = 'month';
+    currentDayDate = null;
+
+    document.querySelector('.cal-grid-wrap').classList.remove('hidden');
+    document.getElementById('calDayView').classList.remove('active');
+    document.getElementById('monthNavBtns').style.display = '';
+    document.getElementById('dayNavBtns').style.display = 'none';
+    document.getElementById('calTitle').textContent = '{{ $monthLabel }}';
+}
+
+// ── Navigate day view ──
+function dayViewNav(offset) {
+    if (!currentDayDate) return;
+    const d = new Date(currentDayDate + 'T12:00:00');
+    d.setDate(d.getDate() + offset);
+    const newKey = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    switchToDayView(newKey);
+}
+
+// ── Render Day View timeline ──
+function renderDayView(dateKey) {
+    const timeline = document.getElementById('dayTimeline');
+    const items = calendarData[dateKey] || [];
+
+    if (items.length === 0) {
+        timeline.innerHTML = `
+            <div class="day-no-items">
+                <i class="bi bi-calendar-x"></i>
+                <p class="mt-2 mb-3">Nothing scheduled for this day</p>
+                <button class="btn btn-sm btn-vip" onclick="document.querySelector('#addEventModal input[name=\\'event_date\\']').value='${dateKey}'; new bootstrap.Modal(document.getElementById('addEventModal')).show();">
+                    <i class="bi bi-plus-circle me-1"></i> Add to Schedule
+                </button>
+            </div>`;
+        return;
+    }
+
+    // Sort items by time (items with time first, then no-time items)
+    const sorted = [...items].sort((a, b) => {
+        const ta = a.time || 'ZZ:ZZ';
+        const tb = b.time || 'ZZ:ZZ';
+        return ta.localeCompare(tb);
+    });
+
+    // Group items by hour slot
+    const hours = {};
+    const noTime = [];
+    sorted.forEach(item => {
+        if (item.time) {
+            // Parse time like "9:00 AM", "14:00", "2:30 PM" etc.
+            let hourKey = item.time;
+            const match24 = item.time.match(/^(\d{1,2}):/);
+            const matchAMPM = item.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+            let h = 0;
+            if (matchAMPM) {
+                h = parseInt(matchAMPM[1]);
+                const isPM = matchAMPM[3].toUpperCase() === 'PM';
+                if (isPM && h !== 12) h += 12;
+                if (!isPM && h === 12) h = 0;
+            } else if (match24) {
+                h = parseInt(match24[1]);
+            }
+            hourKey = String(h).padStart(2, '0') + ':00';
+            if (!hours[hourKey]) hours[hourKey] = [];
+            hours[hourKey].push(item);
+        } else {
+            noTime.push(item);
+        }
+    });
+
+    let html = '';
+
+    // Add event button at top
+    html += `<div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-sm btn-vip" onclick="document.querySelector('#addEventModal input[name=\\'event_date\\']').value='${dateKey}'; new bootstrap.Modal(document.getElementById('addEventModal')).show();">
+            <i class="bi bi-plus-circle me-1"></i> Add to Schedule
+        </button>
+    </div>`;
+
+    // All-day / no time items
+    if (noTime.length > 0) {
+        html += `<div class="day-hour-row" style="background:rgba(201,168,76,.03);">
+            <div class="day-hour-label" style="font-weight:700; color:rgba(0,0,0,.5);">All Day</div>
+            <div class="day-hour-items">`;
+        noTime.forEach(item => { html += buildDayItemCard(item); });
+        html += `</div></div>`;
+    }
+
+    // Time-slotted items — show all hours 6 AM to 8 PM, highlight ones with items
+    for (let h = 6; h <= 20; h++) {
+        const hourKey = String(h).padStart(2, '0') + ':00';
+        const hourItems = hours[hourKey] || [];
+        const ampm = h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h - 12) + ' PM';
+
+        html += `<div class="day-hour-row${hourItems.length ? '' : ''}">
+            <div class="day-hour-label">${ampm}</div>
+            <div class="day-hour-items">`;
+        hourItems.forEach(item => { html += buildDayItemCard(item); });
+        html += `</div></div>`;
+    }
+
+    // Items outside 6am-8pm range
+    const outsideHours = {};
+    Object.keys(hours).forEach(k => {
+        const h = parseInt(k);
+        if (h < 6 || h > 20) outsideHours[k] = hours[k];
+    });
+    Object.keys(outsideHours).sort().forEach(hourKey => {
+        const h = parseInt(hourKey);
+        const ampm = h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h - 12) + ' PM';
+        html += `<div class="day-hour-row">
+            <div class="day-hour-label">${ampm}</div>
+            <div class="day-hour-items">`;
+        outsideHours[hourKey].forEach(item => { html += buildDayItemCard(item); });
+        html += `</div></div>`;
+    });
+
+    timeline.innerHTML = html;
+}
+
+function buildDayItemCard(item) {
+    const icon = item.type === 'job' ? 'wrench' : (item.type === 'order' ? 'tools' : 'calendar-event');
+    const typeBadge = item.type === 'job' ? 'Job' : (item.type === 'order' ? 'Order' : 'Event');
+    const statusBadge = item.status ? `<span class="dic-badge" style="background:${getStatusColor(item.status)}20; color:${getStatusColor(item.status)};">${item.status.replace('_',' ')}</span>` : '';
+
+    let meta = [];
+    if (item.time) meta.push(`<i class="bi bi-clock me-1"></i>${item.time}${item.end_time ? ' – ' + item.end_time : ''}`);
+    if (item.service_name) meta.push(`<i class="bi bi-tag me-1"></i>${item.service_name}`);
+    if (item.address && item.address !== ', ') meta.push(`<i class="bi bi-geo-alt me-1"></i>${item.address}`);
+    if (item.crew_name) meta.push(`<i class="bi bi-people me-1"></i>${item.crew_name}`);
+    if (item.customer_name) meta.push(`<i class="bi bi-person me-1"></i>${item.customer_name}`);
+
+    return `<div class="day-item-card" style="border-left-color:${item.color};" onclick='openCalItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <i class="bi bi-${icon}" style="color:${item.color}; font-size:.85rem;"></i>
+            <span class="dic-title">${item.full_label}</span>
+            <span class="dic-badge" style="background:${item.color}20; color:${item.color};">${typeBadge}</span>
+            ${statusBadge}
+            ${item.is_rescheduled ? '<i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:.7rem;" title="Rescheduled"></i>' : ''}
+        </div>
+        ${meta.length ? '<div class="dic-meta">' + meta.join(' &nbsp;&middot;&nbsp; ') + '</div>' : ''}
+    </div>`;
+}
+
+function getStatusColor(status) {
+    const map = { pending: '#ffc107', scheduled: '#17a2b8', in_progress: '#007bff', completed: '#28a745', cancelled: '#dc3545', rescheduled: '#fd7e14' };
+    return map[status] || '#6c757d';
+}
+
 // ── Calendar Item Popups ──
 function openCalItem(item) {
     const modal = document.getElementById('viewItemModal');
@@ -864,7 +1123,11 @@ function openCalItem(item) {
 
 function openDaySummary(items, dateKey) {
     const modal = document.getElementById('daySummaryModal');
-    document.getElementById('daySummaryTitle').textContent = dateKey;
+    // Format date for display
+    const d = new Date(dateKey + 'T12:00:00');
+    const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const formatted = d.toLocaleDateString('en-US', opts);
+    document.getElementById('daySummaryTitle').innerHTML = `<i class="bi bi-calendar3 me-1"></i> ${formatted}`;
     let html = '';
     items.forEach(item => {
         const icon = item.type === 'job' ? 'wrench' : (item.type === 'order' ? 'tools' : 'calendar-event');
@@ -876,6 +1139,12 @@ function openDaySummary(items, dateKey) {
             </div>
         </div>`;
     });
+    // Add "Add to Schedule" button at the bottom
+    html += `<div class="text-center mt-3 pt-2" style="border-top:1px solid rgba(0,0,0,.06);">
+        <button class="btn btn-sm btn-vip" onclick="bootstrap.Modal.getInstance(document.getElementById('daySummaryModal')).hide(); setTimeout(() => { document.querySelector('#addEventModal input[name=\\'event_date\\']').value='${dateKey}'; new bootstrap.Modal(document.getElementById('addEventModal')).show(); }, 300);">
+            <i class="bi bi-plus-circle me-1"></i> Add to ${formatted.split(',')[0]}
+        </button>
+    </div>`;
     document.getElementById('daySummaryBody').innerHTML = html;
     new bootstrap.Modal(modal).show();
 }
