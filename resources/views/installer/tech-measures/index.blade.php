@@ -959,15 +959,16 @@ function clockOutMeasure(measureId) {
 }
 
 function completeMeasure(measureId) {
-    // Check how many openings exist
-    const itemCount = currentMeasureData?.items?.length || 0;
+    // Check how many openings exist and total qty
+    const items = currentMeasureData?.items || [];
+    const totalQty = items.reduce((sum, item) => sum + (parseInt(item.qty) || 1), 0);
 
-    if (itemCount === 0) {
+    if (items.length === 0) {
         alert('No openings have been entered. Please add at least one opening before completing this tech measure.');
         return;
     }
 
-    const label = itemCount === 1 ? '1 opening' : itemCount + ' openings';
+    const label = totalQty === 1 ? '1 opening' : totalQty + ' openings';
     if (!confirm(`Complete this tech measure with ${label}?`)) return;
 
     // Gather all current frame & grid data to save with completion
