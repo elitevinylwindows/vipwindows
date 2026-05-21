@@ -98,79 +98,56 @@ class SettingsController extends Controller
             'categories.*' => 'in:tech_measures,installations,services,repairs',
         ]);
 
-        $start = $validated['start_date'];
-        $end   = $validated['end_date'];
-        $cats  = $validated['categories'];
-        $counts = [];
+        try {
+            $start = $validated['start_date'];
+            $end   = $validated['end_date'];
+            $cats  = $validated['categories'];
+            $counts = [];
 
-        if (in_array('tech_measures', $cats)) {
-            $tmIds = TechMeasure::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])->pluck('id');
-            $eventIds = TechMeasure::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])
-                ->whereNotNull('calendar_event_id')->pluck('calendar_event_id');
-            $counts[] = [
-                'label' => 'Tech Measures',
-                'count' => $tmIds->count(),
-            ];
-            $counts[] = [
-                'label' => 'Tech Measure Items',
-                'count' => DB::table('tech_measure_items')->whereIn('tech_measure_id', $tmIds)->count(),
-            ];
-            $counts[] = [
-                'label' => 'Tech Measure Photos',
-                'count' => DB::table('tech_measure_photos')->whereIn('tech_measure_id', $tmIds)->count(),
-            ];
-            $counts[] = [
-                'label' => 'Linked Calendar Events',
-                'count' => $eventIds->count(),
-            ];
+            if (in_array('tech_measures', $cats)) {
+                $tmIds = TechMeasure::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])->pluck('id');
+                $eventIds = TechMeasure::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])
+                    ->whereNotNull('calendar_event_id')->pluck('calendar_event_id');
+                $counts[] = ['label' => 'Tech Measures', 'count' => $tmIds->count()];
+                $counts[] = ['label' => 'Tech Measure Items', 'count' => DB::table('tech_measure_items')->whereIn('tech_measure_id', $tmIds)->count()];
+                // Check if tech_measure_photos table exists
+                if (DB::getSchemaBuilder()->hasTable('tech_measure_photos')) {
+                    $counts[] = ['label' => 'Tech Measure Photos', 'count' => DB::table('tech_measure_photos')->whereIn('tech_measure_id', $tmIds)->count()];
+                }
+                $counts[] = ['label' => 'Linked Calendar Events', 'count' => $eventIds->count()];
+            }
+
+            if (in_array('installations', $cats)) {
+                $jobIds = Job::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])->pluck('id');
+                $counts[] = ['label' => 'Installation Jobs', 'count' => $jobIds->count()];
+                $counts[] = ['label' => 'Job Items', 'count' => DB::table('job_items')->whereIn('job_id', $jobIds)->count()];
+                $counts[] = ['label' => 'Job Time Logs', 'count' => DB::table('job_time_logs')->whereIn('job_id', $jobIds)->count()];
+                // Check if job_notes table exists
+                if (DB::getSchemaBuilder()->hasTable('job_notes')) {
+                    $counts[] = ['label' => 'Job Notes', 'count' => DB::table('job_notes')->whereIn('job_id', $jobIds)->count()];
+                }
+                $invoiceIds = Invoice::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])->pluck('id');
+                $counts[] = ['label' => 'Invoices', 'count' => $invoiceIds->count()];
+            }
+
+            if (in_array('services', $cats)) {
+                $svcServiceIds = Service::where('code', 'service')->pluck('id');
+                $svcEventCount = CalendarEvent::whereIn('service_id', $svcServiceIds)
+                    ->whereBetween('event_date', [$start, $end])->count();
+                $counts[] = ['label' => 'Service Events', 'count' => $svcEventCount];
+            }
+
+            if (in_array('repairs', $cats)) {
+                $repairServiceIds = Service::where('code', 'repair')->pluck('id');
+                $repairEventCount = CalendarEvent::whereIn('service_id', $repairServiceIds)
+                    ->whereBetween('event_date', [$start, $end])->count();
+                $counts[] = ['label' => 'Repair Events', 'count' => $repairEventCount];
+            }
+
+            return response()->json(['counts' => $counts]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Preview failed: ' . $e->getMessage()], 500);
         }
-
-        if (in_array('installations', $cats)) {
-            $jobIds = Job::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])->pluck('id');
-            $counts[] = [
-                'label' => 'Installation Jobs',
-                'count' => $jobIds->count(),
-            ];
-            $counts[] = [
-                'label' => 'Job Items',
-                'count' => DB::table('job_items')->whereIn('job_id', $jobIds)->count(),
-            ];
-            $counts[] = [
-                'label' => 'Job Time Logs',
-                'count' => DB::table('job_time_logs')->whereIn('job_id', $jobIds)->count(),
-            ];
-            $counts[] = [
-                'label' => 'Job Notes',
-                'count' => DB::table('job_notes')->whereIn('job_id', $jobIds)->count(),
-            ];
-            $invoiceIds = Invoice::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])->pluck('id');
-            $counts[] = [
-                'label' => 'Invoices',
-                'count' => $invoiceIds->count(),
-            ];
-        }
-
-        if (in_array('services', $cats)) {
-            $svcServiceIds = Service::where('code', 'service')->pluck('id');
-            $svcEventCount = CalendarEvent::whereIn('service_id', $svcServiceIds)
-                ->whereBetween('event_date', [$start, $end])->count();
-            $counts[] = [
-                'label' => 'Service Events',
-                'count' => $svcEventCount,
-            ];
-        }
-
-        if (in_array('repairs', $cats)) {
-            $repairServiceIds = Service::where('code', 'repair')->pluck('id');
-            $repairEventCount = CalendarEvent::whereIn('service_id', $repairServiceIds)
-                ->whereBetween('event_date', [$start, $end])->count();
-            $counts[] = [
-                'label' => 'Repair Events',
-                'count' => $repairEventCount,
-            ];
-        }
-
-        return response()->json(['counts' => $counts]);
     }
 
     /**
@@ -198,7 +175,8 @@ class SettingsController extends Controller
                     ->whereNotNull('calendar_event_id')->pluck('calendar_event_id');
 
                 // Delete children first
-                $photoCount = DB::table('tech_measure_photos')->whereIn('tech_measure_id', $tmIds)->delete();
+                $photoCount = DB::getSchemaBuilder()->hasTable('tech_measure_photos')
+                    ? DB::table('tech_measure_photos')->whereIn('tech_measure_id', $tmIds)->delete() : 0;
                 $itemCount = DB::table('tech_measure_items')->whereIn('tech_measure_id', $tmIds)->delete();
                 $tmCount = TechMeasure::whereIn('id', $tmIds)->delete();
                 // Delete linked calendar events
@@ -210,14 +188,17 @@ class SettingsController extends Controller
             if (in_array('installations', $cats)) {
                 $jobIds = Job::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])->pluck('id');
 
-                $noteCount = DB::table('job_notes')->whereIn('job_id', $jobIds)->delete();
+                $noteCount = DB::getSchemaBuilder()->hasTable('job_notes')
+                    ? DB::table('job_notes')->whereIn('job_id', $jobIds)->delete() : 0;
                 $logCount = DB::table('job_time_logs')->whereIn('job_id', $jobIds)->delete();
                 $jiCount = DB::table('job_items')->whereIn('job_id', $jobIds)->delete();
                 $jobCount = Job::whereIn('id', $jobIds)->forceDelete();
 
                 // Invoices
                 $invoiceIds = Invoice::whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"])->pluck('id');
-                DB::table('invoice_items')->whereIn('invoice_id', $invoiceIds)->delete();
+                if (DB::getSchemaBuilder()->hasTable('invoice_items')) {
+                    DB::table('invoice_items')->whereIn('invoice_id', $invoiceIds)->delete();
+                }
                 $invCount = Invoice::whereIn('id', $invoiceIds)->forceDelete();
 
                 $deleted[] = "{$jobCount} jobs, {$jiCount} job items, {$logCount} time logs, {$noteCount} notes, {$invCount} invoices";

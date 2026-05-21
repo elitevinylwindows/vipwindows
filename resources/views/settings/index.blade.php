@@ -679,9 +679,13 @@ function previewTruncate() {
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
         body: JSON.stringify({ start_date, end_date, categories }),
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) return r.text().then(t => { throw new Error(t); });
+        return r.json();
+    })
     .then(data => {
         if (data.error) { alert(data.error); return; }
+        if (data.errors) { alert(Object.values(data.errors).flat().join('\n')); return; }
         const preview = document.getElementById('truncatePreview');
         const body = document.getElementById('truncatePreviewBody');
         let html = '<ul class="mb-0">';
@@ -696,7 +700,10 @@ function previewTruncate() {
         preview.classList.remove('d-none');
         document.getElementById('truncateBtn').disabled = totalCount === 0;
     })
-    .catch(() => alert('Failed to preview. Please try again.'));
+    .catch(e => {
+        console.error('Truncate preview error:', e);
+        alert('Failed to preview. Please try again.');
+    });
 }
 
 function executeTruncate() {

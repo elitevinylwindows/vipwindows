@@ -404,7 +404,7 @@ function renderDetail(data) {
     let itemsHtml = '';
     if (items.length) {
         itemsHtml = `<table class="tm-items-tbl"><thead><tr>
-            <th style="width:30px;">#</th><th>Qty</th><th>Width</th><th>Height</th><th>Unit (Configuration)</th><th>Reference</th><th>Notes</th><th style="width:60px;"></th>
+            <th style="width:30px;">#</th><th>Qty</th><th>Width</th><th>Height</th><th>Unit (Configuration)</th><th>Type</th><th>Reference</th><th>Notes</th><th style="width:60px;"></th>
         </tr></thead><tbody>`;
         items.forEach((item, idx) => {
             const photoHtml = item.photos?.length ? `<div class="item-photos">${item.photos.map(p => `<img src="${p.url}" class="item-photo" onclick="window.open('${p.url}','_blank')">`).join('')}</div>` : '';
@@ -414,6 +414,7 @@ function renderDetail(data) {
                 <td class="text-nowrap">${item.width || '—'}</td>
                 <td class="text-nowrap">${item.height || '—'}</td>
                 <td>${item.description || '—'}</td>
+                <td>${item.opening_type || '—'}</td>
                 <td>${item.room_label || '—'}${photoHtml}</td>
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
                 <td class="text-center text-nowrap">
@@ -453,6 +454,14 @@ function renderDetail(data) {
                         <select id="addConfig" class="form-select form-select-sm">
                             <option value="">— Select —</option>
                             ${unitOptions.map(o => '<option value="' + escHtml(o.name) + '">' + escHtml(o.name) + '</option>').join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label style="font-size:.65rem; color:#999; text-transform:uppercase;">Type</label>
+                        <select id="addOpeningType" class="form-select form-select-sm">
+                            <option value="">—</option>
+                            <option value="Window">Window</option>
+                            <option value="Door">Door</option>
                         </select>
                     </div>
                     <div class="col-md-2">
