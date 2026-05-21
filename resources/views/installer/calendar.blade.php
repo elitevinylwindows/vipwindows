@@ -556,7 +556,7 @@ function showJobPopup(jobId) {
     // Determine if it's a tech measure (by service name)
     const isTechMeasure = (job.service_name || '').toLowerCase().includes('measure');
     const detailUrl = isTechMeasure
-        ? (job.tech_measure_id ? `/installer/tech-measures/${job.tech_measure_id}` : `/installer/tech-measures?job=${jobId}`)
+        ? (job.tech_measure_id ? `/installer/tech-measures?focus=${job.tech_measure_id}&from=calendar` : `/installer/tech-measures`)
         : `/installer/jobs/${jobId}`;
     const detailLabel = isTechMeasure ? 'Tech Measure' : 'Job Details';
 
