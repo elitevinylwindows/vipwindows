@@ -79,6 +79,47 @@ class InstallerTechMeasureController extends Controller
             }
         }
 
+        // Auto-clock in: if measure is in_progress but no job/time log exists, create them now
+        // This catches cases where the user navigated directly to tech measures
+        // without going through the calendar Start Route flow
+        if ($measure->status === 'in_progress' && !$job) {
+            $job = $this->findOrCreateTimeTrackingJob($measure);
+            JobTimeLog::create([
+                'job_id'   => $job->id,
+                'user_id'  => $user->id,
+                'clock_in' => $measure->started_at ?? now(),
+            ]);
+
+            // Clock in crew members too
+            if ($measure->crew_id) {
+                $crewMemberIds = DB::table('crew_members')
+                    ->where('crew_id', $measure->crew_id)
+                    ->pluck('user_id')
+                    ->toArray();
+
+                foreach ($crewMemberIds as $memberId) {
+                    if ($memberId == $user->id) continue;
+                    JobTimeLog::create([
+                        'job_id'   => $job->id,
+                        'user_id'  => $memberId,
+                        'clock_in' => $measure->started_at ?? now(),
+                    ]);
+                }
+            }
+        }
+
+        // If measure is in_progress, job exists, but user has no active time log — clock them in
+        if ($measure->status === 'in_progress' && $job) {
+            $hasActiveLog = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->exists();
+            if (!$hasActiveLog) {
+                JobTimeLog::create([
+                    'job_id'   => $job->id,
+                    'user_id'  => $user->id,
+                    'clock_in' => $measure->started_at ?? now(),
+                ]);
+            }
+        }
+
         $activeLog = null;
         $totalTimeMinutes = 0;
 
@@ -95,11 +136,6 @@ class InstallerTechMeasureController extends Controller
         $measureArray['active_since'] = $activeLog?->clock_in?->toISOString();
         $measureArray['total_time_minutes'] = $totalTimeMinutes;
         $measureArray['time_tracking_job_id'] = $job?->id;
-        // Debug: include job search info so we can diagnose clock-in issues
-        $measureArray['_debug_job_id_column'] = $measure->job_id;
-        $measureArray['_debug_job_found'] = $job ? $job->job_number : null;
-        $measureArray['_debug_active_log_id'] = $activeLog?->id;
-        $measureArray['_debug_user_id'] = $user->id;
 
         return response()->json([
             'measure' => $measureArray,
@@ -125,16 +161,52 @@ class InstallerTechMeasureController extends Controller
      */
     public function start($id)
     {
-        $measure = TechMeasure::findOrFail($id);
+        $user = Auth::guard('vip')->user();
+        $measure = TechMeasure::with('calendarEvent')->findOrFail($id);
 
         if ($measure->status === 'completed' || $measure->status === 'converted') {
             return response()->json(['error' => 'This measure is already completed.'], 422);
         }
 
+        $now = now();
+
         $measure->update([
             'status' => 'in_progress',
-            'started_at' => $measure->started_at ?? now(),
+            'started_at' => $measure->started_at ?? $now,
         ]);
+
+        // Auto-clock in the user when starting a measure
+        $job = $this->findOrCreateTimeTrackingJob($measure);
+
+        // Only clock in if not already clocked in
+        $alreadyActive = $job->timeLogs()->where('user_id', $user->id)->whereNull('clock_out')->exists();
+        if (!$alreadyActive) {
+            JobTimeLog::create([
+                'job_id'   => $job->id,
+                'user_id'  => $user->id,
+                'clock_in' => $now,
+            ]);
+
+            // Clock in crew members too
+            if ($measure->crew_id) {
+                $crewMemberIds = DB::table('crew_members')
+                    ->where('crew_id', $measure->crew_id)
+                    ->pluck('user_id')
+                    ->toArray();
+
+                foreach ($crewMemberIds as $memberId) {
+                    if ($memberId == $user->id) continue;
+                    $memberActive = $job->timeLogs()->where('user_id', $memberId)->whereNull('clock_out')->exists();
+                    if (!$memberActive) {
+                        JobTimeLog::create([
+                            'job_id'   => $job->id,
+                            'user_id'  => $memberId,
+                            'clock_in' => $now,
+                        ]);
+                    }
+                }
+            }
+        }
 
         return response()->json(['success' => true]);
     }
