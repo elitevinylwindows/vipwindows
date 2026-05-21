@@ -247,11 +247,19 @@
                             <option value="">— Select —</option>
                         </select>
                     </div>
-                    <div class="col-6">
+                    <div class="col-3">
+                        <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Type</label>
+                        <select id="editItemOpeningType" class="form-select form-select-sm bg-dark text-white border-secondary">
+                            <option value="">—</option>
+                            <option value="Window">Window</option>
+                            <option value="Door">Door</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
                         <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Reference</label>
                         <input type="text" id="editItemRoom" class="form-control form-control-sm bg-dark text-white border-secondary">
                     </div>
-                    <div class="col-6">
+                    <div class="col-5">
                         <label class="form-label mb-0" style="font-size:.68rem;color:rgba(255,255,255,.4);">Notes</label>
                         <input type="text" id="editItemNotes" class="form-control form-control-sm bg-dark text-white border-secondary">
                     </div>
@@ -437,6 +445,7 @@ function renderMeasureDetail(data) {
                 <th>Width</th>
                 <th>Height</th>
                 <th>Unit (Configuration)</th>
+                <th>Type</th>
                 <th>Reference</th>
                 <th>Notes</th>
                 <th style="width:60px;"></th>
@@ -456,6 +465,7 @@ function renderMeasureDetail(data) {
                 <td class="text-nowrap">${item.width || '—'}</td>
                 <td class="text-nowrap">${item.height || '—'}</td>
                 <td>${item.description || '—'}</td>
+                <td>${item.opening_type || '—'}</td>
                 <td>${item.room_label || '—'}${photoHtml}</td>
                 <td style="font-size:.72rem;">${item.notes || ''}</td>
                 <td class="text-center text-nowrap">
@@ -517,6 +527,14 @@ function renderMeasureDetail(data) {
                     <select id="addConfig" class="form-select form-select-sm">
                         <option value="">— Select —</option>
                         ${unitOptions.map(o => `<option value="${escHtml(o.name)}">${escHtml(o.name)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label>Type</label>
+                    <select id="addOpeningType" class="form-select form-select-sm">
+                        <option value="">—</option>
+                        <option value="Window">Window</option>
+                        <option value="Door">Door</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -657,6 +675,7 @@ function addItem(measureId) {
     const width = document.getElementById('addWidth')?.value?.trim();
     const height = document.getElementById('addHeight')?.value?.trim();
     const config = document.getElementById('addConfig')?.value || null;
+    const openingType = document.getElementById('addOpeningType')?.value || null;
     const room = document.getElementById('addRoom')?.value?.trim();
     const notes = document.getElementById('addNotes')?.value?.trim();
 
@@ -670,13 +689,14 @@ function addItem(measureId) {
             width: width || null,
             height: height || null,
             qty: qty,
+            opening_type: openingType,
             notes: notes,
         })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Clear inputs for next entry (keep Unit selection)
+            // Clear inputs for next entry (keep Unit and Type selections)
             document.getElementById('addQty').value = 1;
             document.getElementById('addWidth').value = '';
             document.getElementById('addHeight').value = '';
@@ -735,6 +755,9 @@ function editItem(measureId, itemId, item) {
         sel.appendChild(opt);
     });
 
+    // Set opening type
+    document.getElementById('editItemOpeningType').value = item.opening_type || '';
+
     new bootstrap.Modal(document.getElementById('editItemModal')).show();
 }
 
@@ -752,6 +775,7 @@ function saveEditItem() {
             height: document.getElementById('editItemHeight').value.trim() || null,
             description: config || null,
             series_type: config,
+            opening_type: document.getElementById('editItemOpeningType').value || null,
             room_label: document.getElementById('editItemRoom').value.trim(),
             notes: document.getElementById('editItemNotes').value.trim(),
         })

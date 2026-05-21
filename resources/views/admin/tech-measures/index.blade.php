@@ -397,7 +397,7 @@ function renderDetail(data) {
         actions += `<button class="btn btn-sm btn-outline-primary me-1" onclick="downloadPdf(${m.id})" title="Download PDF"><i class="bi bi-download"></i></button>`;
     }
     if (m.status === 'completed') {
-        actions += `<button class="btn btn-sm btn-vip" onclick="convertToQuote(${m.id})"><i class="bi bi-tools me-1"></i>Convert to Job</button>`;
+        actions += `<button class="btn btn-sm btn-vip" onclick="convertToJob(${m.id})"><i class="bi bi-tools me-1"></i>Convert to Job</button>`;
     }
     toolbar.innerHTML = actions;
 
@@ -1064,12 +1064,12 @@ function downloadPdf(measureId) {
     window.open(`/installer/tech-measures/${measureId}/pdf`, '_blank');
 }
 
-let convertMeasureId = null;
+let convertJobMeasureId = null;
 let jobLineItemCounter = 0;
 
-function convertToQuote(measureId) {
+function convertToJob(measureId) {
     if (!currentMeasureData) return;
-    convertMeasureId = measureId;
+    convertJobMeasureId = measureId;
     jobLineItemCounter = 0;
 
     // Populate measurements section
@@ -1089,9 +1089,25 @@ function convertToQuote(measureId) {
         </tr>`;
     });
 
-    // Clear line items and add one default row
+    // Auto-create line items based on opening_type counts (qty-aware)
     document.getElementById('jobLineItemsBody').innerHTML = '';
-    addJobLineItem();
+    const typeCounts = {};
+    items.forEach(item => {
+        const ot = (item.opening_type || '').trim();
+        if (ot) {
+            typeCounts[ot] = (typeCounts[ot] || 0) + (parseInt(item.qty) || 1);
+        }
+    });
+
+    if (Object.keys(typeCounts).length > 0) {
+        // Create a line item for each opening type with pre-selected service
+        Object.entries(typeCounts).forEach(([type, qty]) => {
+            addJobLineItem(qty, type);
+        });
+    } else {
+        // No opening types set — add one blank row
+        addJobLineItem();
+    }
 
     // Clear PDF and schedule fields
     document.getElementById('jobPdfFile').value = '';
@@ -1104,15 +1120,23 @@ function convertToQuote(measureId) {
     new bootstrap.Modal(document.getElementById('convertJobModal')).show();
 }
 
-function addJobLineItem() {
+function addJobLineItem(presetQty, presetType) {
     jobLineItemCounter++;
     const id = jobLineItemCounter;
-    const serviceOpts = installationTypes.map(t => `<option value="${t.id}" data-price="${t.price}">${escHtml(t.name)}</option>`).join('');
+    const qtyVal = presetQty || 1;
+
+    // Build service options, auto-selecting if presetType matches (e.g. "Window" matches "Window Install")
+    const typeLower = (presetType || '').toLowerCase();
+    const serviceOpts = installationTypes.map(t => {
+        const nameL = t.name.toLowerCase();
+        const selected = typeLower && nameL.includes(typeLower) ? 'selected' : '';
+        return `<option value="${t.id}" data-price="${t.price}" ${selected}>${escHtml(t.name)}</option>`;
+    }).join('');
 
     const row = document.createElement('tr');
     row.id = 'jobLine_' + id;
     row.innerHTML = `
-        <td><input type="number" class="form-control form-control-sm job-line-qty" data-line="${id}" value="1" min="1" oninput="updateLineTotal(${id})"></td>
+        <td><input type="number" class="form-control form-control-sm job-line-qty" data-line="${id}" value="${qtyVal}" min="1" oninput="updateLineTotal(${id})"></td>
         <td><select class="form-select form-select-sm job-line-service" data-line="${id}" onchange="onServiceChange(${id})">
             <option value="">— Select Service —</option>
             ${serviceOpts}
@@ -1122,6 +1146,11 @@ function addJobLineItem() {
         <td class="text-center"><button class="btn btn-sm text-danger p-0" onclick="removeJobLineItem(${id})"><i class="bi bi-x-lg" style="font-size:.65rem;"></i></button></td>
     `;
     document.getElementById('jobLineItemsBody').appendChild(row);
+
+    // Auto-fill price if a service was pre-selected
+    if (presetType) {
+        onServiceChange(id);
+    }
 }
 
 function removeJobLineItem(id) {
@@ -1212,7 +1241,7 @@ function submitConvertToJob() {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Converting...';
 
-    fetch(`/admin/tech-measures/${convertMeasureId}/convert-to-quote`, {
+    fetch(`/admin/tech-measures/${convertJobMeasureId}/convert-to-quote`, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
         body: formData
@@ -1225,7 +1254,7 @@ function submitConvertToJob() {
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('convertJobModal')).hide();
             alert(data.message || 'Job created successfully!');
-            loadMeasure(convertMeasureId);
+            loadMeasure(convertJobMeasureId);
         } else {
             alert(data.error || 'Failed to convert.');
         }

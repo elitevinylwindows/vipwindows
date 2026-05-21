@@ -313,19 +313,52 @@ class InstallerTechMeasureController extends Controller
      */
     private function findTimeTrackingJob(TechMeasure $measure): ?Job
     {
-        // If already converted to a job, use that
+        // If already linked to a job, use that
         if ($measure->job_id) {
             return Job::find($measure->job_id);
         }
 
-        // Otherwise look for the auto-created time-tracking job via calendar event
+        // Look for auto-created time-tracking job via calendar event
         $event = $measure->calendarEvent;
-        if (!$event) return null;
 
-        return Job::where('service_id', $event->service_id)
-            ->where('customer_name', $event->customer_name)
-            ->where('scheduled_date', $event->event_date)
+        if ($event) {
+            // Try matching by event's customer_name first
+            $job = Job::where('service_id', $event->service_id)
+                ->where('customer_name', $event->customer_name)
+                ->where('scheduled_date', $event->event_date)
+                ->first();
+
+            if ($job) {
+                // Link it for future lookups
+                $measure->update(['job_id' => $job->id]);
+                return $job;
+            }
+
+            // Try matching by measure's customer_name (job was created from measure data)
+            $job = Job::where('customer_name', $measure->customer_name)
+                ->where('scheduled_date', $event->event_date)
+                ->where('job_number', 'like', 'TM-%')
+                ->first();
+
+            if ($job) {
+                $measure->update(['job_id' => $job->id]);
+                return $job;
+            }
+        }
+
+        // Last resort: find any TM- job for this measure's customer with active time logs
+        $job = Job::where('customer_name', $measure->customer_name)
+            ->where('job_number', 'like', 'TM-%')
+            ->whereHas('timeLogs', function ($q) {
+                $q->where('user_id', \Illuminate\Support\Facades\Auth::guard('vip')->id());
+            })
             ->first();
+
+        if ($job) {
+            $measure->update(['job_id' => $job->id]);
+        }
+
+        return $job;
     }
 
     /**
