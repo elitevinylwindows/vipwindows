@@ -127,66 +127,66 @@
         <nav class="sidebar-nav">
             <div class="nav-label">Main</div>
             <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                <i class="bi bi-speedometer2"></i> Dashboard
+                <i class="bi bi-speedometer2"></i> {{ __('admin.dashboard') }}
             </a>
             <a href="{{ route('admin.calendar.index') }}" class="{{ request()->routeIs('admin.calendar.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar3"></i> Calendar
+                <i class="bi bi-calendar3"></i> {{ __('admin.calendar') }}
             </a>
             <a href="{{ route('admin.jobs.index') }}" class="{{ request()->routeIs('admin.jobs.*') ? 'active' : '' }}">
-                <i class="bi bi-tools"></i> Jobs
+                <i class="bi bi-tools"></i> {{ __('admin.jobs') }}
             </a>
             {{-- Orders and Quotes hidden for now
             <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                <i class="bi bi-clipboard-check"></i> Orders
+                <i class="bi bi-clipboard-check"></i> {{ __('admin.orders') }}
             </a>
             <a href="{{ route('admin.quotes.index') }}" class="{{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
-                <i class="bi bi-calculator"></i> Quotes
+                <i class="bi bi-calculator"></i> {{ __('admin.quotes') }}
             </a>
             --}}
             <a href="{{ route('admin.invoices.index') }}" class="{{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i> Invoices
+                <i class="bi bi-receipt"></i> {{ __('admin.invoices') }}
             </a>
             <a href="{{ route('admin.tech-measures.index') }}" class="{{ request()->routeIs('admin.tech-measures.*') ? 'active' : '' }}">
-                <i class="bi bi-rulers"></i> Tech Measures
+                <i class="bi bi-rulers"></i> {{ __('admin.tech_measures') }}
             </a>
             <a href="{{ route('admin.service-jobs.index') }}" class="{{ request()->routeIs('admin.service-jobs.*') ? 'active' : '' }}">
-                <i class="bi bi-wrench"></i> Services
+                <i class="bi bi-wrench"></i> {{ __('admin.services') }}
             </a>
             <a href="{{ route('admin.services.index') }}" class="{{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
-                <i class="bi bi-gear-wide-connected"></i> Service Types
+                <i class="bi bi-gear-wide-connected"></i> {{ __('admin.service_types') }}
             </a>
 
-            <div class="nav-label mt-3">Management</div>
+            <div class="nav-label mt-3">{{ __('admin.management') }}</div>
             <a href="{{ route('admin.team.index') }}" class="{{ request()->routeIs('admin.team.*') ? 'active' : '' }}">
-                <i class="bi bi-people-fill"></i> Team Members
+                <i class="bi bi-people-fill"></i> {{ __('admin.team_members') }}
             </a>
             <a href="{{ route('admin.installers.index') }}" class="{{ request()->routeIs('admin.installers.*') ? 'active' : '' }}">
-                <i class="bi bi-person-badge"></i> Installers
+                <i class="bi bi-person-badge"></i> {{ __('admin.installers') }}
             </a>
             <a href="{{ route('admin.crews.index') }}" class="{{ request()->routeIs('admin.crews.*') ? 'active' : '' }}">
-                <i class="bi bi-diagram-3"></i> Crews
+                <i class="bi bi-diagram-3"></i> {{ __('admin.crews') }}
             </a>
             <a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> Customers
+                <i class="bi bi-people"></i> {{ __('admin.customers') }}
             </a>
             <a href="{{ route('admin.attendance.index') }}" class="{{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}">
-                <i class="bi bi-clock-history"></i> Attendance
+                <i class="bi bi-clock-history"></i> {{ __('admin.attendance') }}
             </a>
 
-            <div class="nav-label mt-3">Content</div>
+            <div class="nav-label mt-3">{{ __('admin.content') }}</div>
             <a href="{{ route('admin.content.index') }}" class="{{ request()->routeIs('admin.content.*') || request()->routeIs('admin.gallery.*') || request()->routeIs('admin.service-areas.*') ? 'active' : '' }}">
-                <i class="bi bi-layout-text-window-reverse"></i> Content
+                <i class="bi bi-layout-text-window-reverse"></i> {{ __('admin.content') }}
             </a>
 
-            <div class="nav-label mt-3">Communication</div>
+            <div class="nav-label mt-3">{{ __('admin.communication') }}</div>
             <a href="{{ route('admin.email.compose') }}" class="{{ request()->routeIs('admin.email.*') ? 'active' : '' }}">
-                <i class="bi bi-envelope"></i> Email
+                <i class="bi bi-envelope"></i> {{ __('admin.email') }}
             </a>
             <a href="{{ route('admin.consultations.index') }}" class="{{ request()->routeIs('admin.consultations.*') ? 'active' : '' }}">
-                <i class="bi bi-camera-video"></i> Consultations
+                <i class="bi bi-camera-video"></i> {{ __('admin.consultations') }}
             </a>
             <a href="{{ route('admin.messages.index') }}" class="{{ request()->routeIs('admin.messages.*') ? 'active' : '' }}">
-                <i class="bi bi-chat-dots"></i> Messages
+                <i class="bi bi-chat-dots"></i> {{ __('admin.messages') }}
                 @php $msgUnread = \App\Models\Message::whereHas('conversation', fn($q) => $q->where('admin_id', auth('vip')->id()))->where('sender_id', '!=', auth('vip')->id())->whereNull('read_at')->count(); @endphp
                 @if($msgUnread > 0)
                     <span id="msgUnreadBadge" class="badge bg-danger ms-1" style="font-size:.6rem;">{{ $msgUnread }}</span>
@@ -195,19 +195,19 @@
                 @endif
             </a>
 
-            <div class="nav-label mt-3">Configuration</div>
+            <div class="nav-label mt-3">{{ __('admin.configuration') }}</div>
             <a href="{{ route('admin.vip-master.index') }}" class="{{ request()->routeIs('admin.vip-master.*') ? 'active' : '' }}">
-                <i class="bi bi-star-fill"></i> VIP Master
+                <i class="bi bi-star-fill"></i> {{ __('admin.vip_master') }}
             </a>
             {{-- Master Data hidden for now
             <a href="{{ route('admin.master.hub') }}" class="{{ request()->routeIs('admin.master.*') ? 'active' : '' }}">
-                <i class="bi bi-database-gear"></i> Master Data
+                <i class="bi bi-database-gear"></i> {{ __('admin.master_data') }}
             </a>
             --}}
 
-            <div class="nav-label mt-3">System</div>
+            <div class="nav-label mt-3">{{ __('admin.system') }}</div>
             <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                <i class="bi bi-gear"></i> Settings
+                <i class="bi bi-gear"></i> {{ __('admin.settings') }}
             </a>
         </nav>
 
@@ -215,12 +215,12 @@
             <div class="user-name"><i class="bi bi-person-circle me-1"></i> {{ Auth::user()->name }}</div>
             <div class="user-role">{{ ucfirst(Auth::user()->role) }}</div>
             <a href="{{ route('home') }}" target="_blank" class="btn btn-sm btn-outline-light w-100 mt-2 opacity-75">
-                <i class="bi bi-globe me-1"></i> View Website
+                <i class="bi bi-globe me-1"></i> {{ __('admin.view_website') }}
             </a>
             <form method="POST" action="{{ route('logout') }}" class="mt-1">
                 @csrf
                 <button class="btn btn-sm btn-outline-light w-100 opacity-50" type="submit">
-                    <i class="bi bi-box-arrow-left me-1"></i> Sign Out
+                    <i class="bi bi-box-arrow-left me-1"></i> {{ __('admin.sign_out') }}
                 </button>
             </form>
         </div>
@@ -237,9 +237,30 @@
                 <button class="btn btn-sm btn-outline-dark sidebar-toggle" onclick="document.getElementById('adminSidebar').classList.toggle('show')">
                     <i class="bi bi-list"></i>
                 </button>
-                <h6 class="mb-0 fw-semibold text-muted">@yield('title', 'Admin')</h6>
+                <h6 class="mb-0 fw-semibold text-muted">@yield('title', __('admin.admin'))</h6>
             </div>
-            <div class="small text-muted">{{ now()->format('l, M d, Y') }}</div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="small text-muted d-none d-md-block">{{ now()->format('l, M d, Y') }}</div>
+
+                {{-- Language Switcher --}}
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:.78rem; padding:3px 10px;">
+                        <i class="bi bi-globe2 me-1"></i>{{ strtoupper(app()->getLocale()) }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" style="min-width:140px;">
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 {{ app()->getLocale() === 'en' ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['lang' => 'en']) }}" style="font-size:.82rem;">
+                                <span style="font-size:1.1rem;">&#127482;&#127480;</span> English
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 {{ app()->getLocale() === 'es' ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['lang' => 'es']) }}" style="font-size:.82rem;">
+                                <span style="font-size:1.1rem;">&#127466;&#127480;</span> Espanol
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         {{-- Flash messages --}}
@@ -267,7 +288,7 @@
 
         {{-- Footer --}}
         <footer class="py-3 text-center small">
-            &copy; {{ date('Y') }} VIP Windows. All rights reserved.
+            &copy; {{ date('Y') }} VIP Windows. {{ __('admin.all_rights_reserved') }}
         </footer>
     </div>
 

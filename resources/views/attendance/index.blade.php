@@ -39,14 +39,14 @@
 @endphp
 
 <div class="container-fluid py-3">
-    <h5 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>Attendance</h5>
+    <h5 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>{{ __('admin.attendance') }}</h5>
 
     {{-- Currently Active on Jobs --}}
     @if($activeNow->count())
         <div class="att-active-bar">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
-                    <strong><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i> {{ $activeNow->count() }} Currently on a Job</strong>
+                    <strong><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i> {{ $activeNow->count() }} {{ __('admin.currently_on_job') }}</strong>
                 </div>
             </div>
             <div class="d-flex flex-wrap gap-3 mt-2">
@@ -71,17 +71,17 @@
             <form method="GET" action="{{ route('admin.attendance.index') }}" class="d-flex align-items-center gap-2">
                 <input type="hidden" name="month" value="{{ $month }}">
                 <select name="user_id" class="form-select form-select-sm" style="width:200px;" onchange="this.form.submit()">
-                    <option value="">All Staff</option>
+                    <option value="">{{ __('admin.all_staff') }}</option>
                     @foreach($staff as $s)
                         <option value="{{ $s->id }}" {{ $selectedUser == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
                     @endforeach
                 </select>
             </form>
-            <a href="{{ route('admin.attendance.index') }}" class="btn btn-sm btn-outline-primary">This Month</a>
+            <a href="{{ route('admin.attendance.index') }}" class="btn btn-sm btn-outline-primary">{{ __('admin.this_month') }}</a>
             <form method="POST" action="{{ route('admin.attendance.backfill') }}" class="d-inline ms-2" onsubmit="return confirm('This will create time logs for completed tech measures that have no records. Continue?')">
                 @csrf
                 <button type="submit" class="btn btn-sm btn-outline-secondary" title="Create time logs for completed tech measures with no clock records">
-                    <i class="bi bi-arrow-repeat me-1"></i>Backfill Pay
+                    <i class="bi bi-arrow-repeat me-1"></i>{{ __('admin.backfill_pay') }}
                 </button>
             </form>
         </div>
@@ -114,15 +114,15 @@
         <table>
             <thead>
                 <tr>
-                    <th>Staff</th>
-                    <th>Date</th>
-                    <th>Job</th>
-                    <th>Service</th>
-                    <th>Customer</th>
-                    <th>Started</th>
-                    <th>Ended</th>
-                    <th>Duration</th>
-                    <th>Pay</th>
+                    <th>{{ __('admin.staff') }}</th>
+                    <th>{{ __('admin.date') }}</th>
+                    <th>{{ __('admin.job_number') }}</th>
+                    <th>{{ __('admin.service') }}</th>
+                    <th>{{ __('admin.customer') }}</th>
+                    <th>{{ __('admin.started') }}</th>
+                    <th>{{ __('admin.ended') }}</th>
+                    <th>{{ __('admin.duration') }}</th>
+                    <th>{{ __('admin.pay') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -187,7 +187,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="text-center text-muted py-4">No job time records for this period.</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted py-4">{{ __('admin.no_time_records') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
