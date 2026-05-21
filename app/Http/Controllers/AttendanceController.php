@@ -122,6 +122,7 @@ class AttendanceController extends Controller
                     'status'         => 'completed',
                     'job_number'     => 'TM-BF-' . $measure->id,
                     'assigned_to'    => $assignedTo,
+                    'created_by'     => $assignedTo,
                     'notes'          => 'Backfilled time tracking for tech measure: ' . ($measure->customer_name ?? 'N/A'),
                 ]);
             }
