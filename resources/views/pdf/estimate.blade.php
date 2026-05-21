@@ -4,16 +4,16 @@
     <meta charset="utf-8">
     <title>Estimate — {{ $job->customer_name }}</title>
     <style>
-        @page { margin: 0.4in 0.4in 0.5in 0.4in; }
+        @page { margin: 30px 30px 40px 30px; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 9.5pt; }
-        .page { width: 100%; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 9pt; margin: 0; padding: 0; }
+        .page { width: 100%; padding: 0; }
 
         /* ── Header ── */
         .header-table { width: 100%; margin-bottom: 16px; border-collapse: collapse; }
         .company-info { font-size: 9.5pt; line-height: 1.5; }
         .company-name { font-weight: bold; font-size: 10.5pt; }
-        .estimate-title { font-size: 22pt; font-weight: bold; text-align: right; }
+        .estimate-title { font-size: 20pt; font-weight: bold; text-align: right; }
         .date-box { margin-top: 4px; }
         .date-box table { border-collapse: collapse; margin-left: auto; }
         .date-box th, .date-box td { border: 1px solid #000; padding: 2px 10px; font-size: 8.5pt; }
