@@ -95,6 +95,11 @@ class InstallerTechMeasureController extends Controller
         $measureArray['active_since'] = $activeLog?->clock_in?->toISOString();
         $measureArray['total_time_minutes'] = $totalTimeMinutes;
         $measureArray['time_tracking_job_id'] = $job?->id;
+        // Debug: include job search info so we can diagnose clock-in issues
+        $measureArray['_debug_job_id_column'] = $measure->job_id;
+        $measureArray['_debug_job_found'] = $job ? $job->job_number : null;
+        $measureArray['_debug_active_log_id'] = $activeLog?->id;
+        $measureArray['_debug_user_id'] = $user->id;
 
         return response()->json([
             'measure' => $measureArray,
