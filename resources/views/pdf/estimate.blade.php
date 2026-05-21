@@ -4,69 +4,76 @@
     <meta charset="utf-8">
     <title>Estimate — {{ $job->customer_name }}</title>
     <style>
-        @page { margin: 40px 50px 40px 50px; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 8pt; margin: 0; padding: 0; }
-        .page { width: 100%; max-width: 520pt; padding: 0; overflow: hidden; }
+        @page { margin: 0; }
+        * { margin: 0; padding: 0; }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000;
+            font-size: 8pt;
+            padding: 30px 40px 30px 40px;
+        }
+
+        /* ── Master wrapper — hardcoded pixel width ── */
+        .page {
+            width: 535px;
+            overflow: hidden;
+        }
 
         /* ── Header ── */
-        .header-table { width: 100%; margin-bottom: 14px; border-collapse: collapse; }
-        .company-info { font-size: 8.5pt; line-height: 1.4; }
-        .company-name { font-weight: bold; font-size: 9.5pt; }
-        .estimate-title { font-size: 16pt; font-weight: bold; text-align: right; }
-        .date-box { margin-top: 4px; }
-        .date-box table { border-collapse: collapse; margin-left: auto; }
-        .date-box th, .date-box td { border: 1px solid #000; padding: 2px 8px; font-size: 7.5pt; }
+        .header-table { width: 535px; margin-bottom: 12px; border-collapse: collapse; }
+        .company-info { font-size: 8pt; line-height: 1.4; }
+        .company-name { font-weight: bold; font-size: 9pt; }
+        .estimate-title { font-size: 14pt; font-weight: bold; text-align: right; }
+        .date-box { margin-top: 3px; }
+        .date-box table { border-collapse: collapse; margin-left: auto; width: auto; }
+        .date-box th, .date-box td { border: 1px solid #000; padding: 2px 6px; font-size: 7pt; }
         .date-box th { background: #eee; font-weight: bold; }
 
-        /* ── Address blocks side-by-side ── */
-        .address-table { width: 100%; margin-bottom: 12px; border-collapse: collapse; }
+        /* ── Address blocks ── */
+        .address-table { width: 535px; margin-bottom: 10px; border-collapse: collapse; }
         .address-table td { vertical-align: top; }
         .addr-box { border: 1px solid #000; }
-        .addr-label { background: #eee; border-bottom: 1px solid #000; padding: 2px 5px; font-weight: bold; font-size: 7.5pt; }
-        .addr-content { padding: 4px 5px; font-size: 8pt; line-height: 1.4; }
+        .addr-label { background: #eee; border-bottom: 1px solid #000; padding: 2px 4px; font-weight: bold; font-size: 7pt; }
+        .addr-content { padding: 3px 4px; font-size: 7.5pt; line-height: 1.3; }
 
         /* ── Reference row ── */
-        .ref-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        .ref-table th, .ref-table td { border: 1px solid #000; padding: 2px 6px; font-size: 7.5pt; text-align: center; }
+        .ref-table { width: 535px; border-collapse: collapse; margin-bottom: 8px; }
+        .ref-table th, .ref-table td { border: 1px solid #000; padding: 2px 4px; font-size: 7pt; text-align: center; }
         .ref-table th { background: #eee; font-weight: bold; }
 
         /* ── Items table ── */
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-        .items-table th { background: #333; color: #fff; padding: 3px 5px; font-size: 7pt; text-align: left; font-weight: bold; border: 1px solid #333; }
-        .items-table td { padding: 2px 5px; font-size: 7.5pt; border: 1px solid #ccc; vertical-align: top; word-wrap: break-word; }
+        .items-table { width: 535px; border-collapse: collapse; margin-bottom: 6px; }
+        .items-table th { background: #333; color: #fff; padding: 2px 4px; font-size: 6.5pt; text-align: left; font-weight: bold; border: 1px solid #333; }
+        .items-table td { padding: 2px 4px; font-size: 7pt; border: 1px solid #ccc; vertical-align: top; word-wrap: break-word; overflow: hidden; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
 
         /* ── Notice ── */
-        .notice-box { border: 1px solid #999; padding: 5px 8px; font-size: 7pt; line-height: 1.4; display: inline-block; margin-top: 6px; }
+        .notice-box { border: 1px solid #999; padding: 4px 6px; font-size: 6.5pt; line-height: 1.3; margin-top: 5px; width: 250px; }
 
-        /* ── Footer: Terms + Totals ── */
-        .footer-table { width: 100%; margin-top: 10px; border-collapse: collapse; }
+        /* ── Footer ── */
+        .footer-table { width: 535px; margin-top: 8px; border-collapse: collapse; }
         .footer-table td { vertical-align: top; }
-        .terms-text { font-size: 6.5pt; line-height: 1.4; color: #333; padding-right: 10px; }
-        .totals-box table { border-collapse: collapse; margin-left: auto; }
-        .totals-box td { padding: 2px 10px; font-size: 8.5pt; }
+        .terms-text { font-size: 6pt; line-height: 1.3; color: #333; padding-right: 8px; }
+        .totals-box table { border-collapse: collapse; margin-left: auto; width: auto; }
+        .totals-box td { padding: 2px 8px; font-size: 8pt; }
         .totals-box .label { font-weight: bold; text-align: left; }
-        .totals-box .total-row td { border-top: 2px solid #000; font-size: 10pt; font-weight: bold; padding-top: 3px; }
+        .totals-box .total-row td { border-top: 2px solid #000; font-size: 9pt; font-weight: bold; padding-top: 2px; }
 
         /* ── Signature ── */
-        .signature-line { margin-top: 20px; font-size: 7.5pt; }
-        .sig-table { width: 50%; border-collapse: collapse; }
-        .sig-table td.sig-label { font-weight: bold; white-space: nowrap; padding-right: 6px; }
-        .sig-table td.sig-line { border-bottom: 1px solid #000; width: 100%; }
-
-        /* Force all tables to stay within bounds */
-        table { table-layout: fixed; }
+        .signature-line { margin-top: 16px; font-size: 7pt; }
+        .sig-table { width: 260px; border-collapse: collapse; }
+        .sig-table td.sig-label { font-weight: bold; white-space: nowrap; padding-right: 5px; }
+        .sig-table td.sig-line { border-bottom: 1px solid #000; width: 180px; }
     </style>
 </head>
 <body>
 <div class="page">
 
-    {{-- Header: company info left, Estimate title + date right --}}
+    {{-- Header --}}
     <table class="header-table" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="vertical-align: top; width: 50%;">
+            <td style="vertical-align: top; width: 267px;">
                 <div class="company-info">
                     <div class="company-name">{{ $settings['company_name'] ?? 'VIP Windows Inc.' }}</div>
                     <div>{{ $settings['company_address'] ?? '4231 Liberty Blvd.' }}</div>
@@ -74,7 +81,7 @@
                     <div>Phone: {{ $settings['company_phone'] ?? '(562) 368-0313' }}</div>
                 </div>
             </td>
-            <td style="vertical-align: top; text-align: right; width: 50%;">
+            <td style="vertical-align: top; text-align: right; width: 268px;">
                 <div class="estimate-title">Estimate</div>
                 <div class="date-box">
                     <table>
@@ -89,10 +96,10 @@
         </tr>
     </table>
 
-    {{-- Address blocks: Name/Address left, Job Address right — same line --}}
+    {{-- Address blocks --}}
     <table class="address-table" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="width: 48%; vertical-align: top;">
+            <td style="width: 255px; vertical-align: top;">
                 <div class="addr-box">
                     <div class="addr-label">Name / Address</div>
                     <div class="addr-content">
@@ -103,8 +110,8 @@
                     </div>
                 </div>
             </td>
-            <td style="width: 4%;"></td>
-            <td style="width: 48%; vertical-align: top;">
+            <td style="width: 25px;"></td>
+            <td style="width: 255px; vertical-align: top;">
                 <div class="addr-box">
                     <div class="addr-label">Job Address</div>
                     <div class="addr-content">
@@ -121,10 +128,10 @@
     {{-- Reference row --}}
     <table class="ref-table" cellpadding="0" cellspacing="0">
         <tr>
-            <th style="width: 18%;">Reference #</th>
-            <th style="width: 37%;">Customer P.O.</th>
-            <th style="width: 20%;">Terms</th>
-            <th style="width: 25%;">Installation Date</th>
+            <th style="width: 95px;">Reference #</th>
+            <th style="width: 200px;">Customer P.O.</th>
+            <th style="width: 105px;">Terms</th>
+            <th style="width: 135px;">Installation Date</th>
         </tr>
         <tr>
             <td>{{ $estimateNumber }}</td>
@@ -138,15 +145,14 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 85px;">Item</th>
-                <th>Description</th>
-                <th style="width: 40px;" class="text-center">Qty</th>
-                <th style="width: 75px;" class="text-right">Unit Price</th>
-                <th style="width: 80px;" class="text-right">Total</th>
+                <th style="width: 65px;">Item</th>
+                <th style="width: 270px;">Description</th>
+                <th style="width: 30px;" class="text-center">Qty</th>
+                <th style="width: 70px;" class="text-right">Unit Price</th>
+                <th style="width: 70px;" class="text-right">Total</th>
             </tr>
         </thead>
         <tbody>
-            {{-- Installation description row --}}
             @if(!empty($installDescription))
             <tr>
                 <td>WD</td>
@@ -157,7 +163,6 @@
             </tr>
             @endif
 
-            {{-- Measurement items (windows/doors with sizes) --}}
             @foreach($measureItems as $item)
             <tr>
                 <td>{{ $item['type'] }}</td>
@@ -168,7 +173,6 @@
             </tr>
             @endforeach
 
-            {{-- Service line items (installation charges) --}}
             @foreach($serviceItems as $item)
             <tr>
                 <td>{{ $item['type'] }}</td>
@@ -189,15 +193,15 @@
         American Express / Discover {{ $settings['cc_fee_amex'] ?? '2.5' }}%
     </div>
 
-    {{-- Terms + Totals side by side --}}
+    {{-- Terms + Totals --}}
     <table class="footer-table" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="width: 55%; vertical-align: top;">
+            <td style="width: 295px; vertical-align: top;">
                 <div class="terms-text">
                     {{ $settings['estimate_footer'] ?? 'If the above prices, specifications and conditions are satisfactory and hereby accepted, the company requires signatures when orders are placed. By signing, customer has agreed Not to cancel the order or put a stop payment on orders that have been paid by Visa, M/C, check and/or cash. Estimate valid only 30 days.' }}
                 </div>
             </td>
-            <td style="width: 45%; vertical-align: top;">
+            <td style="width: 240px; vertical-align: top;">
                 <div class="totals-box">
                     <table>
                         <tr>
