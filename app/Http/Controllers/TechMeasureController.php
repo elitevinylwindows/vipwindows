@@ -317,8 +317,8 @@ class TechMeasureController extends Controller
         $measurementsTotal = collect($measurementPrices)->sum('price');
         $grandTotal = $lineItemsTotal + $measurementsTotal;
 
-        // Generate job number
-        $lastJob = Job::withTrashed()->orderByDesc('id')->first();
+        // Generate job number — only look at JOB- prefixed jobs (skip TM- time-tracking jobs)
+        $lastJob = Job::withTrashed()->where('job_number', 'like', 'JOB-%')->orderByRaw("CAST(SUBSTRING(job_number, 5) AS UNSIGNED) DESC")->first();
         $nextNum = $lastJob ? (int) substr($lastJob->job_number, 4) + 1 : 1;
         $jobNumber = 'JOB-' . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
 

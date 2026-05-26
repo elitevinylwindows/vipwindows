@@ -521,12 +521,10 @@ function renderMeasureDetail(data) {
                     <input type="number" id="addQty" class="form-control form-control-sm" value="1" min="1">
                 </div>
                 <div class="col">
-                    <label>Width</label>
-                    <input type="text" id="addWidth" class="form-control form-control-sm" placeholder='36 1/2'>
+                    <input type="text" id="addWidth" class="form-control form-control-sm" placeholder='Width'>
                 </div>
                 <div class="col">
-                    <label>Height</label>
-                    <input type="text" id="addHeight" class="form-control form-control-sm" placeholder='60 3/8'>
+                    <input type="text" id="addHeight" class="form-control form-control-sm" placeholder='Height'>
                 </div>
                 <div class="col-md-2">
                     <label>Unit (Configuration)</label>
