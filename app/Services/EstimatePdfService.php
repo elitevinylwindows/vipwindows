@@ -66,6 +66,7 @@ class EstimatePdfService
             }
 
             // Build description: size + unit(config) + notes
+            // Avoid duplicating config value that may appear in both series_type and description
             $parts = [];
             if ($item->width && $item->height) {
                 $parts[] = $item->width . 'x' . $item->height;
@@ -73,7 +74,7 @@ class EstimatePdfService
             if ($item->series_type) {
                 $parts[] = $item->series_type;
             }
-            if ($desc) {
+            if ($desc && trim($desc) !== trim($item->series_type ?? '')) {
                 $parts[] = $desc;
             }
             if ($item->notes) {
