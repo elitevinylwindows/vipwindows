@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Installer\InstallerAvailabilityController;
+use App\Models\AdminAvailability;
+use App\Models\AdminAvailabilityOverride;
+use App\Models\CalendarEvent;
 use App\Models\InstallerBooking;
 use App\Models\InstallerService;
+use App\Models\InstallationOrder;
 use App\Models\VipUser;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class PublicBookingController extends Controller
@@ -134,34 +139,95 @@ class PublicBookingController extends Controller
     public function websiteBook()
     {
         $selectedDate = request('date', today()->addDay()->format('Y-m-d'));
-
-        // Use admin's calendar slots
-        $slots = \App\Models\CalendarSlot::where('slot_date', $selectedDate)
-            ->whereColumn('current_bookings', '<', 'max_bookings')
-            ->orderBy('slot_time')
-            ->get();
+        $slots = self::getAdminSlots($selectedDate);
 
         return view('public.book-website', compact('selectedDate', 'slots'));
     }
 
     /**
-     * Get admin calendar slots for a date.
+     * Get admin calendar slots for a date (AJAX).
      */
     public function websiteSlots(Request $request)
     {
         $request->validate(['date' => 'required|date|after_or_equal:today']);
-
-        $slots = \App\Models\CalendarSlot::where('slot_date', $request->date)
-            ->orderBy('slot_time')
-            ->get()
-            ->map(fn($s) => [
-                'id'        => $s->id,
-                'time'      => $s->slot_time,
-                'remaining' => $s->bookingsRemaining(),
-                'available' => $s->isAvailable(),
-            ]);
+        $slots = self::getAdminSlots($request->date);
 
         return response()->json(['slots' => $slots]);
+    }
+
+    /**
+     * Generate available time slots from admin availability settings.
+     */
+    public static function getAdminSlots(string $date): array
+    {
+        $dateObj = Carbon::parse($date);
+        $dayOfWeek = $dateObj->dayOfWeek; // 0=Sun, 6=Sat
+
+        // Check for date-specific override first
+        $override = AdminAvailabilityOverride::where('override_date', $date)->first();
+
+        if ($override) {
+            if (!$override->is_available) {
+                return []; // Day off
+            }
+            $startTime = $override->start_time ?? '08:00';
+            $endTime = $override->end_time ?? '17:00';
+            $maxBookings = $override->max_bookings_per_slot ?? 5;
+            $slotDuration = 60; // overrides use default 60 min
+        } else {
+            // Use weekly schedule
+            $avail = AdminAvailability::where('day_of_week', $dayOfWeek)->first();
+
+            if (!$avail || !$avail->is_available) {
+                return []; // Not available this day
+            }
+
+            $startTime = $avail->start_time ?? '08:00';
+            $endTime = $avail->end_time ?? '17:00';
+            $maxBookings = $avail->max_bookings_per_slot ?? 5;
+            $slotDuration = $avail->slot_duration ?? 60;
+        }
+
+        // Count existing bookings per time slot for this date
+        $existingBookings = InstallationOrder::where('scheduled_date', $date)
+            ->where('source', 'website')
+            ->whereNotIn('status', ['cancelled'])
+            ->selectRaw('scheduled_slot, COUNT(*) as cnt')
+            ->groupBy('scheduled_slot')
+            ->pluck('cnt', 'scheduled_slot')
+            ->toArray();
+
+        // Also count calendar events that overlap this date
+        $eventBookings = CalendarEvent::where('event_date', '<=', $date)
+            ->where(function ($q) use ($date) {
+                $q->whereNull('end_date')->where('event_date', $date)
+                  ->orWhere('end_date', '>=', $date);
+            })
+            ->whereNull('rescheduled_to')
+            ->count();
+
+        // Generate time slots
+        $slots = [];
+        $current = Carbon::parse($date . ' ' . $startTime);
+        $end = Carbon::parse($date . ' ' . $endTime);
+
+        while ($current->lt($end)) {
+            $timeStr = $current->format('H:i');
+            $booked = ($existingBookings[$timeStr] ?? 0);
+            $remaining = max(0, $maxBookings - $booked);
+
+            $slots[] = [
+                'time'      => $timeStr,
+                'display'   => $current->format('g:i A'),
+                'available' => $remaining > 0,
+                'remaining' => $remaining,
+                'max'       => $maxBookings,
+            ];
+
+            $current->addMinutes($slotDuration);
+        }
+
+        return $slots;
     }
 
     /**
@@ -172,27 +238,27 @@ class PublicBookingController extends Controller
         $validated = $request->validate([
             'customer_name'   => 'required|string|max:255',
             'customer_email'  => 'required|email|max:255',
-            'customer_phone'  => 'nullable|string|max:50',
+            'customer_phone'  => 'required|string|max:50',
             'install_address' => 'required|string|max:500',
             'install_city'    => 'nullable|string|max:100',
             'install_state'   => 'nullable|string|max:50',
             'install_zip'     => 'nullable|string|max:20',
-            'slot_id'         => 'required|exists:install_calendar_slots,id',
+            'booking_date'    => 'required|date|after_or_equal:today',
+            'booking_time'    => 'required|string',
             'service_type'    => 'required|string|max:100',
             'description'     => 'nullable|string|max:2000',
         ]);
 
-        $slot = \App\Models\CalendarSlot::findOrFail($validated['slot_id']);
+        // Verify slot is still available
+        $slots = self::getAdminSlots($validated['booking_date']);
+        $slotAvailable = collect($slots)->first(fn($s) => $s['time'] === $validated['booking_time'] && $s['available']);
 
-        if (!$slot->isAvailable()) {
-            return back()->with('error', 'This slot is no longer available.')->withInput();
+        if (!$slotAvailable) {
+            return back()->with('error', 'This time slot is no longer available. Please choose another.')->withInput();
         }
 
-        // Increment slot bookings
-        $slot->increment('current_bookings');
-
         // Create installation order for admin
-        \App\Models\InstallationOrder::create([
+        InstallationOrder::create([
             'customer_name'    => $validated['customer_name'],
             'customer_email'   => $validated['customer_email'],
             'customer_phone'   => $validated['customer_phone'],
@@ -202,15 +268,18 @@ class PublicBookingController extends Controller
             'install_zip'      => $validated['install_zip'],
             'service_type'     => $validated['service_type'],
             'description'      => $validated['description'],
-            'scheduled_date'   => $slot->slot_date,
-            'scheduled_slot'   => $slot->slot_time,
+            'scheduled_date'   => $validated['booking_date'],
+            'scheduled_slot'   => $validated['booking_time'],
             'status'           => 'scheduled',
             'source'           => 'website',
         ]);
 
+        $dateFormatted = Carbon::parse($validated['booking_date'])->format('l, F j, Y');
+        $timeFormatted = Carbon::parse($validated['booking_time'])->format('g:i A');
+
         return redirect()->route('public.book.website.success')->with('booking', [
-            'date' => $slot->slot_date->format('l, F j, Y'),
-            'time' => $slot->slot_time,
+            'date' => $dateFormatted,
+            'time' => $timeFormatted,
         ]);
     }
 

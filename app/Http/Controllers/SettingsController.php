@@ -30,7 +30,7 @@ class SettingsController extends Controller
         $defaults = [
             'company_name'          => 'VIP Windows',
             'company_phone'         => '(562) 368-0313',
-            'company_email'         => 'info@vipwindows.net',
+            'company_email'         => 'info@vipwindowsinc.com',
             'company_address'       => '',
             'business_hours'        => 'Mon-Fri 8am - 5pm',
             'booking_enabled'       => '1',
@@ -41,7 +41,7 @@ class SettingsController extends Controller
             'teams_client_id'       => '',
             'teams_client_secret'   => '',
             'mail_from_name'        => 'VIP Windows',
-            'mail_from_address'     => 'info@vipwindows.net',
+            'mail_from_address'     => 'info@vipwindowsinc.com',
             'smtp_host'             => 'smtp.zoho.com',
             'smtp_port'             => '465',
             'smtp_username'         => '',

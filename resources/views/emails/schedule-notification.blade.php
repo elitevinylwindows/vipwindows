@@ -124,7 +124,7 @@
                             <p style="color:#c9a84c; font-weight:700; font-size:14px; margin:0 0 5px;">VIP Windows</p>
                             <p style="color:#888; font-size:12px; margin:0 0 3px;">Professional Window & Door Installation</p>
                             <p style="color:#666; font-size:11px; margin:10px 0 0;">
-                                (562) 368-0313 &bull; info@vipwindows.net &bull; vipwindows.net
+                                (562) 368-0313 &bull; info@vipwindowsinc.com &bull; vipwindowsinc.com
                             </p>
                         </td>
                     </tr>

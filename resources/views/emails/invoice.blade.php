@@ -82,13 +82,13 @@
 
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
             <p>If you have any questions about this invoice, please contact us:</p>
-            <p><strong>Phone:</strong> (562) 368-0313<br><strong>Email:</strong> info@vipwindows.net</p>
+            <p><strong>Phone:</strong> (562) 368-0313<br><strong>Email:</strong> info@vipwindowsinc.com</p>
         </div>
 
         <p style="margin-top: 30px;">Best regards,<br><strong>VIP Windows Team</strong></p>
     </div>
     <div style="background: #111; padding: 15px; text-align: center; color: #888; font-size: 12px;">
         VIP Windows &mdash; Professional Window Installation<br>
-        (562) 368-0313 &bull; info@vipwindows.net
+        (562) 368-0313 &bull; info@vipwindowsinc.com
     </div>
 </div>

@@ -117,11 +117,11 @@
             <p class="text-muted text-center mb-2" style="font-size:.75rem; text-transform:uppercase; letter-spacing:1px;">Demo Accounts</p>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-sm btn-outline-secondary flex-fill demo-login-btn"
-                        data-email="installer@demo.vipwindows.net" data-password="demo1234">
+                        data-email="installer@demo.vipwindowsinc.com" data-password="demo1234">
                     <i class="bi bi-tools me-1"></i> Installer
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-secondary flex-fill demo-login-btn"
-                        data-email="customer@demo.vipwindows.net" data-password="demo1234">
+                        data-email="customer@demo.vipwindowsinc.com" data-password="demo1234">
                     <i class="bi bi-house-door me-1"></i> Customer
                 </button>
             </div>

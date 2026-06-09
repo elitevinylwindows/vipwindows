@@ -11,7 +11,7 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         VipUser::updateOrCreate(
-            ['email' => 'admin@vipwindows.net'],
+            ['email' => 'admin@vipwindowsinc.com'],
             [
                 'name'     => 'VIP Admin',
                 'phone'    => null,
@@ -21,6 +21,6 @@ class AdminUserSeeder extends Seeder
             ]
         );
 
-        $this->command->info('Admin user created: admin@vipwindows.net / VipAdmin2026!');
+        $this->command->info('Admin user created: admin@vipwindowsinc.com / VipAdmin2026!');
     }
 }

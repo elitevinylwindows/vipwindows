@@ -62,7 +62,7 @@
                     <label class="form-label small fw-semibold">Email</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                        <input type="email" name="email" class="form-control" placeholder="admin@vipwindows.net" value="{{ old('email') }}" required autofocus>
+                        <input type="email" name="email" class="form-control" placeholder="admin@vipwindowsinc.com" value="{{ old('email') }}" required autofocus>
                     </div>
                 </div>
 

@@ -196,7 +196,7 @@
                     <h6 class="footer-heading">Contact</h6>
                     <ul class="list-unstyled small">
                         <li class="mb-1"><i class="bi bi-telephone me-1"></i> (562) 368-0313</li>
-                        <li class="mb-1"><i class="bi bi-envelope me-1"></i> info@vipwindows.net</li>
+                        <li class="mb-1"><i class="bi bi-envelope me-1"></i> info@vipwindowsinc.com</li>
                         <li class="mb-1"><i class="bi bi-clock me-1"></i> Mon-Fri 8am - 5pm</li>
                     </ul>
                 </div>

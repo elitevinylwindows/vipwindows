@@ -32,7 +32,7 @@
                         </div>
                         <div>
                             <h6 class="fw-bold mb-1">Email</h6>
-                            <p class="text-muted mb-0">info@vipwindows.net</p>
+                            <p class="text-muted mb-0">info@vipwindowsinc.com</p>
                         </div>
                     </div>
 

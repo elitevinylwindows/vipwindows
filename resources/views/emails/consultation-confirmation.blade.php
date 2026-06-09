@@ -42,6 +42,6 @@
     </div>
     <div style="background: #111; padding: 15px; text-align: center; color: #888; font-size: 12px;">
         VIP Windows &mdash; Professional Window Installation<br>
-        (562) 368-0313 &bull; info@vipwindows.net
+        (562) 368-0313 &bull; info@vipwindowsinc.com
     </div>
 </div>

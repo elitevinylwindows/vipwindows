@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         // Demo Installer
-        if (!DB::table('vip_users')->where('email', 'installer@demo.vipwindows.net')->exists()) {
+        if (!DB::table('vip_users')->where('email', 'installer@demo.vipwindowsinc.com')->exists()) {
             DB::table('vip_users')->insert([
                 'name'          => 'Demo Installer',
-                'email'         => 'installer@demo.vipwindows.net',
+                'email'         => 'installer@demo.vipwindowsinc.com',
                 'password'      => Hash::make('demo1234'),
                 'role'          => 'installer',
                 'phone'         => '(555) 123-4567',
@@ -26,10 +26,10 @@ return new class extends Migration
         }
 
         // Demo Customer
-        if (!DB::table('vip_users')->where('email', 'customer@demo.vipwindows.net')->exists()) {
+        if (!DB::table('vip_users')->where('email', 'customer@demo.vipwindowsinc.com')->exists()) {
             DB::table('vip_users')->insert([
                 'name'          => 'Demo Customer',
-                'email'         => 'customer@demo.vipwindows.net',
+                'email'         => 'customer@demo.vipwindowsinc.com',
                 'password'      => Hash::make('demo1234'),
                 'role'          => 'customer',
                 'customer_type' => 'homeowner',
@@ -46,7 +46,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('vip_users')->where('email', 'installer@demo.vipwindows.net')->delete();
-        DB::table('vip_users')->where('email', 'customer@demo.vipwindows.net')->delete();
+        DB::table('vip_users')->where('email', 'installer@demo.vipwindowsinc.com')->delete();
+        DB::table('vip_users')->where('email', 'customer@demo.vipwindowsinc.com')->delete();
     }
 };

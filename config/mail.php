@@ -22,7 +22,7 @@ return [
     ],
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'info@vipwindows.net'),
+        'address' => env('MAIL_FROM_ADDRESS', 'info@vipwindowsinc.com'),
         'name' => env('MAIL_FROM_NAME', 'VIP Windows'),
     ],
 

@@ -33,7 +33,7 @@
 
         <form method="POST" action="{{ route('public.book.website.confirm') }}" id="bookingForm">
             @csrf
-            <input type="hidden" name="slot_id" id="slotIdInput">
+            <input type="hidden" name="booking_time" id="bookingTimeInput">
 
             {{-- Service Type --}}
             <div class="card mb-3">
@@ -61,19 +61,19 @@
                 <div class="card-body">
                     <div class="row g-2">
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Full Name</label>
+                            <label class="form-label small fw-semibold">Full Name *</label>
                             <input type="text" name="customer_name" class="form-control form-control-sm" required value="{{ old('customer_name') }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Email</label>
+                            <label class="form-label small fw-semibold">Email *</label>
                             <input type="email" name="customer_email" class="form-control form-control-sm" required value="{{ old('customer_email') }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Phone</label>
-                            <input type="text" name="customer_phone" class="form-control form-control-sm" value="{{ old('customer_phone') }}">
+                            <label class="form-label small fw-semibold">Phone *</label>
+                            <input type="text" name="customer_phone" class="form-control form-control-sm" required value="{{ old('customer_phone') }}" placeholder="(555) 123-4567">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Installation Address</label>
+                            <label class="form-label small fw-semibold">Installation Address *</label>
                             <input type="text" name="install_address" class="form-control form-control-sm" required value="{{ old('install_address') }}" data-address-autocomplete>
                         </div>
                         <div class="col-4">
@@ -109,16 +109,16 @@
                     </div>
 
                     <div id="slotsContainer">
-                        @if($slots->count())
+                        @if(count($slots))
                             <p class="text-muted small mb-2">Available time slots:</p>
                             <div class="row g-2">
                                 @foreach($slots as $slot)
                                     <div class="col-sm-6 col-md-4">
-                                        <div class="card slot-card p-2 text-center {{ !$slot->isAvailable() ? 'unavailable' : '' }}"
-                                             @if($slot->isAvailable()) onclick="selectSlot(this, '{{ $slot->id }}')" @endif>
-                                            <div class="fw-semibold small">{{ date('g:i A', strtotime($slot->slot_time)) }}</div>
+                                        <div class="card slot-card p-2 text-center {{ !$slot['available'] ? 'unavailable' : '' }}"
+                                             @if($slot['available']) onclick="selectSlot(this, '{{ $slot['time'] }}')" @endif>
+                                            <div class="fw-semibold small">{{ $slot['display'] }}</div>
                                             <div class="text-muted" style="font-size:.7rem;">
-                                                {{ $slot->isAvailable() ? $slot->bookingsRemaining() . ' spot' . ($slot->bookingsRemaining() > 1 ? 's' : '') . ' left' : 'Fully booked' }}
+                                                {{ $slot['available'] ? $slot['remaining'] . ' spot' . ($slot['remaining'] > 1 ? 's' : '') . ' left' : 'Fully booked' }}
                                             </div>
                                         </div>
                                     </div>
@@ -143,10 +143,10 @@
 
 @push('scripts')
 <script>
-function selectSlot(el, slotId) {
+function selectSlot(el, time) {
     document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
-    document.getElementById('slotIdInput').value = slotId;
+    document.getElementById('bookingTimeInput').value = time;
     document.getElementById('confirmBtn').disabled = false;
 }
 
@@ -154,7 +154,7 @@ function loadSlots() {
     const date = document.getElementById('bookingDateInput').value;
     if (!date) return;
     document.getElementById('confirmBtn').disabled = true;
-    document.getElementById('slotIdInput').value = '';
+    document.getElementById('bookingTimeInput').value = '';
 
     fetch(`{{ route('public.book.website.slots') }}?date=${date}`)
         .then(r => r.json())
@@ -167,9 +167,8 @@ function loadSlots() {
             let h = '<p class="text-muted small mb-2">Available time slots:</p><div class="row g-2">';
             data.slots.forEach(s => {
                 const u = !s.available ? 'unavailable' : '';
-                const cl = s.available ? `onclick="selectSlot(this,'${s.id}')"` : '';
-                const timeStr = new Date('2000-01-01T' + s.time).toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'});
-                h += `<div class="col-sm-6 col-md-4"><div class="card slot-card p-2 text-center ${u}" ${cl}><div class="fw-semibold small">${timeStr}</div><div class="text-muted" style="font-size:.7rem;">${s.available ? s.remaining + ' spot' + (s.remaining > 1 ? 's' : '') + ' left' : 'Fully booked'}</div></div></div>`;
+                const cl = s.available ? `onclick="selectSlot(this,'${s.time}')"` : '';
+                h += `<div class="col-sm-6 col-md-4"><div class="card slot-card p-2 text-center ${u}" ${cl}><div class="fw-semibold small">${s.display}</div><div class="text-muted" style="font-size:.7rem;">${s.available ? s.remaining + ' spot' + (s.remaining > 1 ? 's' : '') + ' left' : 'Fully booked'}</div></div></div>`;
             });
             h += '</div>';
             c.innerHTML = h;
