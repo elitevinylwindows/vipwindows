@@ -148,8 +148,13 @@ class PublicBookingController extends Controller
      */
     public function websiteSlots(Request $request)
     {
-        $request->validate(['date' => 'required|date|after_or_equal:today']);
-        $slots = self::getAdminSlots($request->date);
+        try {
+            $request->validate(['date' => 'required|date|after_or_equal:today']);
+            $slots = self::getAdminSlots($request->date);
+        } catch (\Exception $e) {
+            \Log::warning('websiteSlots error: ' . $e->getMessage());
+            $slots = [];
+        }
 
         return response()->json(['slots' => $slots]);
     }
@@ -162,59 +167,66 @@ class PublicBookingController extends Controller
         $dateObj = Carbon::parse($date);
         $dayOfWeek = $dateObj->dayOfWeek; // 0=Sun, 6=Sat
 
-        // Check for date-specific override first
-        $override = AdminAvailabilityOverride::where('override_date', $date)->first();
-
-        if ($override) {
-            if (!$override->is_available) {
-                return []; // Day off
-            }
-            $startTime = $override->start_time ?? '08:00';
-            $endTime = $override->end_time ?? '17:00';
-            $maxBookings = $override->max_bookings_per_slot ?? 5;
-            $slotDuration = 60; // overrides use default 60 min
-        } else {
-            // Use weekly schedule
-            $avail = AdminAvailability::where('day_of_week', $dayOfWeek)->first();
-
-            if ($avail) {
-                if (!$avail->is_available) {
-                    return []; // Explicitly marked unavailable
-                }
-                $startTime = $avail->start_time ?? '08:00';
-                $endTime = $avail->end_time ?? '17:00';
-                $maxBookings = $avail->max_bookings_per_slot ?? 5;
-                $slotDuration = $avail->slot_duration ?? 60;
-            } else {
-                // No record exists — use same defaults as the admin UI:
-                // Mon–Fri available, Sat–Sun closed, 8am–5pm, 60 min slots, 5 max
-                if ($dayOfWeek === 0 || $dayOfWeek === 6) {
-                    return []; // Weekends closed by default
-                }
-                $startTime = '08:00';
-                $endTime = '17:00';
-                $maxBookings = 5;
-                $slotDuration = 60;
-            }
+        // Weekends closed by default
+        if ($dayOfWeek === 0 || $dayOfWeek === 6) {
+            return [];
         }
 
-        // Count existing bookings per time slot for this date
-        $existingBookings = InstallationOrder::where('scheduled_date', $date)
-            ->where('source', 'website')
-            ->whereNotIn('status', ['cancelled'])
-            ->selectRaw('scheduled_slot, COUNT(*) as cnt')
-            ->groupBy('scheduled_slot')
-            ->pluck('cnt', 'scheduled_slot')
-            ->toArray();
+        // Defaults (Mon–Fri 8am–5pm, 60 min, 5 max) — used if DB has no records or errors
+        $startTime = '08:00';
+        $endTime = '17:00';
+        $maxBookings = 5;
+        $slotDuration = 60;
 
-        // Also count calendar events that overlap this date
-        $eventBookings = CalendarEvent::where('event_date', '<=', $date)
-            ->where(function ($q) use ($date) {
-                $q->whereNull('end_date')->where('event_date', $date)
-                  ->orWhere('end_date', '>=', $date);
-            })
-            ->whereNull('rescheduled_to')
-            ->count();
+        try {
+            // Check for date-specific override first
+            $override = AdminAvailabilityOverride::where('override_date', $date)->first();
+
+            if ($override) {
+                if (!$override->is_available) {
+                    return []; // Day off
+                }
+                $startTime = $override->start_time ?? '08:00';
+                $endTime = $override->end_time ?? '17:00';
+                $maxBookings = $override->max_bookings_per_slot ?? 5;
+                // Keep default slotDuration for overrides
+            } else {
+                // Use weekly schedule
+                $avail = AdminAvailability::where('day_of_week', $dayOfWeek)->first();
+
+                if ($avail) {
+                    if (!$avail->is_available) {
+                        return []; // Explicitly marked unavailable
+                    }
+                    $startTime = $avail->start_time ?? '08:00';
+                    $endTime = $avail->end_time ?? '17:00';
+                    $maxBookings = $avail->max_bookings_per_slot ?? 5;
+                    $slotDuration = $avail->slot_duration ?? 60;
+                }
+                // else: no record → keep defaults set above
+            }
+        } catch (\Exception $e) {
+            \Log::warning('getAdminSlots DB error: ' . $e->getMessage());
+            // Keep defaults — still generate slots
+        }
+
+        // Strip seconds if stored as H:i:s
+        $startTime = substr($startTime, 0, 5);
+        $endTime = substr($endTime, 0, 5);
+
+        // Count existing bookings (wrapped in try-catch so slots still show on fresh installs)
+        $existingBookings = [];
+        try {
+            $existingBookings = InstallationOrder::where('scheduled_date', $date)
+                ->where('source', 'website')
+                ->whereNotIn('status', ['cancelled'])
+                ->selectRaw('scheduled_slot, COUNT(*) as cnt')
+                ->groupBy('scheduled_slot')
+                ->pluck('cnt', 'scheduled_slot')
+                ->toArray();
+        } catch (\Exception $e) {
+            \Log::warning('getAdminSlots booking count error: ' . $e->getMessage());
+        }
 
         // Generate time slots
         $slots = [];
