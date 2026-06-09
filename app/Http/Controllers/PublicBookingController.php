@@ -139,9 +139,8 @@ class PublicBookingController extends Controller
     public function websiteBook()
     {
         $selectedDate = request('date', today()->addDay()->format('Y-m-d'));
-        $slots = self::getAdminSlots($selectedDate);
 
-        return view('public.book-website', compact('selectedDate', 'slots'));
+        return view('public.book-website', compact('selectedDate'));
     }
 
     /**
@@ -248,14 +247,6 @@ class PublicBookingController extends Controller
             'service_type'    => 'required|string|max:100',
             'description'     => 'nullable|string|max:2000',
         ]);
-
-        // Verify slot is still available
-        $slots = self::getAdminSlots($validated['booking_date']);
-        $slotAvailable = collect($slots)->first(fn($s) => $s['time'] === $validated['booking_time'] && $s['available']);
-
-        if (!$slotAvailable) {
-            return back()->with('error', 'This time slot is no longer available. Please choose another.')->withInput();
-        }
 
         // Create installation order for admin
         InstallationOrder::create([

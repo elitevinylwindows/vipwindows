@@ -33,7 +33,6 @@
 
         <form method="POST" action="{{ route('public.book.website.confirm') }}" id="bookingForm">
             @csrf
-            <input type="hidden" name="booking_time" id="bookingTimeInput">
 
             {{-- Service Type --}}
             <div class="card mb-3">
@@ -102,78 +101,25 @@
                     <span class="badge bg-dark rounded-pill me-2">3</span> Choose Date & Time
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Preferred Date</label>
-                        <input type="date" name="booking_date" id="bookingDateInput" class="form-control form-control-sm" style="max-width:220px;"
-                               value="{{ $selectedDate }}" min="{{ today()->format('Y-m-d') }}" onchange="loadSlots()">
-                    </div>
-
-                    <div id="slotsContainer">
-                        @if(count($slots))
-                            <p class="text-muted small mb-2">Available time slots:</p>
-                            <div class="row g-2">
-                                @foreach($slots as $slot)
-                                    <div class="col-sm-6 col-md-4">
-                                        <div class="card slot-card p-2 text-center {{ !$slot['available'] ? 'unavailable' : '' }}"
-                                             @if($slot['available']) onclick="selectSlot(this, '{{ $slot['time'] }}')" @endif>
-                                            <div class="fw-semibold small">{{ $slot['display'] }}</div>
-                                            <div class="text-muted" style="font-size:.7rem;">
-                                                {{ $slot['available'] ? $slot['remaining'] . ' spot' . ($slot['remaining'] > 1 ? 's' : '') . ' left' : 'Fully booked' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="text-center py-3 text-muted small">
-                                <i class="bi bi-calendar-x fs-3 d-block mb-1"></i>
-                                No available slots for this date. Try another day.
-                            </div>
-                        @endif
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Preferred Date *</label>
+                            <input type="date" name="booking_date" class="form-control form-control-sm"
+                                   value="{{ $selectedDate }}" min="{{ today()->format('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Preferred Time *</label>
+                            <input type="time" name="booking_time" class="form-control form-control-sm" value="{{ old('booking_time', '09:00') }}" required>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-vip btn-lg w-100" id="confirmBtn" disabled>
+            <button type="submit" class="btn btn-vip btn-lg w-100">
                 <i class="bi bi-check-circle me-1"></i> Submit Booking Request
             </button>
         </form>
     </div>
 </div>
 
-@push('scripts')
-<script>
-function selectSlot(el, time) {
-    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    document.getElementById('bookingTimeInput').value = time;
-    document.getElementById('confirmBtn').disabled = false;
-}
-
-function loadSlots() {
-    const date = document.getElementById('bookingDateInput').value;
-    if (!date) return;
-    document.getElementById('confirmBtn').disabled = true;
-    document.getElementById('bookingTimeInput').value = '';
-
-    fetch(`{{ route('public.book.website.slots') }}?date=${date}`)
-        .then(r => r.json())
-        .then(data => {
-            const c = document.getElementById('slotsContainer');
-            if (!data.slots || !data.slots.length) {
-                c.innerHTML = '<div class="text-center py-3 text-muted small"><i class="bi bi-calendar-x fs-3 d-block mb-1"></i>No available slots for this date.</div>';
-                return;
-            }
-            let h = '<p class="text-muted small mb-2">Available time slots:</p><div class="row g-2">';
-            data.slots.forEach(s => {
-                const u = !s.available ? 'unavailable' : '';
-                const cl = s.available ? `onclick="selectSlot(this,'${s.time}')"` : '';
-                h += `<div class="col-sm-6 col-md-4"><div class="card slot-card p-2 text-center ${u}" ${cl}><div class="fw-semibold small">${s.display}</div><div class="text-muted" style="font-size:.7rem;">${s.available ? s.remaining + ' spot' + (s.remaining > 1 ? 's' : '') + ' left' : 'Fully booked'}</div></div></div>`;
-            });
-            h += '</div>';
-            c.innerHTML = h;
-        });
-}
-</script>
-@endpush
 @endsection
