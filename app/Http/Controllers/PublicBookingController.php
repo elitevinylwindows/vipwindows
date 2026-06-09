@@ -177,14 +177,25 @@ class PublicBookingController extends Controller
             // Use weekly schedule
             $avail = AdminAvailability::where('day_of_week', $dayOfWeek)->first();
 
-            if (!$avail || !$avail->is_available) {
-                return []; // Not available this day
+            if ($avail) {
+                if (!$avail->is_available) {
+                    return []; // Explicitly marked unavailable
+                }
+                $startTime = $avail->start_time ?? '08:00';
+                $endTime = $avail->end_time ?? '17:00';
+                $maxBookings = $avail->max_bookings_per_slot ?? 5;
+                $slotDuration = $avail->slot_duration ?? 60;
+            } else {
+                // No record exists — use same defaults as the admin UI:
+                // Mon–Fri available, Sat–Sun closed, 8am–5pm, 60 min slots, 5 max
+                if ($dayOfWeek === 0 || $dayOfWeek === 6) {
+                    return []; // Weekends closed by default
+                }
+                $startTime = '08:00';
+                $endTime = '17:00';
+                $maxBookings = 5;
+                $slotDuration = 60;
             }
-
-            $startTime = $avail->start_time ?? '08:00';
-            $endTime = $avail->end_time ?? '17:00';
-            $maxBookings = $avail->max_bookings_per_slot ?? 5;
-            $slotDuration = $avail->slot_duration ?? 60;
         }
 
         // Count existing bookings per time slot for this date
